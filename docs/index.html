@@ -409,6 +409,56 @@
     <section class="hero">
         <div class="container">
             <div class="hero-content">
+                <!-- GooseStack Logo -->
+                <div style="margin-bottom: 2rem;">
+                    <svg width="240" height="120" viewBox="0 0 240 120" xmlns="http://www.w3.org/2000/svg" style="height: 120px;">
+                      <!-- Background circle for contrast -->
+                      <circle cx="60" cy="60" r="50" fill="#1a1a1a" stroke="#333" stroke-width="2" opacity="0.8"/>
+                      
+                      <!-- Stack layers (bottom to top) -->
+                      <rect x="20" y="80" width="80" height="8" rx="4" fill="#555" opacity="0.6"/>
+                      <rect x="25" y="70" width="70" height="8" rx="4" fill="#666" opacity="0.7"/>
+                      <rect x="30" y="60" width="60" height="8" rx="4" fill="#777" opacity="0.8"/>
+                      <rect x="35" y="50" width="50" height="8" rx="4" fill="#888" opacity="0.9"/>
+                      
+                      <!-- Goose silhouette -->
+                      <g transform="translate(35, 20)">
+                        <!-- Body -->
+                        <ellipse cx="25" cy="30" rx="18" ry="12" fill="#FF4500"/>
+                        
+                        <!-- Neck -->
+                        <ellipse cx="15" cy="20" rx="6" ry="16" fill="#FF4500" transform="rotate(-15 15 20)"/>
+                        
+                        <!-- Head -->
+                        <ellipse cx="8" cy="8" rx="8" ry="9" fill="#FF4500"/>
+                        
+                        <!-- Beak -->
+                        <polygon points="0,8 8,10 6,12" fill="#FF6B00"/>
+                        
+                        <!-- Wing detail -->
+                        <ellipse cx="30" cy="28" rx="10" ry="8" fill="#FF6B00" opacity="0.8"/>
+                        
+                        <!-- Eye -->
+                        <circle cx="10" cy="6" r="2" fill="#000"/>
+                        <circle cx="11" cy="5" r="0.8" fill="#FFF"/>
+                        
+                        <!-- Tail -->
+                        <ellipse cx="42" cy="32" rx="8" ry="5" fill="#FF6B00" transform="rotate(20 42 32)"/>
+                      </g>
+                      
+                      <!-- GooseStack text -->
+                      <text x="130" y="45" font-family="Arial, sans-serif" font-size="28" font-weight="bold" fill="#FFF">
+                        Goose
+                      </text>
+                      <text x="130" y="75" font-family="Arial, sans-serif" font-size="28" font-weight="bold" fill="#FF4500">
+                        Stack
+                      </text>
+                      
+                      <!-- Subtle connecting line -->
+                      <line x1="110" y1="60" x2="125" y2="60" stroke="#444" stroke-width="2" opacity="0.5"/>
+                    </svg>
+                </div>
+                
                 <h1>Your AI agent. One command away. <span class="goose">🪿</span></h1>
                 <p>GooseStack is a one-command macOS installer that sets up a fully optimized AI agent environment.</p>
                 

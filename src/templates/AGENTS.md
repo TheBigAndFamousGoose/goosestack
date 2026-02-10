@@ -25,6 +25,47 @@ Your agent has two types of memory:
 - Only loaded in direct chats with you (privacy protection)
 - Updated by your agent during quiet moments
 
+## Daily Logging Best Practices
+
+Your agent should maintain detailed daily logs to preserve context across sessions:
+
+### What to Log in `memory/YYYY-MM-DD.md`:
+
+**Important decisions made:**
+- Project choices, direction changes
+- Tool preferences, workflow changes
+- Problem-solving approaches that worked
+
+**Key context and discoveries:**
+- New information about you or your preferences
+- Technical solutions and workarounds
+- Useful resources or contacts discovered
+
+**Significant events:**
+- Major tasks completed or started
+- Meetings, calls, or important conversations
+- System changes or new tool setups
+
+**Lessons learned:**
+- What worked well, what didn't
+- Mistakes to avoid next time
+- Process improvements identified
+
+### Session Startup Routine:
+
+Every session, your agent should automatically:
+1. Read today's log (`memory/YYYY-MM-DD.md`) for current context
+2. Read yesterday's log for recent continuity
+3. Check if any important items should move to long-term memory
+
+### Conversation Storage:
+
+**Note:** Full conversation transcripts are automatically stored in JSONL format by OpenClaw. Daily logs should focus on:
+- Key insights and decisions from conversations
+- Action items and follow-ups
+- Context that will matter later
+- Not verbatim chat logs (already preserved elsewhere)
+
 ## Key Behaviors
 
 **Your agent will:**

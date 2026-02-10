@@ -223,6 +223,44 @@ EOF
     log_info "You can manage the gateway with: ~/.openclaw/manage-gateway.sh {start|stop|restart|status|logs}"
 }
 
+# Prevent sleep and keep system awake for AI workloads
+prevent_sleep() {
+    log_info "⏰ Configuring sleep prevention for AI workloads..."
+    
+    # Disable system sleep, display sleep, and disk sleep
+    log_info "Disabling system sleep settings..."
+    sudo pmset -a sleep 0 displaysleep 0 disksleep 0
+    
+    if [[ $? -eq 0 ]]; then
+        log_success "Sleep prevention configured via pmset"
+    else
+        log_warning "Could not configure pmset (requires sudo)"
+    fi
+    
+    # Start caffeinate to prevent sleep programmatically
+    log_info "Starting caffeinate background process..."
+    
+    # Kill any existing caffeinate processes started by this script
+    pkill -f "caffeinate -s" 2>/dev/null || true
+    
+    # Start caffeinate in the background
+    nohup caffeinate -s > "$HOME/.openclaw/logs/caffeinate.log" 2>&1 &
+    local caffeinate_pid=$!
+    
+    # Save the PID so we can manage it later
+    echo "$caffeinate_pid" > "$HOME/.openclaw/caffeinate.pid"
+    
+    log_success "Caffeinate started (PID: $caffeinate_pid)"
+    
+    # User notification
+    echo -e "\n${YELLOW}☕ Sleep Prevention Active:${NC}"
+    echo -e "  • System will not sleep automatically"
+    echo -e "  • Display and disk sleep disabled"
+    echo -e "  • Caffeinate keeping system awake"
+    echo -e "  • This ensures AI agents can work 24/7"
+    echo -e "  • To restore normal sleep: sudo pmset -a sleep 1 displaysleep 10 disksleep 10"
+}
+
 # Main LaunchAgent setup function
 main_setup_launchagent() {
     log_info "🎯 Setting up OpenClaw auto-start service..."
@@ -230,6 +268,7 @@ main_setup_launchagent() {
     create_launch_agent
     load_launch_agent
     create_management_script
+    prevent_sleep
     
     # Verify it's working
     if verify_gateway_running; then
@@ -242,6 +281,7 @@ main_setup_launchagent() {
         echo -e "  ✅ Auto-starts on login"
         echo -e "  ✅ Restarts automatically if crashed"
         echo -e "  ✅ Management script available"
+        echo -e "  ✅ Sleep prevention configured"
         
         echo -e "\n${CYAN}💡 Management commands:${NC}"
         echo -e "  ~/.openclaw/manage-gateway.sh status   # Check status"
