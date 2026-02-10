@@ -1,88 +1,56 @@
 {
-  "gateway": {
-    "host": "localhost",
-    "port": 3721,
-    "token": "${GOOSE_GATEWAY_TOKEN}",
-    "corsOrigins": [
-      "http://localhost:3000",
-      "https://openclaw.dev",
-      "https://app.openclaw.dev"
-    ]
-  },
-  "defaultModel": "${GOOSE_API_KEY:+anthropic/claude-3-5-sonnet-20241022}${GOOSE_API_KEY:-ollama/${GOOSE_OLLAMA_MODEL}}",
-  "models": {
-    "anthropic/claude-3-5-sonnet-20241022": {
-      "apiKey": "${GOOSE_API_KEY:-}",
-      "maxTokens": 200000,
-      "timeout": 60000
-    },
-    "anthropic/claude-3-5-haiku-20241022": {
-      "apiKey": "${GOOSE_API_KEY:-}",
-      "maxTokens": 200000,
-      "timeout": 30000
-    },
-    "ollama/${GOOSE_OLLAMA_MODEL}": {
-      "baseURL": "http://localhost:11434",
-      "timeout": 120000
+  "auth": {
+    "profiles": {
+      {{GOOSE_AUTH_PROFILE}}
     }
   },
-  "timeoutSeconds": 600,
-  "thinkingDefault": "low",
-  "elevatedDefault": "on",
-  "memorySearch": {
-    "provider": "local",
-    "embeddingModel": "nomic-embed-text",
-    "maxResults": 10,
-    "similarity": 0.7
-  },
-  "subagents": {
-    "defaultModel": "ollama/${GOOSE_OLLAMA_MODEL}",
-    "maxConcurrent": 3,
-    "timeoutSeconds": 300,
-    "thinkingDefault": "off"
-  },
-  "compaction": {
-    "mode": "safeguard",
-    "maxTokens": 100000,
-    "keepMinTokens": 20000,
-    "triggerRatio": 0.9
-  },
-  "heartbeat": {
-    "enabled": true,
-    "intervalSeconds": 1800,
-    "prompt": "Read HEARTBEAT.md if it exists (workspace context). Follow it strictly. Do not infer or repeat old tasks from prior chats. If nothing needs attention, reply HEARTBEAT_OK.",
-    "quietHours": {
-      "start": "23:00",
-      "end": "08:00"
-    }
-  },
-  "skills": [],
-  "channels": {
-    "webchat": {
-      "enabled": true,
-      "port": 3000,
-      "title": "AI Agent - ${USER:-User} Edition",
-      "theme": "dark"
-    }${GOOSE_TELEGRAM_ENABLED:+,}
-${GOOSE_TELEGRAM_ENABLED:+    "telegram": {
-      "enabled": true,
-      "botToken": "${GOOSE_TELEGRAM_BOT_TOKEN}",
-      "allowedUsers": [],
-      "notifications": {
-        "startup": true,
-        "errors": true
+  "agents": {
+    "defaults": {
+      "workspace": "~/.openclaw/workspace",
+      "memorySearch": {
+        "provider": "local",
+        "fallback": "none"
+      },
+      "compaction": {
+        "mode": "safeguard"
+      },
+      "thinkingDefault": "low",
+      "elevatedDefault": "on",
+      "timeoutSeconds": 600,
+      "maxConcurrent": 4,
+      "subagents": {
+        "maxConcurrent": 8,
+        "model": "ollama/{{GOOSE_OLLAMA_MODEL}}",
+        "thinking": "off"
       }
-    }}
+    }
   },
-  "logging": {
-    "level": "info",
-    "file": "~/.openclaw/logs/openclaw.log",
-    "maxFiles": 5,
-    "maxSize": "10mb"
+  "tools": {
+    "web": {
+      "search": {
+        "provider": "brave"
+      }
+    }
   },
-  "security": {
-    "elevatedCommands": true,
-    "fileAccess": "workspace",
-    "networkAccess": true
+  "commands": {
+    "native": "auto",
+    "nativeSkills": "auto"
+  },
+  "channels": {
+    {{GOOSE_TELEGRAM_CONFIG}}
+  },
+  "gateway": {
+    "port": 18789,
+    "mode": "local",
+    "bind": "loopback",
+    "auth": {
+      "mode": "token",
+      "token": "{{GOOSE_GATEWAY_TOKEN}}"
+    }
+  },
+  "plugins": {
+    "entries": {
+      {{GOOSE_TELEGRAM_PLUGIN}}
+    }
   }
 }
