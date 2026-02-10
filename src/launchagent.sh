@@ -236,24 +236,28 @@ EOF
 prevent_sleep() {
     log_info "⏰ Configuring sleep prevention for AI workloads..."
     
-    # Disable system sleep, display sleep, and disk sleep
-    log_info "Disabling system sleep settings..."
-    sudo pmset -a sleep 0 displaysleep 0 disksleep 0
+    # Disable ALL sleep modes: system sleep, display sleep, disk sleep,
+    # hibernate, standby, and auto power off. Display sleep alone can
+    # escalate to hibernate on some Macs.
+    log_info "Disabling all sleep and hibernate modes..."
+    sudo pmset -a sleep 0 displaysleep 0 disksleep 0 hibernatemode 0 standby 0 autopoweroff 0
     
     if [[ $? -eq 0 ]]; then
-        log_success "Sleep prevention configured via pmset"
+        log_success "All sleep/hibernate modes disabled via pmset"
     else
-        log_warning "Could not configure pmset (requires sudo)"
+        log_warning "Could not configure pmset (requires sudo) — trying caffeinate fallback"
     fi
     
-    # Start caffeinate to prevent sleep programmatically
+    # Start caffeinate as belt-and-suspenders backup
+    # -d = prevent display sleep, -i = prevent idle sleep,
+    # -m = prevent disk sleep, -s = prevent system sleep on AC
     log_info "Starting caffeinate background process..."
     
-    # Kill any existing caffeinate processes started by this script
-    pkill -f "caffeinate -s" 2>/dev/null || true
+    # Kill any existing caffeinate processes
+    killall caffeinate 2>/dev/null || true
     
-    # Start caffeinate in the background
-    nohup caffeinate -s > "$HOME/.openclaw/logs/caffeinate.log" 2>&1 &
+    # Start caffeinate with ALL prevention flags
+    nohup caffeinate -dims > "$HOME/.openclaw/logs/caffeinate.log" 2>&1 &
     local caffeinate_pid=$!
     
     # Save the PID so we can manage it later
