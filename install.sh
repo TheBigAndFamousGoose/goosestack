@@ -17,7 +17,7 @@ readonly NC='\033[0m' # No Color
 # Globals
 INSTALL_DIR=""
 TEMP_DIR=""
-GOOSE_REPO="https://github.com/openclaw-dev/goosestack"
+GOOSE_REPO="https://github.com/TheBigAndFamousGoose/goosestack"
 
 # Cleanup function
 cleanup() {
@@ -159,7 +159,7 @@ main() {
     log_info "Your AI agent is running and ready to help."
     log_info "Check the dashboard URL above to start chatting!"
     
-    echo -e "\n${CYAN}Need help? Visit: https://github.com/openclaw-dev/goosestack${NC}"
+    echo -e "\n${CYAN}Need help? Visit: https://github.com/TheBigAndFamousGoose/goosestack${NC}"
 }
 
 # Run main function

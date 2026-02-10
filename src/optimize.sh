@@ -178,12 +178,27 @@ setup_workspace() {
     sed "s/{{USER_NAME}}/${user_name}/g" "$template_dir/USER.md.tmpl" > "$workspace_dir/USER.md"
     log_success "User: $user_name"
 
-    # TOOLS.md, MEMORY.md, HEARTBEAT.md — only create if missing
-    for file in TOOLS.md MEMORY.md HEARTBEAT.md; do
-        if [[ ! -f "$workspace_dir/$file" && -f "$template_dir/$file" ]]; then
-            cp "$template_dir/$file" "$workspace_dir/$file"
-        fi
-    done
+    # TOOLS.md, MEMORY.md — process templates with sed, only create if missing
+    if [[ ! -f "$workspace_dir/TOOLS.md" && -f "$template_dir/TOOLS.md" ]]; then
+        sed -e "s|{{GOOSE_CHIP:-Unknown}}|${GOOSE_CHIP:-Unknown}|g" \
+            -e "s|{{GOOSE_RAM_GB:-8}}|${GOOSE_RAM_GB:-8}|g" \
+            -e "s|{{GOOSE_ARCH:-arm64}}|${GOOSE_ARCH:-arm64}|g" \
+            -e "s|{{GOOSE_MACOS_VER:-Unknown}}|${GOOSE_MACOS_VER:-Unknown}|g" \
+            -e "s|{{GOOSE_OLLAMA_MODEL:-qwen2.5:7b}}|${GOOSE_OLLAMA_MODEL:-qwen3:14b}|g" \
+            "$template_dir/TOOLS.md" > "$workspace_dir/TOOLS.md"
+    fi
+
+    if [[ ! -f "$workspace_dir/MEMORY.md" && -f "$template_dir/MEMORY.md" ]]; then
+        sed -e "s|{{GOOSE_AGENT_PERSONA:-partner}}|${GOOSE_AGENT_PERSONA:-partner}|g" \
+            -e "s|{{GOOSE_OLLAMA_MODEL:-qwen2.5:7b}}|${GOOSE_OLLAMA_MODEL:-qwen3:14b}|g" \
+            -e "s|{{GOOSE_RAM_GB:-8}}|${GOOSE_RAM_GB:-8}|g" \
+            "$template_dir/MEMORY.md" > "$workspace_dir/MEMORY.md"
+    fi
+
+    # HEARTBEAT.md — copy only if missing
+    if [[ ! -f "$workspace_dir/HEARTBEAT.md" && -f "$template_dir/HEARTBEAT.md" ]]; then
+        cp "$template_dir/HEARTBEAT.md" "$workspace_dir/HEARTBEAT.md"
+    fi
 
     log_success "Workspace ready at $workspace_dir"
 }

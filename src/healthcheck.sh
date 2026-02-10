@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 # GooseStack Health Check & Final Verification
 # Comprehensive system validation and user onboarding
 
@@ -303,7 +304,7 @@ test_memory_search() {
 # Get dashboard URL and token
 get_dashboard_info() {
     local gateway_token="$GOOSE_GATEWAY_TOKEN"
-    local dashboard_url="http://localhost:3000"
+    local dashboard_url="http://localhost:18789"
     local gateway_url="http://localhost:3721"
     
     echo -e "\n${BOLD}${GREEN}🎉 Your AI Agent is Ready!${NC}\n"
@@ -383,8 +384,8 @@ show_next_steps() {
     fi
     
     echo -e "${CYAN}Need help?${NC}"
-    echo -e "   📖 Documentation: https://github.com/openclaw-dev/goosestack"
-    echo -e "   💬 Issues: https://github.com/openclaw-dev/goosestack/issues"
+    echo -e "   📖 Documentation: https://github.com/TheBigAndFamousGoose/goosestack"
+    echo -e "   💬 Issues: https://github.com/TheBigAndFamousGoose/goosestack/issues"
 }
 
 # Main health check function

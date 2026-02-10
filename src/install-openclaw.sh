@@ -83,7 +83,7 @@ generate_base_config() {
     "host": "localhost",
     "port": 3721,
     "token": "$GOOSE_GATEWAY_TOKEN",
-    "corsOrigins": ["http://localhost:3000", "https://openclaw.dev"]
+    
   },
   "defaultModel": "anthropic/claude-3-5-sonnet-20241022",
   "timeoutSeconds": 600,
