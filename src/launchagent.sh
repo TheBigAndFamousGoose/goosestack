@@ -73,6 +73,15 @@ create_launch_agent() {
     <key>ThrottleInterval</key>
     <integer>10</integer>
     
+    <key>ExitTimeOut</key>
+    <integer>30</integer>
+    
+    <key>SoftResourceLimits</key>
+    <dict>
+        <key>NumberOfFiles</key>
+        <integer>8192</integer>
+    </dict>
+    
     <key>ProcessType</key>
     <string>Interactive</string>
 </dict>
@@ -261,6 +270,71 @@ prevent_sleep() {
     echo -e "  • To restore normal sleep: sudo pmset -a sleep 1 displaysleep 10 disksleep 10"
 }
 
+# Setup watchdog monitoring
+setup_watchdog() {
+    log_info "🐕 Setting up gateway watchdog..."
+    
+    local src_watchdog="/Users/bfg/goosestack/src/templates/watchdog.sh"
+    local dest_watchdog="$HOME/.openclaw/watchdog.sh"
+    local plist_file="$HOME/Library/LaunchAgents/ai.openclaw.watchdog.plist"
+    
+    # Copy watchdog script
+    if [[ -f "$src_watchdog" ]]; then
+        cp "$src_watchdog" "$dest_watchdog"
+        chmod +x "$dest_watchdog"
+        log_info "Watchdog script installed to $dest_watchdog"
+    else
+        log_error "Watchdog template not found at $src_watchdog"
+        return 1
+    fi
+    
+    # Create LaunchAgent plist for watchdog
+    cat > "$plist_file" << EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>ai.openclaw.watchdog</string>
+    
+    <key>ProgramArguments</key>
+    <array>
+        <string>$dest_watchdog</string>
+    </array>
+    
+    <key>RunAtLoad</key>
+    <true/>
+    
+    <key>StartInterval</key>
+    <integer>300</integer>
+    
+    <key>StandardOutPath</key>
+    <string>$HOME/.openclaw/logs/watchdog-stdout.log</string>
+    
+    <key>StandardErrorPath</key>
+    <string>$HOME/.openclaw/logs/watchdog-stderr.log</string>
+    
+    <key>WorkingDirectory</key>
+    <string>$HOME/.openclaw</string>
+</dict>
+</plist>
+EOF
+    
+    # Load the watchdog LaunchAgent
+    if launchctl unload "$plist_file" 2>/dev/null; then
+        log_info "Unloaded existing watchdog LaunchAgent"
+    fi
+    
+    if launchctl load "$plist_file" 2>/dev/null; then
+        log_success "Watchdog LaunchAgent loaded successfully"
+    else
+        log_error "Failed to load watchdog LaunchAgent"
+        return 1
+    fi
+    
+    log_success "Gateway watchdog configured to run every 5 minutes"
+}
+
 # Main LaunchAgent setup function
 main_setup_launchagent() {
     log_info "🎯 Setting up OpenClaw auto-start service..."
@@ -268,6 +342,7 @@ main_setup_launchagent() {
     create_launch_agent
     load_launch_agent
     create_management_script
+    setup_watchdog
     prevent_sleep
     
     # Verify it's working

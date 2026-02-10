@@ -88,6 +88,37 @@ Every session, your agent should automatically:
 **TOOLS.md** - Add notes about your specific setup
 **HEARTBEAT.md** - Set up periodic tasks and reminders
 
+## Data Safety
+
+Your conversations and memories are stored locally:
+
+### Storage Locations:
+- **Conversations:** `~/.openclaw/agents/main/sessions/*.jsonl`
+  - Full conversation transcripts in JSON Lines format
+  - Automatically saved by OpenClaw for continuity
+  
+- **Memory Files:** Your workspace directory
+  - Daily logs: `memory/YYYY-MM-DD.md`
+  - Long-term memory: `MEMORY.md`
+  - Configuration: `SOUL.md`, `USER.md`, etc.
+
+### Backup Recommendations:
+Create periodic backups to protect your data:
+
+```bash
+# Quick backup with timestamp
+cp -R ~/.openclaw ~/.openclaw-backup-$(date +%Y%m%d)
+
+# Or backup just the important parts
+tar -czf ~/openclaw-backup-$(date +%Y%m%d).tar.gz ~/.openclaw/workspace ~/.openclaw/agents
+```
+
+### Privacy Notes:
+- All data stays on your machine by default
+- Conversation data is never sent to external services without explicit API calls
+- Memory files are only loaded in appropriate contexts (MEMORY.md only in private chats)
+- You control what gets shared when using external AI models
+
 ## Safety
 
 Your agent is designed to:

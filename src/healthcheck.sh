@@ -179,6 +179,114 @@ check_configuration() {
     fi
 }
 
+# Check macOS permissions and provide guidance
+check_macos_permissions() {
+    log_info "🔐 Checking macOS permissions..."
+    
+    # Try to check screen recording permissions if peekaboo is available
+    if command -v peekaboo >/dev/null 2>&1; then
+        if peekaboo permissions >/dev/null 2>&1; then
+            add_health_result "pass" "Screen Recording permission available"
+        else
+            add_health_result "warn" "Screen Recording permission not granted"
+            echo -e "\n${YELLOW}📱 macOS Permissions Guidance:${NC}"
+            echo -e "  Screen Recording may not be available to Node.js"
+        fi
+    else
+        add_health_result "warn" "Cannot check Screen Recording permission (peekaboo not available)"
+        echo -e "\n${YELLOW}📱 macOS Permissions Guidance:${NC}"
+        echo -e "  If you need screen access, install peekaboo to check permissions"
+    fi
+    
+    # Always show general permissions guidance
+    echo -e "\n${CYAN}💡 macOS Permissions Setup:${NC}"
+    echo -e "  1. Grant permissions to: ${BOLD}/opt/homebrew/bin/node${NC}"
+    echo -e "     • Go to System Settings → Privacy & Security"
+    echo -e "     • Add /opt/homebrew/bin/node to relevant permissions"
+    echo -e ""
+    echo -e "  2. For Accessibility access, you may need to create a .app wrapper"
+    echo -e "     • See: https://support.apple.com/guide/mac-help/allow-accessibility-apps-mchlc01d91f1/mac"
+    echo -e "     • Or create an Automator app that runs your Node script"
+    echo -e ""
+    echo -e "  3. Common permissions needed:"
+    echo -e "     • Screen Recording (for screenshot tools)"
+    echo -e "     • Accessibility (for UI automation)"
+    echo -e "     • Files and Folders (for file system access)"
+    echo -e ""
+    
+    add_health_result "pass" "macOS permissions guidance provided"
+}
+
+# Verify gateway is alive with better diagnostics
+verify_gateway_alive() {
+    log_info "🚀 Verifying gateway startup..."
+    
+    local max_wait=30
+    local waited=0
+    local gateway_responding=false
+    
+    echo -n "  Waiting for gateway to respond"
+    
+    while [[ $waited -lt $max_wait ]]; do
+        if curl -s -f -m 2 "http://localhost:18789" >/dev/null 2>&1; then
+            gateway_responding=true
+            echo " ✅"
+            break
+        fi
+        
+        echo -n "."
+        sleep 1
+        ((waited++))
+    done
+    
+    if [[ "$gateway_responding" == "true" ]]; then
+        add_health_result "pass" "Gateway responding after ${waited}s"
+    else
+        echo " ❌"
+        add_health_result "fail" "Gateway not responding after ${max_wait}s"
+        
+        echo -e "\n${YELLOW}🔧 Gateway Troubleshooting:${NC}"
+        echo -e "  1. Check logs: ${CYAN}tail -f ~/.openclaw/logs/gateway-stderr.log${NC}"
+        echo -e "  2. Restart manually: ${CYAN}openclaw gateway restart${NC}"
+        echo -e "  3. Check LaunchAgent: ${CYAN}launchctl list | grep openclaw${NC}"
+        echo -e ""
+        echo -e "  Log files location: ${CYAN}~/.openclaw/logs/${NC}"
+        
+        # Show recent error logs if available
+        local error_log="$HOME/.openclaw/logs/gateway-stderr.log"
+        if [[ -f "$error_log" ]] && [[ -s "$error_log" ]]; then
+            echo -e "\n${YELLOW}Recent error logs:${NC}"
+            tail -5 "$error_log" | sed 's/^/    /'
+        fi
+    fi
+}
+
+# Check memory search and embedding model
+check_memory_search_model() {
+    log_info "🔍 Checking memory search capabilities..."
+    
+    # Check if embedding model is available
+    if ollama list | grep -q "nomic-embed-text"; then
+        add_health_result "pass" "Embedding model (nomic-embed-text) available"
+    else
+        add_health_result "warn" "Embedding model not found - will auto-download on first use"
+        echo -e "\n${YELLOW}📥 Memory Search Setup:${NC}"
+        echo -e "  • Embedding model (nomic-embed-text) will auto-download on first memory search"
+        echo -e "  • First search may take 1-2 minutes to download ~600MB model"
+        echo -e "  • Subsequent searches will be fast"
+        echo -e "  • No action required - this is normal"
+        echo -e ""
+    fi
+    
+    # Check if GGUF files exist (for local embeddings)
+    local gguf_pattern="$HOME/.ollama/models/blobs/*nomic*"
+    if ls $gguf_pattern >/dev/null 2>&1; then
+        add_health_result "pass" "Local embedding model files found"
+    else
+        add_health_result "warn" "Embedding model will download on first use"
+    fi
+}
+
 # Test memory search functionality
 test_memory_search() {
     log_info "🧠 Testing memory search..."
@@ -289,6 +397,9 @@ main_healthcheck() {
     check_embeddings
     check_workspace
     check_configuration
+    check_macos_permissions
+    verify_gateway_alive
+    check_memory_search_model
     test_memory_search
     
     show_health_report
