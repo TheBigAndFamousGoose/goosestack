@@ -134,19 +134,23 @@ main() {
     # shellcheck source=src/install-openclaw.sh
     source "$INSTALL_DIR/src/install-openclaw.sh"
     
-    log_step "Phase 4: Configuration Wizard"
+    log_step "Phase 4: Security Suite (Optional)"
+    # shellcheck source=src/install-security.sh
+    source "$INSTALL_DIR/src/install-security.sh"
+    
+    log_step "Phase 5: Configuration Wizard"
     # shellcheck source=src/wizard.sh
     source "$INSTALL_DIR/src/wizard.sh"
     
-    log_step "Phase 5: System Optimization"
+    log_step "Phase 6: System Optimization"
     # shellcheck source=src/optimize.sh
     source "$INSTALL_DIR/src/optimize.sh"
     
-    log_step "Phase 6: Auto-Start Setup"
+    log_step "Phase 7: Auto-Start Setup"
     # shellcheck source=src/launchagent.sh
     source "$INSTALL_DIR/src/launchagent.sh"
     
-    log_step "Phase 7: Health Check & Verification"
+    log_step "Phase 8: Health Check & Verification"
     # shellcheck source=src/healthcheck.sh
     source "$INSTALL_DIR/src/healthcheck.sh"
     

@@ -38,6 +38,16 @@ Example:
 - [ ] Weekly team sync prep on Sundays
 -->
 
+<!--
+## Soul-Guardian Security
+
+*Security monitoring and file integrity checks (uncommented if ClawSec is installed):*
+
+- [ ] Run soul-guardian scan for file tampering
+- [ ] Check for suspicious process activity  
+- [ ] Review security audit logs
+-->
+
 ## Settings
 
 **Check Frequency:** Every 30-45 minutes during active hours  
