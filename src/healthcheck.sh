@@ -415,6 +415,8 @@ main_healthcheck() {
         echo -e "${YELLOW}You can re-run this check with: ~/.openclaw/manage-gateway.sh status${NC}"
     fi
     
+    echo -e "\n${BOLD}${CYAN}📊 Dashboard available at: http://localhost:3721${NC}"
+    
     log_success "Health check complete!"
 }
 

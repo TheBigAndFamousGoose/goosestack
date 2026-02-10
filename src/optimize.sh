@@ -203,12 +203,39 @@ setup_workspace() {
     log_success "Workspace ready at $workspace_dir"
 }
 
+# Copy dashboard files and setup convenience access
+setup_dashboard() {
+    log_info "📊 Setting up dashboard files..."
+    
+    local dashboard_src="$INSTALL_DIR/dashboard"
+    local dashboard_dest="$HOME/.openclaw/dashboard"
+    
+    # Copy dashboard files
+    mkdir -p "$dashboard_dest"
+    cp -r "$dashboard_src/"* "$dashboard_dest/"
+    chmod +x "$dashboard_dest/server.sh"
+    
+    log_success "Dashboard files copied to ~/.openclaw/dashboard/"
+    
+    # Create convenience alias script
+    local alias_script="$HOME/.openclaw/dashboard-start.sh"
+    cat > "$alias_script" << 'ALIASEOF'
+#!/bin/bash
+# GooseStack Dashboard Quick Start
+cd "$HOME/.openclaw/dashboard" && ./server.sh
+ALIASEOF
+    chmod +x "$alias_script"
+    
+    log_success "Dashboard quick-start script created"
+}
+
 # Main optimization function
 main_optimize() {
     log_info "🚀 Optimizing system configuration..."
 
     generate_openclaw_config
     setup_workspace
+    setup_dashboard
 
     echo ""
     log_success "System optimization complete!"
@@ -217,6 +244,7 @@ main_optimize() {
     echo -e "  ${GREEN}✅${NC} Subagents: ollama/${GOOSE_OLLAMA_MODEL:-qwen3:14b} (local, \$0)"
     echo -e "  ${GREEN}✅${NC} Thinking mode: low (best quality/cost ratio)"
     echo -e "  ${GREEN}✅${NC} Workspace files ready"
+    echo -e "  ${GREEN}✅${NC} Dashboard ready at ~/.openclaw/dashboard/"
 }
 
 main_optimize
