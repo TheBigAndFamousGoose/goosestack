@@ -1,0 +1,258 @@
+#!/bin/bash
+# GooseStack LaunchAgent Setup
+# Creates and loads macOS LaunchAgent for OpenClaw gateway auto-start
+
+# Exit on any error
+set -euo pipefail
+
+# Create LaunchAgent plist
+create_launch_agent() {
+    log_info "🚀 Setting up OpenClaw auto-start..."
+    
+    local launch_agents_dir="$HOME/Library/LaunchAgents"
+    local plist_file="$launch_agents_dir/ai.openclaw.gateway.plist"
+    
+    # Create LaunchAgents directory if it doesn't exist
+    mkdir -p "$launch_agents_dir"
+    
+    # Get the path to openclaw binary
+    local openclaw_path
+    if command -v openclaw >/dev/null 2>&1; then
+        openclaw_path=$(which openclaw)
+    else
+        log_error "OpenClaw binary not found in PATH"
+        exit 1
+    fi
+    
+    # Create the plist file
+    log_info "Creating LaunchAgent configuration..."
+    
+    cat > "$plist_file" << EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>ai.openclaw.gateway</string>
+    
+    <key>ProgramArguments</key>
+    <array>
+        <string>$openclaw_path</string>
+        <string>gateway</string>
+        <string>start</string>
+    </array>
+    
+    <key>RunAtLoad</key>
+    <true/>
+    
+    <key>KeepAlive</key>
+    <dict>
+        <key>SuccessfulExit</key>
+        <false/>
+        <key>Crashed</key>
+        <true/>
+    </dict>
+    
+    <key>StandardOutPath</key>
+    <string>$HOME/.openclaw/logs/gateway-stdout.log</string>
+    
+    <key>StandardErrorPath</key>
+    <string>$HOME/.openclaw/logs/gateway-stderr.log</string>
+    
+    <key>WorkingDirectory</key>
+    <string>$HOME/.openclaw</string>
+    
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin</string>
+        <key>NODE_ENV</key>
+        <string>production</string>
+    </dict>
+    
+    <key>ThrottleInterval</key>
+    <integer>10</integer>
+    
+    <key>ProcessType</key>
+    <string>Interactive</string>
+</dict>
+</plist>
+EOF
+    
+    # Create logs directory
+    mkdir -p "$HOME/.openclaw/logs"
+    
+    log_success "LaunchAgent configuration created"
+    echo -e "  📄 File: $plist_file"
+}
+
+# Load and start the LaunchAgent
+load_launch_agent() {
+    log_info "Loading OpenClaw LaunchAgent..."
+    
+    local plist_file="$HOME/Library/LaunchAgents/ai.openclaw.gateway.plist"
+    
+    # Unload if already loaded (to reload with new settings)
+    if launchctl list | grep -q "ai.openclaw.gateway"; then
+        log_info "Unloading existing LaunchAgent..."
+        launchctl unload "$plist_file" 2>/dev/null || true
+        sleep 2
+    fi
+    
+    # Load the LaunchAgent
+    launchctl load "$plist_file"
+    
+    if [[ $? -eq 0 ]]; then
+        log_success "LaunchAgent loaded successfully"
+    else
+        log_error "Failed to load LaunchAgent"
+        exit 1
+    fi
+    
+    # Give it a moment to start
+    sleep 3
+}
+
+# Verify the gateway is running
+verify_gateway_running() {
+    log_info "🔍 Verifying OpenClaw gateway is running..."
+    
+    local max_attempts=30
+    local attempt=0
+    
+    while [[ $attempt -lt $max_attempts ]]; do
+        # Check if the process is running via launchctl
+        if launchctl list | grep -q "ai.openclaw.gateway"; then
+            # Check if the gateway is responding
+            if curl -s -f "http://localhost:3721/status" >/dev/null 2>&1; then
+                log_success "OpenClaw gateway is running and responding"
+                return 0
+            fi
+        fi
+        
+        sleep 2
+        ((attempt++))
+        
+        # Show progress
+        if [[ $((attempt % 5)) -eq 0 ]]; then
+            log_info "Still waiting for gateway to start... (${attempt}/${max_attempts})"
+        fi
+    done
+    
+    log_error "OpenClaw gateway failed to start properly"
+    
+    # Show some diagnostics
+    echo -e "\n${YELLOW}🔧 Diagnostics:${NC}"
+    echo -e "LaunchAgent status:"
+    launchctl list | grep -E "(PID|ai.openclaw)" || echo "  Not found in launchctl list"
+    
+    echo -e "\nRecent logs:"
+    if [[ -f "$HOME/.openclaw/logs/gateway-stderr.log" ]]; then
+        tail -10 "$HOME/.openclaw/logs/gateway-stderr.log" || echo "  No error logs found"
+    else
+        echo "  No log files found"
+    fi
+    
+    return 1
+}
+
+# Create helpful management aliases
+create_management_script() {
+    log_info "📝 Creating management shortcuts..."
+    
+    local script_file="$HOME/.openclaw/manage-gateway.sh"
+    
+    cat > "$script_file" << 'EOF'
+#!/bin/bash
+# OpenClaw Gateway Management Script
+
+PLIST_FILE="$HOME/Library/LaunchAgents/ai.openclaw.gateway.plist"
+
+case "${1:-status}" in
+    start)
+        echo "Starting OpenClaw gateway..."
+        launchctl load "$PLIST_FILE" 2>/dev/null || echo "Already loaded"
+        ;;
+    stop)
+        echo "Stopping OpenClaw gateway..."
+        launchctl unload "$PLIST_FILE" 2>/dev/null || echo "Not loaded"
+        ;;
+    restart)
+        echo "Restarting OpenClaw gateway..."
+        launchctl unload "$PLIST_FILE" 2>/dev/null || true
+        sleep 2
+        launchctl load "$PLIST_FILE"
+        ;;
+    status)
+        echo "OpenClaw Gateway Status:"
+        if launchctl list | grep -q "ai.openclaw.gateway"; then
+            echo "  ✅ LaunchAgent: Running"
+        else
+            echo "  ❌ LaunchAgent: Not running"
+        fi
+        
+        if curl -s -f "http://localhost:3721/status" >/dev/null 2>&1; then
+            echo "  ✅ HTTP Gateway: Responding"
+        else
+            echo "  ❌ HTTP Gateway: Not responding"
+        fi
+        ;;
+    logs)
+        echo "Recent gateway logs:"
+        echo "--- STDOUT ---"
+        tail -20 "$HOME/.openclaw/logs/gateway-stdout.log" 2>/dev/null || echo "No stdout logs"
+        echo -e "\n--- STDERR ---"
+        tail -20 "$HOME/.openclaw/logs/gateway-stderr.log" 2>/dev/null || echo "No stderr logs"
+        ;;
+    *)
+        echo "Usage: $0 {start|stop|restart|status|logs}"
+        echo ""
+        echo "Commands:"
+        echo "  start   - Start the OpenClaw gateway"
+        echo "  stop    - Stop the OpenClaw gateway"
+        echo "  restart - Restart the OpenClaw gateway"
+        echo "  status  - Show gateway status"
+        echo "  logs    - Show recent logs"
+        ;;
+esac
+EOF
+    
+    chmod +x "$script_file"
+    
+    log_success "Management script created: $script_file"
+    log_info "You can manage the gateway with: ~/.openclaw/manage-gateway.sh {start|stop|restart|status|logs}"
+}
+
+# Main LaunchAgent setup function
+main_setup_launchagent() {
+    log_info "🎯 Setting up OpenClaw auto-start service..."
+    
+    create_launch_agent
+    load_launch_agent
+    create_management_script
+    
+    # Verify it's working
+    if verify_gateway_running; then
+        log_success "OpenClaw LaunchAgent setup complete!"
+        
+        # Summary
+        echo -e "\n${BOLD}${BLUE}🎯 Auto-Start Summary:${NC}"
+        echo -e "  ✅ LaunchAgent created and loaded"
+        echo -e "  ✅ OpenClaw gateway running on port 3721"
+        echo -e "  ✅ Auto-starts on login"
+        echo -e "  ✅ Restarts automatically if crashed"
+        echo -e "  ✅ Management script available"
+        
+        echo -e "\n${CYAN}💡 Management commands:${NC}"
+        echo -e "  ~/.openclaw/manage-gateway.sh status   # Check status"
+        echo -e "  ~/.openclaw/manage-gateway.sh restart  # Restart service"
+        echo -e "  ~/.openclaw/manage-gateway.sh logs     # View logs"
+        
+    else
+        log_warning "LaunchAgent was created but gateway is not responding"
+        log_info "You may need to start it manually or check the logs"
+    fi
+}
+
+# Run LaunchAgent setup
+main_setup_launchagent
