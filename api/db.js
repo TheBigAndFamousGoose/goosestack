@@ -56,9 +56,18 @@ db.exec(`
     created_at    TEXT NOT NULL DEFAULT (datetime('now'))
   );
 
-  CREATE INDEX IF NOT EXISTS idx_usage_user    ON usage_log(user_id);
-  CREATE INDEX IF NOT EXISTS idx_usage_created ON usage_log(created_at);
-  CREATE INDEX IF NOT EXISTS idx_keys_user     ON api_keys(user_id);
+  CREATE TABLE IF NOT EXISTS payments (
+    stripe_payment_id TEXT PRIMARY KEY,
+    user_id       INTEGER NOT NULL,
+    amount_cents  INTEGER NOT NULL,
+    type          TEXT NOT NULL,        -- 'credits' | 'pro'
+    created_at    TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_usage_user     ON usage_log(user_id);
+  CREATE INDEX IF NOT EXISTS idx_usage_created  ON usage_log(created_at);
+  CREATE INDEX IF NOT EXISTS idx_keys_user      ON api_keys(user_id);
+  CREATE INDEX IF NOT EXISTS idx_payments_user  ON payments(user_id);
 `);
 
 // ============================================================
@@ -233,6 +242,28 @@ function getRecentUsage(userId, limit = 20) {
 }
 
 // ============================================================
+// Payment deduplication helpers
+// ============================================================
+
+/**
+ * Check if a Stripe payment has already been recorded (prevents double-crediting).
+ */
+function paymentExists(stripePaymentId) {
+  if (!stripePaymentId) return false;
+  const row = db.prepare('SELECT 1 FROM payments WHERE stripe_payment_id = ?').get(stripePaymentId);
+  return !!row;
+}
+
+/**
+ * Record a Stripe payment for deduplication.
+ */
+function recordPayment(stripePaymentId, userId, amountCents, type) {
+  db.prepare(
+    'INSERT OR IGNORE INTO payments (stripe_payment_id, user_id, amount_cents, type) VALUES (?, ?, ?, ?)'
+  ).run(stripePaymentId, userId, amountCents, type);
+}
+
+// ============================================================
 // Exports
 // ============================================================
 
@@ -259,4 +290,7 @@ module.exports = {
   logUsage,
   getUsageSummary,
   getRecentUsage,
+  // Payments
+  paymentExists,
+  recordPayment,
 };

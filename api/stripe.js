@@ -207,13 +207,21 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
       // ----- One-time payment completed (credit top-up) -----
       case 'checkout.session.completed': {
         const session = event.data.object;
+        const paymentId = session.payment_intent || session.id;
+
         if (session.metadata?.type === 'credits' && session.payment_status === 'paid') {
           const userId = parseInt(session.metadata.user_id, 10);
           const creditsCents = parseInt(session.metadata.credits_cents, 10);
 
           if (userId && creditsCents > 0) {
-            db.addCredits(userId, creditsCents);
-            console.log(`[stripe] credited ${creditsCents}¢ to user ${userId}`);
+            // Deduplicate: only credit if we haven't seen this payment before
+            if (db.paymentExists(paymentId)) {
+              console.log(`[stripe] duplicate payment ${paymentId} for user ${userId}, skipping credit`);
+            } else {
+              db.addCredits(userId, creditsCents);
+              db.recordPayment(paymentId, userId, creditsCents, 'credits');
+              console.log(`[stripe] credited ${creditsCents}¢ to user ${userId} (session: ${session.id}, payment: ${paymentId})`);
+            }
           }
         }
 
@@ -221,10 +229,16 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
         if (session.metadata?.type === 'pro') {
           const userId = parseInt(session.metadata.user_id, 10);
           if (userId) {
-            // Set pro for 35 days (buffer beyond 1 month)
-            const proUntil = new Date(Date.now() + 35 * 86400000).toISOString();
-            db.setProUntil(userId, proUntil);
-            console.log(`[stripe] pro activated for user ${userId} until ${proUntil}`);
+            // Deduplicate pro activation
+            if (db.paymentExists(paymentId)) {
+              console.log(`[stripe] duplicate pro payment ${paymentId} for user ${userId}, skipping`);
+            } else {
+              // Set pro for 35 days (buffer beyond 1 month)
+              const proUntil = new Date(Date.now() + 35 * 86400000).toISOString();
+              db.setProUntil(userId, proUntil);
+              db.recordPayment(paymentId, userId, 1000, 'pro');
+              console.log(`[stripe] pro activated for user ${userId} until ${proUntil} (session: ${session.id}, payment: ${paymentId})`);
+            }
           }
         }
         break;

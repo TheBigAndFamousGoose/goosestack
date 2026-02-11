@@ -30,6 +30,14 @@ const PRICING = {
   'o1-mini': { input: 360, output: 1440 },
   'o1-preview': { input: 1800, output: 7200 },
   'o3-mini': { input: 135, output: 540 },
+  'o3': { input: 1200, output: 4800 },
+  'o3-2025-04-16': { input: 1200, output: 4800 },
+  'gpt-4.1': { input: 240, output: 960 },
+  'gpt-4.1-2025-04-14': { input: 240, output: 960 },
+  'gpt-4.1-mini': { input: 48, output: 192 },
+  'gpt-4.1-mini-2025-04-14': { input: 48, output: 192 },
+  'gpt-4.1-nano': { input: 12, output: 48 },
+  'gpt-4.1-nano-2025-04-14': { input: 12, output: 48 },
 
   // --- Anthropic models ---
   'claude-sonnet-4-20250514': { input: 360, output: 1800 },
@@ -66,7 +74,7 @@ function resolveModel(model) {
  */
 function getModelPricing(model) {
   const resolved = resolveModel(model);
-  return PRICING[resolved] || { input: 600, output: 2400 }; // safe fallback
+  return PRICING[resolved] || { input: 300, output: 1200 }; // safe fallback (GPT-4o level)
 }
 
 /**
@@ -132,7 +140,7 @@ function estimateInputTokens(messages) {
 function detectProvider(model) {
   const resolved = resolveModel(model);
   if (resolved.startsWith('claude')) return 'anthropic';
-  if (resolved.startsWith('gpt') || resolved.startsWith('o1') || resolved.startsWith('o3')) return 'openai';
+  if (resolved.startsWith('gpt') || resolved.startsWith('o1') || resolved.startsWith('o3') || resolved.startsWith('o4')) return 'openai';
   return 'unknown';
 }
 

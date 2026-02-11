@@ -768,6 +768,263 @@
         .reveal.hidden:nth-child(5) { transition-delay: 0.32s; }
         .reveal.hidden:nth-child(6) { transition-delay: 0.40s; }
 
+        /* ===== DASHBOARD MODAL ===== */
+        .dash-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 200;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            padding: 60px 20px 40px;
+            overflow-y: auto;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+        .dash-overlay.open {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .dash-modal {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-xl);
+            max-width: 720px;
+            width: 100%;
+            padding: 0;
+            transform: translateY(12px);
+            transition: transform 0.3s;
+            position: relative;
+        }
+        .dash-overlay.open .dash-modal {
+            transform: translateY(0);
+        }
+        .dash-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 24px 28px 20px;
+            border-bottom: 1px solid var(--border);
+        }
+        .dash-header h2 {
+            font-size: 1.3rem;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .dash-close {
+            background: none;
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            font-size: 1.2rem;
+            cursor: pointer;
+            border-radius: 8px;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        .dash-close:hover {
+            color: var(--orange);
+            border-color: var(--orange);
+        }
+        .dash-body {
+            padding: 28px;
+        }
+        .dash-card {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 22px;
+            margin-bottom: 20px;
+        }
+        .dash-card-title {
+            font-size: 0.78rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-muted);
+            margin-bottom: 14px;
+        }
+        .dash-balance {
+            font-size: 2.4rem;
+            font-weight: 800;
+            color: var(--orange);
+            line-height: 1.1;
+        }
+        .dash-balance-sub {
+            font-size: 0.85rem;
+            color: var(--text-dim);
+            margin-top: 4px;
+        }
+        .dash-btn-row {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .dash-btn {
+            padding: 10px 20px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--text);
+            font-weight: 600;
+            font-size: 0.88rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .dash-btn:hover {
+            border-color: var(--orange);
+            color: var(--orange);
+            background: var(--orange-soft);
+        }
+        .dash-btn.primary {
+            background: var(--orange);
+            color: #fff;
+            border-color: var(--orange);
+        }
+        .dash-btn.primary:hover {
+            background: var(--orange-hover);
+            opacity: 1;
+        }
+        .dash-btn.danger {
+            border-color: #444;
+            color: var(--text-muted);
+        }
+        .dash-btn.danger:hover {
+            border-color: #ef4444;
+            color: #ef4444;
+            background: rgba(239,68,68,0.08);
+        }
+        .dash-input {
+            width: 100%;
+            padding: 12px 16px;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            font-size: 0.95rem;
+            outline: none;
+            font-family: inherit;
+            transition: border-color 0.2s;
+        }
+        .dash-input:focus {
+            border-color: var(--orange);
+        }
+        .dash-input::placeholder {
+            color: var(--text-dim);
+        }
+        .dash-key-display {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 12px 16px;
+        }
+        .dash-key-text {
+            flex: 1;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+        .dash-key-copy {
+            background: none;
+            border: none;
+            color: var(--orange);
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 600;
+            padding: 4px 8px;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+        .dash-key-copy:hover {
+            background: var(--orange-soft);
+        }
+        .dash-usage-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+        .dash-usage-table th {
+            text-align: left;
+            padding: 8px 10px;
+            color: var(--text-dim);
+            font-weight: 600;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-bottom: 1px solid var(--border);
+        }
+        .dash-usage-table td {
+            padding: 8px 10px;
+            color: var(--text-muted);
+            border-bottom: 1px solid rgba(34,34,34,0.5);
+        }
+        .dash-usage-table tr:last-child td {
+            border-bottom: none;
+        }
+        .dash-login-text {
+            color: var(--text-muted);
+            font-size: 0.92rem;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+        .dash-error {
+            background: rgba(239,68,68,0.08);
+            border: 1px solid rgba(239,68,68,0.2);
+            border-radius: 8px;
+            padding: 12px 16px;
+            color: #ef4444;
+            font-size: 0.88rem;
+            margin-bottom: 16px;
+            display: none;
+        }
+        .dash-error.visible { display: block; }
+        .dash-loading {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--text-muted);
+            padding: 20px 0;
+            font-size: 0.9rem;
+        }
+        .dash-spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid var(--border);
+            border-radius: 50%;
+            border-top-color: var(--orange);
+            animation: dashSpin 0.8s linear infinite;
+        }
+        @keyframes dashSpin { to { transform: rotate(360deg); } }
+        .dash-pro-badge {
+            display: inline-block;
+            background: var(--orange);
+            color: #fff;
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 4px;
+            margin-left: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
         /* ===== RESPONSIVE ===== */
         @media (max-width: 900px) {
             .features-grid { grid-template-columns: repeat(2, 1fr); }
@@ -821,6 +1078,7 @@
             <li><a href="#how-it-works">How It Works</a></li>
             <li><a href="#pricing">Pricing</a></li>
             <li><a href="#faq">FAQ</a></li>
+            <li><a href="#" onclick="openDashboard(); return false;">Dashboard</a></li>
             <li><a href="https://github.com/TheBigAndFamousGoose/goosestack" target="_blank" rel="noopener">GitHub</a></li>
             <li><a href="https://goosestack.com/pro" class="nav-cta">Go Pro →</a></li>
         </ul>
@@ -925,10 +1183,10 @@
         <h2 class="section-title reveal">Top Up. Start Building.</h2>
         <p class="section-subtitle reveal">The GooseStack API uses optimized AI routing that saves 5‑10× vs direct API costs. Buy prepaid token credits and start using cloud models instantly — no API key management needed.</p>
         <div style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap;" class="reveal">
-            <a href="https://goosestack.com/credits" class="pricing-cta cta-outline" style="min-width:110px;">$10</a>
-            <a href="https://goosestack.com/credits" class="pricing-cta cta-outline" style="min-width:110px;">$25</a>
-            <a href="https://goosestack.com/credits" class="pricing-cta cta-primary" style="min-width:110px;">$50</a>
-            <a href="https://goosestack.com/credits" class="pricing-cta cta-outline" style="min-width:110px;">$100</a>
+            <a href="#" onclick="handleCreditBuy(1000); return false;" class="pricing-cta cta-outline credit-buy-btn" data-amount="1000" style="min-width:110px;">$10</a>
+            <a href="#" onclick="handleCreditBuy(2500); return false;" class="pricing-cta cta-outline credit-buy-btn" data-amount="2500" style="min-width:110px;">$25</a>
+            <a href="#" onclick="handleCreditBuy(5000); return false;" class="pricing-cta cta-primary credit-buy-btn" data-amount="5000" style="min-width:110px;">$50</a>
+            <a href="#" onclick="handleCreditBuy(10000); return false;" class="pricing-cta cta-outline credit-buy-btn" data-amount="10000" style="min-width:110px;">$100</a>
         </div>
         <p class="reveal" style="text-align:center;color:var(--text-dim);font-size:0.85rem;margin-top:1.2rem;">Works on Free &amp; Pro tiers · Prepaid balance — you control spending · No surprises</p>
     </div>
@@ -1076,7 +1334,371 @@
     </div>
 </footer>
 
+<!-- ===== DASHBOARD MODAL ===== -->
+<div class="dash-overlay" id="dashOverlay">
+    <div class="dash-modal">
+        <div class="dash-header">
+            <h2>🪿 Dashboard</h2>
+            <button class="dash-close" id="dashClose" aria-label="Close">✕</button>
+        </div>
+        <div class="dash-body" id="dashBody">
+            <!-- Content injected by JS -->
+        </div>
+    </div>
+</div>
+
 <script>
+// ===== DASHBOARD CONFIG =====
+const API_BASE = 'https://api.goosestack.com';
+const DASH_LS_KEY = 'goosestack_api_key';
+
+// ===== DASHBOARD STATE =====
+let dashApiKey = localStorage.getItem(DASH_LS_KEY) || '';
+
+function openDashboard() {
+    document.getElementById('dashOverlay').classList.add('open');
+    document.getElementById('navLinks').classList.remove('open');
+    renderDashboard();
+}
+
+function closeDashboard() {
+    document.getElementById('dashOverlay').classList.remove('open');
+}
+
+document.getElementById('dashClose').addEventListener('click', closeDashboard);
+document.getElementById('dashOverlay').addEventListener('click', (e) => {
+    if (e.target === document.getElementById('dashOverlay')) closeDashboard();
+});
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeDashboard();
+});
+
+function renderDashboard() {
+    const body = document.getElementById('dashBody');
+    if (!dashApiKey) {
+        renderLoginView(body);
+    } else {
+        renderAccountView(body);
+    }
+}
+
+function renderLoginView(body) {
+    body.innerHTML = `
+        <div class="dash-card">
+            <p class="dash-login-text">Enter your email to get started. You'll receive an API key to use with GooseStack.</p>
+            <div class="dash-error" id="dashLoginError"></div>
+            <div style="margin-bottom:14px;">
+                <input type="email" class="dash-input" id="dashEmail" placeholder="you@example.com" autocomplete="email">
+            </div>
+            <button class="dash-btn primary" id="dashGetKey" style="width:100%; justify-content:center;">
+                Get API Key
+            </button>
+        </div>
+        <div style="text-align:center; color:var(--text-dim); font-size:0.82rem;">
+            Already have a key? <a href="#" id="dashEnterKey" style="color:var(--orange);">Enter it here</a>
+        </div>
+    `;
+    document.getElementById('dashGetKey').addEventListener('click', handleGetKey);
+    document.getElementById('dashEmail').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') handleGetKey();
+    });
+    document.getElementById('dashEnterKey').addEventListener('click', (e) => {
+        e.preventDefault();
+        renderEnterKeyView(body);
+    });
+}
+
+function renderEnterKeyView(body) {
+    body.innerHTML = `
+        <div class="dash-card">
+            <p class="dash-login-text">Enter your existing GooseStack API key.</p>
+            <div class="dash-error" id="dashLoginError"></div>
+            <div style="margin-bottom:14px;">
+                <input type="text" class="dash-input" id="dashExistingKey" placeholder="gsk_..." autocomplete="off">
+            </div>
+            <div class="dash-btn-row">
+                <button class="dash-btn" id="dashBackToLogin">← Back</button>
+                <button class="dash-btn primary" id="dashSaveKey" style="flex:1; justify-content:center;">
+                    Connect
+                </button>
+            </div>
+        </div>
+    `;
+    document.getElementById('dashSaveKey').addEventListener('click', () => {
+        const key = document.getElementById('dashExistingKey').value.trim();
+        if (!key.startsWith('gsk_')) {
+            showDashError('dashLoginError', 'API key must start with gsk_');
+            return;
+        }
+        dashApiKey = key;
+        localStorage.setItem(DASH_LS_KEY, key);
+        renderDashboard();
+    });
+    document.getElementById('dashExistingKey').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') document.getElementById('dashSaveKey').click();
+    });
+    document.getElementById('dashBackToLogin').addEventListener('click', () => {
+        renderLoginView(body);
+    });
+}
+
+async function handleGetKey() {
+    const email = document.getElementById('dashEmail').value.trim();
+    if (!email || !email.includes('@')) {
+        showDashError('dashLoginError', 'Please enter a valid email address.');
+        return;
+    }
+
+    const btn = document.getElementById('dashGetKey');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="dash-spinner"></span> Creating key…';
+    hideDashError('dashLoginError');
+
+    try {
+        const res = await fetch(`${API_BASE}/v1/keys`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email }),
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+            throw new Error(data.error?.message || data.error || 'Failed to create key');
+        }
+
+        dashApiKey = data.api_key;
+        localStorage.setItem(DASH_LS_KEY, data.api_key);
+
+        // Show the key once
+        const body = document.getElementById('dashBody');
+        body.innerHTML = `
+            <div class="dash-card" style="border-color: var(--green);">
+                <div class="dash-card-title" style="color: var(--green);">✓ API Key Created</div>
+                <p style="color: var(--text-muted); font-size:0.9rem; margin-bottom:16px;">
+                    Save this key — it cannot be retrieved again.
+                </p>
+                <div class="dash-key-display" style="margin-bottom:14px;">
+                    <span class="dash-key-text" style="color:var(--text); word-break:break-all;">${escapeHtml(data.api_key)}</span>
+                    <button class="dash-key-copy" onclick="copyToClipboard('${escapeHtml(data.api_key)}', this)">Copy</button>
+                </div>
+                <button class="dash-btn primary" onclick="renderDashboard()" style="width:100%; justify-content:center;">
+                    Go to Dashboard →
+                </button>
+            </div>
+        `;
+    } catch (err) {
+        showDashError('dashLoginError', err.message);
+        btn.disabled = false;
+        btn.innerHTML = 'Get API Key';
+    }
+}
+
+async function renderAccountView(body) {
+    body.innerHTML = `
+        <div class="dash-loading"><span class="dash-spinner"></span> Loading account…</div>
+    `;
+
+    try {
+        const res = await fetch(`${API_BASE}/v1/usage`, {
+            headers: { 'Authorization': 'Bearer ' + dashApiKey },
+        });
+
+        if (res.status === 401) {
+            dashApiKey = '';
+            localStorage.removeItem(DASH_LS_KEY);
+            renderLoginView(body);
+            return;
+        }
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error?.message || 'Failed to load usage');
+
+        const isPro = data.pro === true;
+        const proLabel = isPro ? '<span class="dash-pro-badge">Pro</span>' : '';
+
+        // Build usage table
+        let usageRows = '';
+        if (data.recent_requests && data.recent_requests.length > 0) {
+            for (const r of data.recent_requests.slice(0, 8)) {
+                const totalTokens = (r.input_tokens || 0) + (r.output_tokens || 0);
+                const cost = (r.cost_cents / 100).toFixed(4);
+                const time = r.created_at ? new Date(r.created_at + 'Z').toLocaleString() : '—';
+                usageRows += `<tr>
+                    <td>${escapeHtml(r.model || '—')}</td>
+                    <td>${totalTokens.toLocaleString()}</td>
+                    <td>$${cost}</td>
+                    <td>${time}</td>
+                </tr>`;
+            }
+        } else {
+            usageRows = '<tr><td colspan="4" style="text-align:center; color:var(--text-dim); padding:20px;">No usage yet</td></tr>';
+        }
+
+        // Find key prefix
+        const keyPrefix = data.api_keys?.[0]?.key_prefix || dashApiKey.slice(0, 12) + '...';
+
+        body.innerHTML = `
+            <div class="dash-error" id="dashAccountError"></div>
+
+            <!-- Balance -->
+            <div class="dash-card" style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px;">
+                <div>
+                    <div class="dash-card-title" style="margin-bottom:6px;">Credit Balance ${proLabel}</div>
+                    <div class="dash-balance">${escapeHtml(data.balance_usd || '$0.00')}</div>
+                    <div class="dash-balance-sub">${data.balance_cents || 0} credits</div>
+                </div>
+                ${!isPro ? '<button class="dash-btn primary" onclick="handleProCheckout()">⭐ Go Pro — $10/mo</button>' : '<div style="color:var(--green); font-weight:600; font-size:0.88rem;">✓ Pro active' + (data.pro_until ? ' until ' + new Date(data.pro_until).toLocaleDateString() : '') + '</div>'}
+            </div>
+
+            <!-- Top Up -->
+            <div class="dash-card">
+                <div class="dash-card-title">Top Up Credits</div>
+                <div class="dash-btn-row">
+                    <button class="dash-btn" onclick="handleCheckout(1000)">$10</button>
+                    <button class="dash-btn" onclick="handleCheckout(2500)">$25</button>
+                    <button class="dash-btn primary" onclick="handleCheckout(5000)">$50</button>
+                    <button class="dash-btn" onclick="handleCheckout(10000)">$100</button>
+                </div>
+            </div>
+
+            <!-- Usage -->
+            <div class="dash-card">
+                <div class="dash-card-title">Recent Usage</div>
+                <div style="overflow-x:auto;">
+                    <table class="dash-usage-table">
+                        <thead>
+                            <tr><th>Model</th><th>Tokens</th><th>Cost</th><th>Time</th></tr>
+                        </thead>
+                        <tbody>${usageRows}</tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- API Key -->
+            <div class="dash-card">
+                <div class="dash-card-title">API Key</div>
+                <div class="dash-key-display">
+                    <span class="dash-key-text">${escapeHtml(keyPrefix)}</span>
+                    <button class="dash-key-copy" onclick="copyToClipboard(dashApiKey, this)">Copy</button>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div style="display:flex; gap:10px; flex-wrap:wrap; justify-content:space-between;">
+                <button class="dash-btn" onclick="handleBillingPortal()">💳 Manage Billing</button>
+                <button class="dash-btn danger" onclick="handleLogout()">Logout</button>
+            </div>
+        `;
+    } catch (err) {
+        body.innerHTML = `
+            <div class="dash-card">
+                <div style="text-align:center; padding:20px;">
+                    <p style="color: #ef4444; margin-bottom:16px;">Failed to load account: ${escapeHtml(err.message)}</p>
+                    <div class="dash-btn-row" style="justify-content:center;">
+                        <button class="dash-btn" onclick="renderDashboard()">Retry</button>
+                        <button class="dash-btn danger" onclick="handleLogout()">Logout</button>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+}
+
+async function handleCheckout(amount) {
+    try {
+        const res = await fetch(`${API_BASE}/billing/checkout`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + dashApiKey,
+            },
+            body: JSON.stringify({ type: 'credits', amount }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error?.message || data.error || 'Checkout failed');
+        if (data.url) window.location.href = data.url;
+    } catch (err) {
+        showDashError('dashAccountError', err.message);
+    }
+}
+
+async function handleProCheckout() {
+    try {
+        const res = await fetch(`${API_BASE}/billing/checkout`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + dashApiKey,
+            },
+            body: JSON.stringify({ type: 'pro' }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error?.message || data.error || 'Checkout failed');
+        if (data.url) window.location.href = data.url;
+    } catch (err) {
+        showDashError('dashAccountError', err.message);
+    }
+}
+
+async function handleBillingPortal() {
+    try {
+        const res = await fetch(`${API_BASE}/billing/portal`, {
+            headers: { 'Authorization': 'Bearer ' + dashApiKey },
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error?.message || data.error || 'Portal failed');
+        if (data.url) window.location.href = data.url;
+    } catch (err) {
+        showDashError('dashAccountError', err.message);
+    }
+}
+
+function handleLogout() {
+    dashApiKey = '';
+    localStorage.removeItem(DASH_LS_KEY);
+    renderDashboard();
+}
+
+function handleCreditBuy(amount) {
+    if (!dashApiKey) {
+        openDashboard();
+        return;
+    }
+    handleCheckout(amount);
+}
+
+function showDashError(id, msg) {
+    const el = document.getElementById(id);
+    if (el) { el.textContent = msg; el.classList.add('visible'); el.style.display = 'block'; }
+}
+
+function hideDashError(id) {
+    const el = document.getElementById(id);
+    if (el) { el.classList.remove('visible'); el.style.display = 'none'; }
+}
+
+function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+}
+
+function copyToClipboard(text, btn) {
+    if (navigator.clipboard) {
+        navigator.clipboard.writeText(text).then(() => {
+            const orig = btn.textContent;
+            btn.textContent = 'Copied!';
+            btn.style.color = '#22c55e';
+            setTimeout(() => { btn.textContent = orig; btn.style.color = ''; }, 2000);
+        });
+    }
+}
+
+// Auto-open dashboard if URL has /dashboard hash or path
+if (window.location.hash === '#dashboard' || window.location.pathname.endsWith('/dashboard')) {
+    window.addEventListener('DOMContentLoaded', () => { setTimeout(openDashboard, 300); });
+}
+
 // ===== COPY INSTALL COMMAND =====
 function copyInstall() {
     const cmd = document.getElementById('install-cmd').textContent;

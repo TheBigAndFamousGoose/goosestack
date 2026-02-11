@@ -24,6 +24,81 @@ const PORT = process.env.PORT || 3000;
 // Middleware
 // ============================================================
 
+// ----- CORS — allow cross-origin requests from the web dashboard -----
+app.use((req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Provider-Key, anthropic-version');
+  res.setHeader('Access-Control-Max-Age', '86400');
+
+  // Handle preflight requests
+  if (req.method === 'OPTIONS') {
+    return res.status(204).end();
+  }
+  next();
+});
+
+// ----- In-memory rate limiter -----
+const rateLimitBuckets = new Map(); // key → { count, resetAt }
+const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute
+
+function getRateLimitKey(req, prefix = '') {
+  // Use API key if present, otherwise use IP
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith('Bearer gsk_')) {
+    return prefix + 'key:' + authHeader.slice(7, 19); // use prefix of key
+  }
+  return prefix + 'ip:' + (req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.ip || req.socket.remoteAddress);
+}
+
+function checkRateLimit(key, maxRequests, windowMs = RATE_LIMIT_WINDOW_MS) {
+  const now = Date.now();
+  let bucket = rateLimitBuckets.get(key);
+
+  if (!bucket || now > bucket.resetAt) {
+    bucket = { count: 0, resetAt: now + windowMs };
+    rateLimitBuckets.set(key, bucket);
+  }
+
+  bucket.count++;
+  return {
+    allowed: bucket.count <= maxRequests,
+    remaining: Math.max(0, maxRequests - bucket.count),
+    resetAt: bucket.resetAt,
+  };
+}
+
+// Clean up stale rate limit buckets every 5 minutes
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, bucket] of rateLimitBuckets) {
+    if (now > bucket.resetAt + 60000) rateLimitBuckets.delete(key);
+  }
+}, 5 * 60 * 1000);
+
+// Rate limit middleware factory
+function rateLimit(maxRequests, windowMs = RATE_LIMIT_WINDOW_MS, keyPrefix = '') {
+  return (req, res, next) => {
+    const key = getRateLimitKey(req, keyPrefix);
+    const result = checkRateLimit(key, maxRequests, windowMs);
+
+    res.setHeader('X-RateLimit-Limit', String(maxRequests));
+    res.setHeader('X-RateLimit-Remaining', String(result.remaining));
+    res.setHeader('X-RateLimit-Reset', String(Math.ceil(result.resetAt / 1000)));
+
+    if (!result.allowed) {
+      return res.status(429).json({
+        error: {
+          message: 'Rate limit exceeded. Please try again later.',
+          type: 'rate_limit_error',
+          retry_after_ms: result.resetAt - Date.now(),
+        },
+      });
+    }
+    next();
+  };
+}
+
 // JSON body parser for all routes EXCEPT Stripe webhook (needs raw body).
 // The webhook route has its own raw parser in stripe.js.
 app.use((req, res, next) => {
@@ -94,8 +169,9 @@ app.get('/health', (req, res) => {
 // ============================================================
 // POST /v1/keys — Issue a new API key
 // Body: { email: "user@example.com", name?: "my-key" }
+// Rate limited: 3 keys/hour per IP (unauthenticated endpoint)
 // ============================================================
-app.post('/v1/keys', (req, res) => {
+app.post('/v1/keys', rateLimit(3, 60 * 60 * 1000, 'keys:'), (req, res) => {
   try {
     const { email, name } = req.body;
     if (!email || typeof email !== 'string' || !email.includes('@')) {
@@ -120,7 +196,7 @@ app.post('/v1/keys', (req, res) => {
 // ============================================================
 // GET /v1/usage — Credit balance + usage stats
 // ============================================================
-app.get('/v1/usage', authenticate, (req, res) => {
+app.get('/v1/usage', rateLimit(60), authenticate, (req, res) => {
   try {
     const user = req.user;
     const balance = db.getBalance(user.id);
@@ -147,7 +223,7 @@ app.get('/v1/usage', authenticate, (req, res) => {
 // ============================================================
 // POST /v1/chat/completions — OpenAI-compatible proxy
 // ============================================================
-app.post('/v1/chat/completions', authenticate, async (req, res) => {
+app.post('/v1/chat/completions', rateLimit(60), authenticate, async (req, res) => {
   try {
     const user = req.user;
     const body = req.body;
@@ -291,7 +367,7 @@ app.post('/v1/chat/completions', authenticate, async (req, res) => {
 // ============================================================
 // POST /v1/messages — Anthropic-compatible proxy
 // ============================================================
-app.post('/v1/messages', authenticate, async (req, res) => {
+app.post('/v1/messages', rateLimit(60), authenticate, async (req, res) => {
   try {
     const user = req.user;
     const body = req.body;
