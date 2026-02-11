@@ -1,0 +1,5 @@
+
+# Private — revenue engine & local dashboard
+api/
+dashboard/
+*.db
