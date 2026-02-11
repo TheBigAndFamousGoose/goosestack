@@ -13,9 +13,23 @@ generate_openclaw_config() {
     local gateway_token
     gateway_token=$(openssl rand -hex 24)
 
-    # Build auth profile block
+    # Build auth profile block based on API mode
     local auth_block=""
-    if [[ -n "${GOOSE_API_KEY:-}" ]]; then
+    local api_mode="${GOOSE_API_MODE:-byok}"
+    
+    if [[ "$api_mode" == "proxy" && -n "${GOOSE_PROXY_KEY:-}" ]]; then
+        # GooseStack Proxy API — routes through our proxy with prepaid credits
+        auth_block=$(cat <<AUTHEOF
+    "profiles": {
+      "goosestack:default": {
+        "provider": "openai-compatible",
+        "mode": "api_key",
+        "baseUrl": "https://api.goosestack.dev/v1"
+      }
+    }
+AUTHEOF
+)
+    elif [[ -n "${GOOSE_API_KEY:-}" ]]; then
         auth_block=$(cat <<AUTHEOF
     "profiles": {
       "anthropic:default": {
@@ -113,10 +127,30 @@ TELEOF
 }
 CONFIGEOF
 
-    # Store the API key in auth-profiles.json if provided
-    if [[ -n "${GOOSE_API_KEY:-}" ]]; then
-        local agent_dir="$config_dir/agents/main/agent"
-        mkdir -p "$agent_dir"
+    # Store API key in auth-profiles.json
+    local agent_dir="$config_dir/agents/main/agent"
+    mkdir -p "$agent_dir"
+    
+    if [[ "$api_mode" == "proxy" && -n "${GOOSE_PROXY_KEY:-}" ]]; then
+        cat > "$agent_dir/auth-profiles.json" <<AUTHFILEEOF
+{
+  "version": 1,
+  "profiles": {
+    "goosestack:default": {
+      "type": "api_key",
+      "provider": "openai-compatible",
+      "key": "${GOOSE_PROXY_KEY}",
+      "baseUrl": "https://api.goosestack.dev/v1"
+    }
+  },
+  "lastGood": {
+    "openai-compatible": "goosestack:default"
+  }
+}
+AUTHFILEEOF
+        chmod 600 "$agent_dir/auth-profiles.json"
+        log_success "GooseStack Proxy API key stored securely"
+    elif [[ -n "${GOOSE_API_KEY:-}" ]]; then
         cat > "$agent_dir/auth-profiles.json" <<AUTHFILEEOF
 {
   "version": 1,

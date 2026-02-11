@@ -89,14 +89,25 @@ Choose your agent's personality during setup:
 - **⚡ Coder** - Technical, direct, development-focused
 - **🎨 Creative** - Witty, expressive, imaginative
 
-### API Keys
+### API Setup — Choose Your Path
 
-**Local-First:** Works great with local models only (no API key needed)
+During setup, you'll choose one of three modes:
 
-**Premium Models:** Add an Anthropic API key for Claude access:
-- Get one at: https://console.anthropic.com/
-- Edit: `~/.openclaw/openclaw.json` 
-- Restart: `~/.openclaw/manage-gateway.sh restart`
+**🟢 BYOK (Bring Your Own Key)** — Free forever
+- Use your own Anthropic/OpenAI API key
+- Full control over costs and provider choice
+- Get a key at: https://console.anthropic.com/
+
+**🔵 GooseStack API** — Zero friction (prepaid credits)
+- No API key needed — just buy credits and go
+- 40% markup on token costs (transparent pricing)
+- Prepaid balance — you control spending
+- Buy credits at: https://goosestack.dev/credits
+
+**⚪ Local Only** — 100% free, 100% private
+- Uses only local Ollama models
+- No cloud, no costs, no API key needed
+- Less capable than cloud models but fully private
 
 ### Telegram Integration
 
@@ -185,7 +196,7 @@ ollama run qwen2.5:7b "test"
 ### Getting Help
 
 - **📖 Documentation:** Full guides at [goosestack.dev/docs](https://goosestack.dev/docs)
-- **🐛 Bug Reports:** [GitHub Issues](https://github.com/openclaw-dev/goosestack/issues)
+- **🐛 Bug Reports:** [GitHub Issues](https://github.com/TheBigAndFamousGoose/goosestack/issues)
 - **💬 Community:** [Discord Server](https://discord.gg/openclaw)
 - **✉️  Email:** support@goosestack.dev
 
@@ -193,7 +204,7 @@ ollama run qwen2.5:7b "test"
 
 ### Local Development
 ```bash
-git clone https://github.com/openclaw-dev/goosestack.git
+git clone https://github.com/TheBigAndFamousGoose/goosestack.git
 cd goosestack
 ./install.sh
 ```
@@ -213,6 +224,6 @@ MIT License - see [LICENSE](LICENSE) for details.
 
 ---
 
-**Made with ❤️  by the OpenClaw community**
+**Built by two geese 🪿🪿**
 
 *Transform your Mac into an AI-powered productivity machine in just one command.*

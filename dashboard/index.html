@@ -5,1016 +5,1199 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GooseStack Dashboard</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        :root {
+            --bg: #0a0a0a;
+            --bg-card: #141414;
+            --bg-card-alt: #1a1a1a;
+            --bg-input: #111;
+            --border: #2a2a2a;
+            --border-light: #333;
+            --accent: #FF4500;
+            --accent-hover: #ff5a1f;
+            --accent-glow: rgba(255, 69, 0, 0.15);
+            --accent-dim: rgba(255, 69, 0, 0.08);
+            --text: #e8e8e8;
+            --text-muted: #888;
+            --text-dim: #555;
+            --green: #22c55e;
+            --red: #ef4444;
+            --yellow: #eab308;
+            --blue: #3b82f6;
         }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #0a0a0a;
-            color: #ffffff;
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
             line-height: 1.6;
             min-height: 100vh;
+            overflow-x: hidden;
         }
 
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-        }
+        /* ─── Scrollbar ─── */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #555; }
 
-        /* Header */
+        /* ─── Layout ─── */
+        .shell { max-width: 1280px; margin: 0 auto; padding: 0 24px 40px; }
+
+        /* ─── Header ─── */
         .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 30px;
-            padding-bottom: 20px;
-            border-bottom: 1px solid #333;
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 18px 0; margin-bottom: 4px;
+            border-bottom: 1px solid var(--border);
+            position: sticky; top: 0; z-index: 50;
+            background: var(--bg);
         }
-
+        .header-left { display: flex; align-items: center; gap: 20px; }
         .logo {
-            font-size: 2rem;
-            font-weight: bold;
-            color: #FF4500;
+            font-size: 1.5rem; font-weight: 700; color: var(--accent);
+            letter-spacing: -0.5px; white-space: nowrap;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .logo-emoji { font-size: 1.6rem; }
+        .header-status { display: flex; gap: 16px; align-items: center; }
+        .hstat {
+            display: flex; align-items: center; gap: 6px;
+            font-size: 0.8rem; color: var(--text-muted);
+        }
+        .dot {
+            width: 8px; height: 8px; border-radius: 50%;
+            flex-shrink: 0; background: var(--text-dim);
+            transition: background 0.3s;
+        }
+        .dot.ok { background: var(--green); box-shadow: 0 0 6px var(--green); }
+        .dot.err { background: var(--red); box-shadow: 0 0 6px var(--red); }
+        .dot.warn { background: var(--yellow); }
+        .header-right { display: flex; align-items: center; gap: 12px; }
+        .gear-btn {
+            background: none; border: 1px solid var(--border);
+            border-radius: 8px; padding: 7px 10px; cursor: pointer;
+            color: var(--text-muted); font-size: 1.1rem;
+            transition: all 0.2s;
+        }
+        .gear-btn:hover { color: var(--accent); border-color: var(--accent); }
+
+        /* ─── Tabs ─── */
+        .tabs {
+            display: flex; gap: 2px; margin-bottom: 24px;
+            border-bottom: 1px solid var(--border); overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        .tab-btn {
+            padding: 13px 22px; background: none; border: none;
+            color: var(--text-muted); cursor: pointer; font-size: 0.9rem;
+            font-weight: 500; white-space: nowrap; transition: all 0.2s;
+            border-bottom: 2px solid transparent; position: relative;
+        }
+        .tab-btn:hover { color: var(--text); background: var(--accent-dim); }
+        .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+        .tab-btn .tab-icon { margin-right: 6px; }
+
+        /* ─── Panels ─── */
+        .panel { display: none; animation: fadeUp 0.25s ease; }
+        .panel.active { display: block; }
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(6px); }
+            to   { opacity: 1; transform: translateY(0); }
         }
 
-        .status-indicators {
-            display: flex;
-            gap: 20px;
-            align-items: center;
-        }
-
-        .status-dot {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            margin-right: 8px;
-            display: inline-block;
-        }
-
-        .status-dot.running {
-            background: #00ff00;
-            animation: pulse 2s infinite;
-        }
-
-        .status-dot.stopped {
-            background: #ff0000;
-        }
-
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.5; }
-            100% { opacity: 1; }
-        }
-
-        .status-item {
-            display: flex;
-            align-items: center;
-            font-size: 0.9rem;
-            color: #ccc;
-        }
-
-        /* Navigation Tabs */
-        .nav-tabs {
-            display: flex;
-            margin-bottom: 30px;
-            border-bottom: 1px solid #333;
-            overflow-x: auto;
-        }
-
-        .nav-tab {
-            padding: 15px 25px;
-            background: none;
-            border: none;
-            color: #ccc;
-            cursor: pointer;
-            font-size: 1rem;
-            transition: all 0.3s ease;
-            white-space: nowrap;
-        }
-
-        .nav-tab:hover {
-            color: #FF4500;
-            background: rgba(255, 69, 0, 0.1);
-        }
-
-        .nav-tab.active {
-            color: #FF4500;
-            border-bottom: 2px solid #FF4500;
-            background: rgba(255, 69, 0, 0.05);
-        }
-
-        /* Tab Content */
-        .tab-content {
-            display: none;
-            animation: fadeIn 0.3s ease;
-        }
-
-        .tab-content.active {
-            display: block;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
-        /* Cards */
+        /* ─── Cards ─── */
         .card {
-            background: #1a1a1a;
-            border: 1px solid #333;
-            border-radius: 8px;
-            padding: 20px;
-            margin-bottom: 20px;
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: 12px; padding: 22px; margin-bottom: 20px;
         }
-
         .card-title {
-            font-size: 1.2rem;
-            color: #FF4500;
-            margin-bottom: 15px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
+            font-size: 0.85rem; font-weight: 600; text-transform: uppercase;
+            letter-spacing: 0.6px; color: var(--text-muted); margin-bottom: 16px;
+            display: flex; align-items: center; gap: 8px;
         }
+        .card-title .ct-icon { color: var(--accent); font-size: 1rem; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+        .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
 
-        .card-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 20px;
-            margin-bottom: 20px;
+        /* ─── Metric tiles ─── */
+        .metric {
+            background: var(--bg-card-alt); border-radius: 10px;
+            padding: 16px; border-left: 3px solid var(--accent);
         }
-
-        /* Status items */
-        .status-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
+        .metric-label {
+            font-size: 0.75rem; color: var(--text-muted);
+            text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;
         }
-
-        .status-item-card {
-            background: #222;
-            padding: 15px;
-            border-radius: 6px;
-            border-left: 4px solid #FF4500;
+        .metric-value {
+            font-size: 1.05rem; font-weight: 600; word-break: break-all;
         }
+        .metric-value.ok { color: var(--green); }
+        .metric-value.err { color: var(--red); }
+        .metric-value.warn { color: var(--yellow); }
+        .metric-value.muted { color: var(--text-dim); }
 
-        .status-item-card h4 {
-            color: #FF4500;
-            font-size: 0.9rem;
-            margin-bottom: 5px;
+        /* ─── Chat ─── */
+        .chat-wrap {
+            display: flex; flex-direction: column; height: calc(100vh - 220px);
+            min-height: 420px; max-height: 700px;
         }
-
-        .status-item-card .value {
-            font-size: 1.1rem;
-            font-weight: bold;
-        }
-
-        /* Chat Interface */
-        .chat-container {
-            height: 500px;
-            display: flex;
-            flex-direction: column;
-        }
-
         .chat-messages {
-            flex: 1;
-            overflow-y: auto;
-            padding: 20px;
-            background: #111;
-            border-radius: 8px 8px 0 0;
-            border: 1px solid #333;
-            border-bottom: none;
+            flex: 1; overflow-y: auto; padding: 20px;
+            background: var(--bg-input); border-radius: 12px 12px 0 0;
+            border: 1px solid var(--border); border-bottom: none;
         }
-
-        .chat-message {
-            margin-bottom: 15px;
-            display: flex;
-        }
-
-        .chat-message.user {
-            justify-content: flex-end;
-        }
-
-        .chat-bubble {
-            max-width: 70%;
-            padding: 12px 16px;
-            border-radius: 18px;
-            word-wrap: break-word;
-        }
-
-        .chat-bubble.user {
-            background: #FF4500;
-            color: white;
-        }
-
-        .chat-bubble.agent {
-            background: #333;
-            color: #fff;
-        }
-
-        .chat-input-container {
-            display: flex;
-            border: 1px solid #333;
-            border-radius: 0 0 8px 8px;
-            background: #1a1a1a;
-        }
-
-        .chat-input {
-            flex: 1;
-            padding: 15px;
-            background: none;
-            border: none;
-            color: white;
-            font-size: 1rem;
-            outline: none;
-        }
-
-        .chat-input::placeholder {
-            color: #666;
-        }
-
-        .chat-send {
-            padding: 15px 20px;
-            background: #FF4500;
-            border: none;
-            color: white;
-            cursor: pointer;
-            transition: background 0.3s ease;
-        }
-
-        .chat-send:hover {
-            background: #ff6500;
-        }
-
-        .chat-send:disabled {
-            background: #666;
-            cursor: not-allowed;
-        }
-
-        /* Configuration display */
-        .config-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 10px 0;
-            border-bottom: 1px solid #333;
-        }
-
-        .config-item:last-child {
-            border-bottom: none;
-        }
-
-        .config-key {
-            color: #ccc;
-            font-weight: 500;
-        }
-
-        .config-value {
-            color: #fff;
-            font-family: 'Courier New', monospace;
-        }
-
-        /* Logs */
-        .logs-container {
-            background: #111;
-            border: 1px solid #333;
-            border-radius: 8px;
-            height: 400px;
-            overflow-y: auto;
-            font-family: 'Courier New', monospace;
-            font-size: 0.9rem;
-        }
-
-        .log-entry {
-            padding: 8px 12px;
-            border-bottom: 1px solid #222;
+        .msg { margin-bottom: 14px; display: flex; }
+        .msg.user { justify-content: flex-end; }
+        .bubble {
+            max-width: 72%; padding: 12px 16px; border-radius: 16px;
+            font-size: 0.95rem; line-height: 1.5; word-wrap: break-word;
             white-space: pre-wrap;
         }
+        .bubble.user {
+            background: var(--accent); color: #fff;
+            border-bottom-right-radius: 4px;
+        }
+        .bubble.agent {
+            background: #222; color: var(--text);
+            border-bottom-left-radius: 4px;
+        }
+        .bubble.system {
+            background: transparent; color: var(--text-dim);
+            font-size: 0.85rem; font-style: italic; max-width: 100%;
+        }
+        .bubble.error-bubble {
+            background: rgba(239,68,68,0.1); color: var(--red);
+            border: 1px solid rgba(239,68,68,0.2);
+        }
+        .thinking-indicator {
+            display: none; padding: 8px 16px; align-items: center; gap: 8px;
+        }
+        .thinking-indicator.visible { display: flex; }
+        .thinking-dots span {
+            display: inline-block; width: 7px; height: 7px;
+            background: var(--accent); border-radius: 50%;
+            animation: bounce 1.4s infinite ease-in-out both;
+        }
+        .thinking-dots span:nth-child(1) { animation-delay: -0.32s; }
+        .thinking-dots span:nth-child(2) { animation-delay: -0.16s; }
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1); }
+        }
+        .chat-bar {
+            display: flex; border: 1px solid var(--border);
+            border-radius: 0 0 12px 12px; background: var(--bg-card);
+        }
+        .chat-input {
+            flex: 1; padding: 14px 18px; background: none;
+            border: none; color: var(--text); font-size: 0.95rem;
+            outline: none; font-family: inherit;
+        }
+        .chat-input::placeholder { color: var(--text-dim); }
+        .chat-send-btn {
+            padding: 14px 22px; background: var(--accent); border: none;
+            color: #fff; cursor: pointer; font-size: 0.95rem; font-weight: 600;
+            border-radius: 0 0 12px 0; transition: background 0.2s;
+        }
+        .chat-send-btn:hover { background: var(--accent-hover); }
+        .chat-send-btn:disabled { background: #444; cursor: not-allowed; }
 
-        .log-entry:last-child {
-            border-bottom: none;
+        /* ─── Config ─── */
+        .cfg-row {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 12px 0; border-bottom: 1px solid var(--border);
+        }
+        .cfg-row:last-child { border-bottom: none; }
+        .cfg-key { color: var(--text-muted); font-size: 0.9rem; font-weight: 500; }
+        .cfg-val {
+            color: var(--text); font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 0.88rem; text-align: right; max-width: 60%; word-break: break-all;
+        }
+        .cfg-section {
+            font-size: 0.8rem; color: var(--accent); font-weight: 600;
+            text-transform: uppercase; letter-spacing: 0.5px;
+            padding: 14px 0 6px; border-bottom: 1px solid var(--border);
         }
 
-        .log-entry.error {
-            color: #ff6b6b;
-            background: rgba(255, 107, 107, 0.1);
+        /* ─── Logs ─── */
+        .log-box {
+            background: var(--bg-input); border: 1px solid var(--border);
+            border-radius: 10px; height: 500px; overflow-y: auto;
+            font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+            font-size: 0.82rem; padding: 4px 0;
+        }
+        .log-line {
+            padding: 5px 14px; border-bottom: 1px solid #1a1a1a;
+            line-height: 1.5; white-space: pre-wrap; word-break: break-all;
+        }
+        .log-line:last-child { border-bottom: none; }
+        .log-line.error { color: var(--red); background: rgba(239,68,68,0.06); }
+        .log-line.warn { color: var(--yellow); background: rgba(234,179,8,0.05); }
+        .log-line.info { color: #999; }
+        .log-line.debug { color: #555; }
+        .log-toolbar {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 12px;
+        }
+        .log-toolbar .badge {
+            font-size: 0.75rem; background: var(--bg-card-alt);
+            border: 1px solid var(--border); border-radius: 6px;
+            padding: 4px 10px; color: var(--text-muted);
         }
 
-        .log-entry.warn {
-            color: #ffd93d;
-            background: rgba(255, 217, 61, 0.1);
+        /* ─── Security ─── */
+        .sec-actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 16px; }
+        .sec-result {
+            margin-top: 16px; background: var(--bg-input);
+            border: 1px solid var(--border); border-radius: 10px;
+            padding: 16px; font-family: 'SF Mono', monospace;
+            font-size: 0.82rem; max-height: 300px; overflow-y: auto;
+            white-space: pre-wrap; color: #aaa; display: none;
         }
+        .sec-result.visible { display: block; }
 
-        .log-entry.info {
-            color: #ccc;
-        }
-
-        /* Buttons */
+        /* ─── Buttons ─── */
         .btn {
-            padding: 10px 20px;
-            background: #FF4500;
-            border: none;
-            border-radius: 6px;
-            color: white;
-            cursor: pointer;
-            font-size: 1rem;
-            transition: all 0.3s ease;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
+            padding: 10px 20px; background: var(--accent); border: none;
+            border-radius: 8px; color: #fff; cursor: pointer;
+            font-size: 0.9rem; font-weight: 500; transition: all 0.2s;
+            display: inline-flex; align-items: center; gap: 8px;
+        }
+        .btn:hover { background: var(--accent-hover); transform: translateY(-1px); }
+        .btn:active { transform: translateY(0); }
+        .btn:disabled { background: #333; color: #666; cursor: not-allowed; transform: none; }
+        .btn-outline {
+            background: transparent; border: 1px solid var(--border); color: var(--text-muted);
+        }
+        .btn-outline:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+        .btn-sm { padding: 6px 14px; font-size: 0.82rem; }
+
+        /* ─── Error / Empty states ─── */
+        .empty-state {
+            text-align: center; padding: 50px 20px; color: var(--text-dim);
+        }
+        .empty-state h3 { color: var(--text-muted); margin-bottom: 8px; font-size: 1.1rem; }
+        .empty-state p { max-width: 400px; margin: 0 auto; line-height: 1.7; font-size: 0.9rem; }
+        .error-banner {
+            background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.2);
+            border-radius: 10px; padding: 16px 20px; margin-bottom: 20px;
+            color: var(--red); display: none; font-size: 0.9rem;
+        }
+        .error-banner.visible { display: block; }
+
+        /* ─── Modal ─── */
+        .modal-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 100; opacity: 0; pointer-events: none;
+            transition: opacity 0.2s;
+            backdrop-filter: blur(4px);
+        }
+        .modal-overlay.open { opacity: 1; pointer-events: auto; }
+        .modal {
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: 14px; padding: 28px; max-width: 440px; width: 92%;
+            transform: scale(0.95); transition: transform 0.2s;
+        }
+        .modal-overlay.open .modal { transform: scale(1); }
+        .modal h3 { color: var(--accent); margin-bottom: 6px; font-size: 1.15rem; }
+        .modal p { color: var(--text-muted); margin-bottom: 18px; font-size: 0.9rem; }
+        .modal-input {
+            width: 100%; padding: 12px 14px; background: var(--bg-input);
+            border: 1px solid var(--border); border-radius: 8px;
+            color: var(--text); font-family: 'SF Mono', monospace;
+            font-size: 0.9rem; margin-bottom: 14px; outline: none;
+        }
+        .modal-input:focus { border-color: var(--accent); }
+        .modal-input-label {
+            font-size: 0.78rem; color: var(--text-muted);
+            text-transform: uppercase; letter-spacing: 0.4px;
+            margin-bottom: 6px; display: block;
+        }
+        .modal-footer { display: flex; gap: 10px; justify-content: flex-end; margin-top: 6px; }
+
+        /* ─── Spinner ─── */
+        .spinner {
+            display: inline-block; width: 16px; height: 16px;
+            border: 2px solid var(--border); border-radius: 50%;
+            border-top-color: var(--accent); animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loading-row {
+            display: flex; align-items: center; gap: 10px;
+            color: var(--text-muted); padding: 20px; font-size: 0.9rem;
         }
 
-        .btn:hover {
-            background: #ff6500;
-            transform: translateY(-1px);
+        /* ─── Refresh badge ─── */
+        .refresh-ts {
+            font-size: 0.72rem; color: var(--text-dim);
+            text-align: right; padding: 4px 0 0;
         }
 
-        .btn:disabled {
-            background: #666;
-            cursor: not-allowed;
-            transform: none;
+        /* ─── Responsive ─── */
+        @media (max-width: 900px) {
+            .grid-2 { grid-template-columns: 1fr; }
+            .grid-4 { grid-template-columns: repeat(2, 1fr); }
         }
-
-        .btn-secondary {
-            background: #333;
-            border: 1px solid #555;
-        }
-
-        .btn-secondary:hover {
-            background: #444;
-        }
-
-        /* Error states */
-        .error-state {
-            text-align: center;
-            padding: 40px;
-            color: #ff6b6b;
-        }
-
-        .error-state h3 {
-            margin-bottom: 10px;
-        }
-
-        /* Loading states */
-        .loading {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 2px solid #333;
-            border-radius: 50%;
-            border-top-color: #FF4500;
-            animation: spin 1s ease-in-out infinite;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        /* Token prompt */
-        .token-prompt {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.8);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-        }
-
-        .token-prompt-content {
-            background: #1a1a1a;
-            padding: 30px;
-            border-radius: 12px;
-            border: 1px solid #333;
-            max-width: 400px;
-            width: 90%;
-        }
-
-        .token-prompt h3 {
-            color: #FF4500;
-            margin-bottom: 15px;
-        }
-
-        .token-input {
-            width: 100%;
-            padding: 12px;
-            background: #111;
-            border: 1px solid #333;
-            border-radius: 6px;
-            color: white;
-            margin-bottom: 20px;
-            font-family: 'Courier New', monospace;
-        }
-
-        .token-input:focus {
-            outline: none;
-            border-color: #FF4500;
-        }
-
-        .token-buttons {
-            display: flex;
-            gap: 10px;
-            justify-content: flex-end;
-        }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            .container {
-                padding: 10px;
-            }
-
-            .header {
-                flex-direction: column;
-                gap: 15px;
-                text-align: center;
-            }
-
-            .status-indicators {
-                flex-wrap: wrap;
-                justify-content: center;
-            }
-
-            .card-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .nav-tabs {
-                justify-content: flex-start;
-            }
-
-            .nav-tab {
-                padding: 12px 18px;
-                font-size: 0.9rem;
-            }
-
-            .chat-container {
-                height: 400px;
-            }
-
-            .chat-bubble {
-                max-width: 85%;
-            }
+        @media (max-width: 640px) {
+            .shell { padding: 0 14px 30px; }
+            .header { flex-direction: column; gap: 12px; align-items: flex-start; }
+            .header-right { align-self: flex-end; position: absolute; right: 14px; top: 18px; }
+            .header-status { flex-wrap: wrap; }
+            .tabs { gap: 0; }
+            .tab-btn { padding: 11px 14px; font-size: 0.82rem; }
+            .grid-3 { grid-template-columns: 1fr 1fr; }
+            .grid-4 { grid-template-columns: 1fr 1fr; }
+            .card { padding: 16px; }
+            .bubble { max-width: 88%; }
+            .chat-wrap { height: calc(100vh - 240px); min-height: 340px; }
+            .cfg-row { flex-direction: column; align-items: flex-start; gap: 4px; }
+            .cfg-val { text-align: left; max-width: 100%; }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <!-- Header -->
-        <header class="header">
-            <div class="logo">🪿 GooseStack Dashboard</div>
-            <div class="status-indicators">
-                <div class="status-item">
-                    <span class="status-dot stopped" id="agentStatus"></span>
-                    <span id="agentStatusText">Agent: Checking...</span>
-                </div>
-                <div class="status-item">
-                    <span class="status-dot stopped" id="gatewayStatus"></span>
-                    <span id="gatewayStatusText">Gateway: Connecting...</span>
-                </div>
-            </div>
-        </header>
+<div class="shell">
 
-        <!-- Navigation -->
-        <nav class="nav-tabs">
-            <button class="nav-tab active" data-tab="overview">Status Overview</button>
-            <button class="nav-tab" data-tab="chat">Chat</button>
-            <button class="nav-tab" data-tab="config">Configuration</button>
-            <button class="nav-tab" data-tab="logs">Logs</button>
-            <button class="nav-tab" data-tab="security">Security</button>
-        </nav>
-
-        <!-- Tab Content -->
-        
-        <!-- Status Overview -->
-        <div class="tab-content active" id="overview">
-            <div class="card-grid">
-                <div class="card">
-                    <h3 class="card-title">🤖 Agent Status</h3>
-                    <div class="status-grid">
-                        <div class="status-item-card">
-                            <h4>Status</h4>
-                            <div class="value" id="overviewAgentStatus">Checking...</div>
-                        </div>
-                        <div class="status-item-card">
-                            <h4>Uptime</h4>
-                            <div class="value" id="uptime">--</div>
-                        </div>
-                        <div class="status-item-card">
-                            <h4>Model</h4>
-                            <div class="value" id="currentModel">--</div>
-                        </div>
-                        <div class="status-item-card">
-                            <h4>Session</h4>
-                            <div class="value" id="sessionInfo">--</div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="card">
-                    <h3 class="card-title">📊 Statistics</h3>
-                    <div class="status-grid">
-                        <div class="status-item-card">
-                            <h4>Messages Today</h4>
-                            <div class="value" id="messagesCount">--</div>
-                        </div>
-                        <div class="status-item-card">
-                            <h4>Token Usage (Est.)</h4>
-                            <div class="value" id="tokenUsage">--</div>
-                        </div>
-                        <div class="status-item-card">
-                            <h4>Memory Search</h4>
-                            <div class="value" id="memoryStatus">--</div>
-                        </div>
-                        <div class="status-item-card">
-                            <h4>Last Activity</h4>
-                            <div class="value" id="lastActivity">--</div>
-                        </div>
-                    </div>
-                </div>
+    <!-- ═══ Header ═══ -->
+    <header class="header">
+        <div class="header-left">
+            <div class="logo"><span class="logo-emoji">🪿</span> GooseStack Dashboard</div>
+            <div class="header-status">
+                <div class="hstat"><span class="dot" id="dotGw"></span> <span id="lblGw">Gateway</span></div>
+                <div class="hstat"><span class="dot" id="dotAgent"></span> <span id="lblAgent">Agent</span></div>
             </div>
         </div>
+        <div class="header-right">
+            <button class="gear-btn" id="btnSettings" title="Settings">⚙️</button>
+        </div>
+    </header>
 
-        <!-- Chat -->
-        <div class="tab-content" id="chat">
+    <!-- ═══ Tabs ═══ -->
+    <nav class="tabs" id="tabNav">
+        <button class="tab-btn active" data-tab="overview"><span class="tab-icon">📊</span>Status</button>
+        <button class="tab-btn" data-tab="chat"><span class="tab-icon">💬</span>Chat</button>
+        <button class="tab-btn" data-tab="config"><span class="tab-icon">⚙️</span>Config</button>
+        <button class="tab-btn" data-tab="logs"><span class="tab-icon">📝</span>Logs</button>
+        <button class="tab-btn" data-tab="security"><span class="tab-icon">🔒</span>Security</button>
+    </nav>
+
+    <!-- ═══ Error Banner ═══ -->
+    <div class="error-banner" id="errorBanner"></div>
+
+    <!-- ═══════════════════════════════════
+         PANEL 1 — Status Overview
+    ═══════════════════════════════════ -->
+    <div class="panel active" id="panelOverview">
+        <div class="grid-2">
+            <!-- Agent -->
             <div class="card">
-                <h3 class="card-title">💬 Chat with Agent</h3>
-                <div class="chat-container">
-                    <div class="chat-messages" id="chatMessages">
-                        <div class="chat-message agent">
-                            <div class="chat-bubble agent">
-                                Hello! I'm your GooseStack agent. How can I help you today?
-                            </div>
-                        </div>
-                    </div>
-                    <div class="chat-input-container">
-                        <input type="text" class="chat-input" id="chatInput" placeholder="Type your message..." maxlength="1000">
-                        <button class="chat-send" id="chatSend">Send</button>
-                    </div>
+                <div class="card-title"><span class="ct-icon">🤖</span> Agent Status</div>
+                <div class="grid-2" id="agentMetrics">
+                    <div class="metric"><div class="metric-label">Status</div><div class="metric-value muted" id="mAgentStatus">—</div></div>
+                    <div class="metric"><div class="metric-label">Uptime</div><div class="metric-value" id="mUptime">—</div></div>
+                    <div class="metric"><div class="metric-label">Model</div><div class="metric-value" id="mModel">—</div></div>
+                    <div class="metric"><div class="metric-label">Gateway Version</div><div class="metric-value" id="mVersion">—</div></div>
+                    <div class="metric"><div class="metric-label">Channels</div><div class="metric-value" id="mChannels">—</div></div>
+                    <div class="metric"><div class="metric-label">Memory Search</div><div class="metric-value" id="mMemory">—</div></div>
+                    <div class="metric"><div class="metric-label">Last Activity</div><div class="metric-value" id="mLastActivity">—</div></div>
+                    <div class="metric"><div class="metric-label">Session</div><div class="metric-value" id="mSession">—</div></div>
                 </div>
             </div>
-        </div>
-
-        <!-- Configuration -->
-        <div class="tab-content" id="config">
+            <!-- System -->
             <div class="card">
-                <h3 class="card-title">⚙️ Configuration</h3>
-                <div id="configContent">
-                    <div class="loading"></div> Loading configuration...
+                <div class="card-title"><span class="ct-icon">🖥️</span> System Info</div>
+                <div class="grid-2" id="sysMetrics">
+                    <div class="metric"><div class="metric-label">Hostname</div><div class="metric-value" id="mHostname">—</div></div>
+                    <div class="metric"><div class="metric-label">macOS</div><div class="metric-value" id="mOS">—</div></div>
+                    <div class="metric"><div class="metric-label">Chip</div><div class="metric-value" id="mChip">—</div></div>
+                    <div class="metric"><div class="metric-label">RAM</div><div class="metric-value" id="mRAM">—</div></div>
                 </div>
             </div>
         </div>
+        <div class="refresh-ts" id="overviewTs"></div>
+    </div>
 
-        <!-- Logs -->
-        <div class="tab-content" id="logs">
-            <div class="card">
-                <h3 class="card-title">📝 Recent Logs</h3>
-                <div class="logs-container" id="logsContainer">
-                    <div class="log-entry info">Loading logs...</div>
+    <!-- ═══════════════════════════════════
+         PANEL 2 — Chat
+    ═══════════════════════════════════ -->
+    <div class="panel" id="panelChat">
+        <div class="card" style="padding:0; overflow:hidden;">
+            <div class="chat-wrap">
+                <div class="chat-messages" id="chatMessages">
+                    <div class="msg"><div class="bubble system">Send a message to chat with your agent via the gateway webchat API.</div></div>
                 </div>
-            </div>
-        </div>
-
-        <!-- Security -->
-        <div class="tab-content" id="security">
-            <div class="card-grid">
-                <div class="card">
-                    <h3 class="card-title">🔒 Security Status</h3>
-                    <div class="status-grid">
-                        <div class="status-item-card">
-                            <h4>ClawSec</h4>
-                            <div class="value" id="clawsecStatus">--</div>
-                        </div>
-                        <div class="status-item-card">
-                            <h4>Soul Guardian</h4>
-                            <div class="value" id="soulGuardianStatus">--</div>
-                        </div>
-                        <div class="status-item-card">
-                            <h4>Last Audit</h4>
-                            <div class="value" id="lastAudit">--</div>
-                        </div>
-                        <div class="status-item-card">
-                            <h4>File Integrity</h4>
-                            <div class="value" id="fileIntegrity">--</div>
-                        </div>
-                    </div>
+                <div class="thinking-indicator" id="thinkingIndicator">
+                    <div class="thinking-dots"><span></span><span></span><span></span></div>
+                    <span style="color:var(--text-dim);font-size:0.85rem;">Thinking…</span>
                 </div>
-
-                <div class="card">
-                    <h3 class="card-title">🛠️ Security Actions</h3>
-                    <button class="btn" id="fileIntegrityCheck">
-                        🔍 Run File Integrity Check
-                    </button>
+                <div class="chat-bar">
+                    <input type="text" class="chat-input" id="chatInput" placeholder="Type a message…" autocomplete="off">
+                    <button class="chat-send-btn" id="chatSendBtn" disabled>Send</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Token Prompt Modal -->
-    <div class="token-prompt" id="tokenPrompt" style="display: none;">
-        <div class="token-prompt-content">
-            <h3>Gateway Authentication</h3>
-            <p style="margin-bottom: 15px; color: #ccc;">Enter your OpenClaw gateway token to connect:</p>
-            <input type="password" class="token-input" id="tokenInput" placeholder="Enter gateway token...">
-            <div class="token-buttons">
-                <button class="btn btn-secondary" id="tokenCancel">Cancel</button>
-                <button class="btn" id="tokenSubmit">Connect</button>
+    <!-- ═══════════════════════════════════
+         PANEL 3 — Configuration
+    ═══════════════════════════════════ -->
+    <div class="panel" id="panelConfig">
+        <div class="card" id="configCard">
+            <div class="card-title"><span class="ct-icon">⚙️</span> Configuration <span style="font-size:0.72rem;color:var(--text-dim);margin-left:auto;">(read-only)</span></div>
+            <div id="configContent"><div class="loading-row"><span class="spinner"></span> Loading configuration…</div></div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════
+         PANEL 4 — Logs
+    ═══════════════════════════════════ -->
+    <div class="panel" id="panelLogs">
+        <div class="card">
+            <div class="log-toolbar">
+                <div class="card-title" style="margin-bottom:0;"><span class="ct-icon">📝</span> Gateway Logs</div>
+                <div style="display:flex;gap:8px;align-items:center;">
+                    <span class="badge" id="logCount">0 entries</span>
+                    <button class="btn btn-outline btn-sm" id="btnRefreshLogs">↻ Refresh</button>
+                </div>
+            </div>
+            <div class="log-box" id="logBox">
+                <div class="log-line info">Waiting for logs…</div>
             </div>
         </div>
     </div>
 
-    <script>
-        class GooseStackDashboard {
-            constructor() {
-                this.gatewayUrl = 'http://localhost:18789';
-                this.token = localStorage.getItem('openclaw_token');
-                this.websocket = null;
-                this.isConnected = false;
-                this.logs = [];
-                this.lastLogFetch = 0;
-                
-                this.init();
-            }
+    <!-- ═══════════════════════════════════
+         PANEL 5 — Security
+    ═══════════════════════════════════ -->
+    <div class="panel" id="panelSecurity">
+        <div class="grid-2">
+            <div class="card">
+                <div class="card-title"><span class="ct-icon">🛡️</span> Security Status</div>
+                <div class="grid-2">
+                    <div class="metric"><div class="metric-label">ClawSec</div><div class="metric-value" id="mClawsec">—</div></div>
+                    <div class="metric"><div class="metric-label">Soul Guardian</div><div class="metric-value" id="mSoulGuardian">—</div></div>
+                    <div class="metric"><div class="metric-label">Last Audit</div><div class="metric-value" id="mLastAudit">—</div></div>
+                    <div class="metric"><div class="metric-label">File Integrity</div><div class="metric-value" id="mFileIntegrity">—</div></div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-title"><span class="ct-icon">🛠️</span> Security Actions</div>
+                <p style="color:var(--text-muted);font-size:0.88rem;margin-bottom:14px;">
+                    Run security checks against your OpenClaw installation. Results appear below.
+                </p>
+                <div class="sec-actions">
+                    <button class="btn" id="btnAudit">🔍 Run Security Audit</button>
+                    <button class="btn btn-outline" id="btnIntegrity">🔐 Check File Integrity</button>
+                </div>
+                <div class="sec-result" id="secResult"></div>
+            </div>
+        </div>
+    </div>
 
-            init() {
-                this.setupTabs();
-                this.setupChat();
-                this.setupTokenPrompt();
-                
-                if (!this.token) {
-                    this.showTokenPrompt();
-                } else {
-                    this.connect();
-                }
+</div><!-- .shell -->
 
-                // Auto-refresh logs every 10 seconds
-                setInterval(() => {
-                    if (this.isConnected) {
-                        this.fetchLogs();
-                    }
-                }, 10000);
+<!-- ═══ Settings Modal ═══ -->
+<div class="modal-overlay" id="modalSettings">
+    <div class="modal">
+        <h3>Dashboard Settings</h3>
+        <p>Configure your gateway connection.</p>
+        <label class="modal-input-label">Gateway URL</label>
+        <input class="modal-input" id="inputGwUrl" placeholder="http://localhost:18789">
+        <label class="modal-input-label">Bearer Token</label>
+        <input class="modal-input" id="inputToken" type="password" placeholder="Enter token…">
+        <div class="modal-footer">
+            <button class="btn btn-outline" id="btnSettingsCancel">Cancel</button>
+            <button class="btn" id="btnSettingsSave">Save &amp; Connect</button>
+        </div>
+    </div>
+</div>
 
-                // Auto-refresh status every 5 seconds
-                setInterval(() => {
-                    this.updateStatus();
-                }, 5000);
-            }
+<!-- ═══ Token Prompt (first visit) ═══ -->
+<div class="modal-overlay" id="modalToken">
+    <div class="modal">
+        <h3>🪿 Welcome to GooseStack</h3>
+        <p>Enter your OpenClaw gateway bearer token to connect.</p>
+        <label class="modal-input-label">Gateway URL</label>
+        <input class="modal-input" id="firstGwUrl" value="http://localhost:18789" placeholder="http://localhost:18789">
+        <label class="modal-input-label">Bearer Token</label>
+        <input class="modal-input" id="firstToken" type="password" placeholder="Paste your token here…">
+        <div class="modal-footer">
+            <button class="btn" id="btnFirstConnect">Connect</button>
+        </div>
+    </div>
+</div>
 
-            setupTabs() {
-                const tabs = document.querySelectorAll('.nav-tab');
-                const contents = document.querySelectorAll('.tab-content');
+<script>
+/* ═══════════════════════════════════════════════
+   GooseStack Dashboard — Production Build
+   Connects to OpenClaw Gateway REST API
+   ═══════════════════════════════════════════════ */
 
-                tabs.forEach(tab => {
-                    tab.addEventListener('click', () => {
-                        const targetTab = tab.dataset.tab;
-                        
-                        tabs.forEach(t => t.classList.remove('active'));
-                        contents.forEach(c => c.classList.remove('active'));
-                        
-                        tab.classList.add('active');
-                        document.getElementById(targetTab).classList.add('active');
+(() => {
+'use strict';
 
-                        // Load content when switching to certain tabs
-                        if (targetTab === 'config') {
-                            this.loadConfiguration();
-                        } else if (targetTab === 'logs') {
-                            this.fetchLogs();
-                        } else if (targetTab === 'security') {
-                            this.loadSecurityStatus();
-                        }
-                    });
-                });
-            }
+// ─── State ───
+let gwUrl = localStorage.getItem('gsd_gw_url') || 'http://localhost:18789';
+let token = localStorage.getItem('gsd_token') || '';
+let connected = false;
+let statusTimer = null;
+let logsTimer = null;
+let chatBusy = false;
 
-            setupChat() {
-                const chatInput = document.getElementById('chatInput');
-                const chatSend = document.getElementById('chatSend');
-                const chatMessages = document.getElementById('chatMessages');
+// ─── DOM helpers ───
+const $ = (s, p) => (p || document).querySelector(s);
+const $$ = (s, p) => [...(p || document).querySelectorAll(s)];
+const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html !== undefined) e.innerHTML = html; return e; };
 
-                const sendMessage = () => {
-                    const message = chatInput.value.trim();
-                    if (!message || !this.isConnected) return;
+// ─── Init ───
+document.addEventListener('DOMContentLoaded', () => {
+    setupTabs();
+    setupSettings();
+    setupChat();
+    setupSecurity();
+    setupLogRefresh();
 
-                    this.addChatMessage('user', message);
-                    chatInput.value = '';
-                    chatSend.disabled = true;
+    if (!token) {
+        openModal('modalToken');
+    } else {
+        boot();
+    }
+});
 
-                    this.sendToAgent(message).then(response => {
-                        this.addChatMessage('agent', response);
-                        chatSend.disabled = false;
-                    }).catch(error => {
-                        this.addChatMessage('agent', `Error: ${error.message}`);
-                        chatSend.disabled = false;
-                    });
-                };
+// ─── API helper ───
+async function api(path, opts = {}) {
+    const url = `${gwUrl}${path}`;
+    const headers = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json', ...(opts.headers || {}) };
+    const res = await fetch(url, { ...opts, headers });
+    return res;
+}
 
-                chatSend.addEventListener('click', sendMessage);
-                chatInput.addEventListener('keypress', (e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault();
-                        sendMessage();
-                    }
-                });
-            }
+// ─── Boot ───
+function boot() {
+    checkConnection();
+    startPolling();
+}
 
-            setupTokenPrompt() {
-                const tokenPrompt = document.getElementById('tokenPrompt');
-                const tokenInput = document.getElementById('tokenInput');
-                const tokenSubmit = document.getElementById('tokenSubmit');
-                const tokenCancel = document.getElementById('tokenCancel');
+async function checkConnection() {
+    try {
+        const res = await api('/api/v1/status');
+        if (res.status === 401 || res.status === 403) {
+            showError('Authentication failed — check your bearer token.');
+            setGwDot(false); setAgentDot(false);
+            connected = false;
+            return;
+        }
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        connected = true;
+        hideError();
+        setGwDot(true);
+        const data = await res.json();
+        renderStatus(data);
+        enableChat(true);
+    } catch (e) {
+        connected = false;
+        setGwDot(false); setAgentDot(false);
+        showError(`Cannot reach gateway at ${gwUrl} — ${e.message}`);
+        enableChat(false);
+    }
+}
 
-                const submitToken = () => {
-                    const token = tokenInput.value.trim();
-                    if (token) {
-                        this.token = token;
-                        localStorage.setItem('openclaw_token', token);
-                        tokenPrompt.style.display = 'none';
-                        this.connect();
-                    }
-                };
+function startPolling() {
+    clearInterval(statusTimer);
+    clearInterval(logsTimer);
+    statusTimer = setInterval(async () => {
+        if (!token) return;
+        try {
+            const res = await api('/api/v1/status');
+            if (res.ok) {
+                connected = true; setGwDot(true); hideError();
+                renderStatus(await res.json());
+            } else { connected = false; setGwDot(false); }
+        } catch { connected = false; setGwDot(false); setAgentDot(false); }
+    }, 5000);
+}
 
-                tokenSubmit.addEventListener('click', submitToken);
-                tokenInput.addEventListener('keypress', (e) => {
-                    if (e.key === 'Enter') {
-                        e.preventDefault();
-                        submitToken();
-                    }
-                });
+// ─── Tabs ───
+function setupTabs() {
+    const btns = $$('.tab-btn');
+    const panels = $$('.panel');
+    btns.forEach(b => b.addEventListener('click', () => {
+        btns.forEach(x => x.classList.remove('active'));
+        panels.forEach(x => x.classList.remove('active'));
+        b.classList.add('active');
+        const t = b.dataset.tab;
+        $(`#panel${t.charAt(0).toUpperCase() + t.slice(1)}`).classList.add('active');
+        if (t === 'config') loadConfig();
+        if (t === 'logs') loadLogs();
+        if (t === 'security') loadSecurity();
+    }));
+}
 
-                tokenCancel.addEventListener('click', () => {
-                    tokenPrompt.style.display = 'none';
-                });
-            }
+// ─── Settings Modal ───
+function setupSettings() {
+    $('#btnSettings').addEventListener('click', () => {
+        $('#inputGwUrl').value = gwUrl;
+        $('#inputToken').value = token;
+        openModal('modalSettings');
+    });
+    $('#btnSettingsCancel').addEventListener('click', () => closeModal('modalSettings'));
+    $('#btnSettingsSave').addEventListener('click', () => {
+        const u = $('#inputGwUrl').value.trim().replace(/\/+$/, '');
+        const t = $('#inputToken').value.trim();
+        if (!u || !t) return;
+        gwUrl = u; token = t;
+        localStorage.setItem('gsd_gw_url', gwUrl);
+        localStorage.setItem('gsd_token', token);
+        closeModal('modalSettings');
+        boot();
+    });
 
-            showTokenPrompt() {
-                document.getElementById('tokenPrompt').style.display = 'flex';
-                document.getElementById('tokenInput').focus();
-            }
+    // First-visit modal
+    $('#btnFirstConnect').addEventListener('click', () => {
+        const u = $('#firstGwUrl').value.trim().replace(/\/+$/, '') || 'http://localhost:18789';
+        const t = $('#firstToken').value.trim();
+        if (!t) { $('#firstToken').style.borderColor = 'var(--red)'; return; }
+        gwUrl = u; token = t;
+        localStorage.setItem('gsd_gw_url', gwUrl);
+        localStorage.setItem('gsd_token', token);
+        closeModal('modalToken');
+        boot();
+    });
+    // Enter key for first token
+    $('#firstToken').addEventListener('keydown', e => { if (e.key === 'Enter') $('#btnFirstConnect').click(); });
+    $('#inputToken').addEventListener('keydown', e => { if (e.key === 'Enter') $('#btnSettingsSave').click(); });
+}
 
-            async connect() {
-                try {
-                    const response = await this.apiCall('/api/status');
-                    if (response.ok) {
-                        this.isConnected = true;
-                        this.updateConnectionStatus(true);
-                        this.setupWebSocket();
-                        this.updateStatus();
-                    } else {
-                        throw new Error('Authentication failed');
-                    }
-                } catch (error) {
-                    console.error('Connection failed:', error);
-                    this.isConnected = false;
-                    this.updateConnectionStatus(false);
-                    
-                    if (error.message.includes('Authentication') || error.message.includes('401')) {
-                        localStorage.removeItem('openclaw_token');
-                        this.token = null;
-                        this.showTokenPrompt();
-                    }
-                }
-            }
+function openModal(id) { $(`#${id}`).classList.add('open'); }
+function closeModal(id) { $(`#${id}`).classList.remove('open'); }
 
-            setupWebSocket() {
-                try {
-                    const wsUrl = this.gatewayUrl.replace('http', 'ws') + '/ws';
-                    this.websocket = new WebSocket(wsUrl);
-                    
-                    this.websocket.onopen = () => {
-                        console.log('WebSocket connected');
-                    };
+// ─── Status rendering ───
+function renderStatus(d) {
+    // Agent dot
+    const running = d.agent === 'running' || d.agentRunning || d.agent_running || d.status === 'running';
+    setAgentDot(running);
 
-                    this.websocket.onmessage = (event) => {
-                        try {
-                            const data = JSON.parse(event.data);
-                            this.handleWebSocketMessage(data);
-                        } catch (e) {
-                            console.error('Failed to parse WebSocket message:', e);
-                        }
-                    };
+    const s = (id, v) => { const el = $(`#${id}`); if (el) el.textContent = v || '—'; };
+    const sc = (id, v, cls) => { const el = $(`#${id}`); if (el) { el.textContent = v || '—'; el.className = 'metric-value ' + (cls || ''); } };
 
-                    this.websocket.onclose = () => {
-                        console.log('WebSocket disconnected');
-                        setTimeout(() => this.setupWebSocket(), 5000);
-                    };
-                } catch (error) {
-                    console.log('WebSocket not available, using polling');
-                }
-            }
+    // Agent metrics
+    sc('mAgentStatus', running ? 'Running' : 'Stopped', running ? 'ok' : 'err');
+    s('mUptime', formatUptime(d.uptime || d.uptimeMs || d.uptime_seconds));
+    s('mModel', d.model || d.defaultModel || d.default_model);
+    s('mVersion', d.version || d.gatewayVersion || d.gateway_version);
+    s('mChannels', formatChannels(d.channels || d.connectedChannels || d.connected_channels));
+    s('mMemory', d.memorySearch || d.memory_search || d.memorySearchStatus || (d.memory && d.memory.status));
+    s('mLastActivity', formatTime(d.lastActivity || d.last_activity || d.lastActivityAt));
+    s('mSession', d.session || d.activeSession || d.active_session);
 
-            handleWebSocketMessage(data) {
-                if (data.type === 'status_update') {
-                    this.updateStatusDisplay(data);
-                } else if (data.type === 'log_entry') {
-                    this.addLogEntry(data);
-                }
-            }
+    // System info
+    s('mHostname', d.hostname || d.host);
+    s('mOS', d.os || d.osVersion || d.os_version || d.macos || d.macosVersion);
+    s('mChip', d.chip || d.cpu || d.arch || d.architecture);
+    s('mRAM', d.ram || d.memory || d.totalMemory || d.total_memory);
 
-            async apiCall(endpoint, options = {}) {
-                const url = `${this.gatewayUrl}${endpoint}`;
-                const defaultOptions = {
-                    headers: {
-                        'Authorization': `Bearer ${this.token}`,
-                        'Content-Type': 'application/json'
-                    }
-                };
+    // Refresh ts
+    $('#overviewTs').textContent = `Last refreshed: ${new Date().toLocaleTimeString()}`;
+}
 
-                return fetch(url, { ...defaultOptions, ...options });
-            }
+function setGwDot(ok) {
+    const d = $('#dotGw');
+    d.className = 'dot ' + (ok ? 'ok' : 'err');
+    $('#lblGw').textContent = 'Gateway: ' + (ok ? 'Connected' : 'Disconnected');
+}
+function setAgentDot(ok) {
+    const d = $('#dotAgent');
+    d.className = 'dot ' + (ok ? 'ok' : 'err');
+    $('#lblAgent').textContent = 'Agent: ' + (ok ? 'Running' : 'Stopped');
+}
 
-            async sendToAgent(message) {
-                try {
-                    const response = await this.apiCall('/hooks/agent', {
-                        method: 'POST',
-                        body: JSON.stringify({ message })
-                    });
+function formatUptime(v) {
+    if (!v) return '—';
+    if (typeof v === 'string') return v;
+    let sec = typeof v === 'number' ? (v > 1e10 ? v / 1000 : v) : 0;
+    if (sec < 60) return `${Math.floor(sec)}s`;
+    if (sec < 3600) return `${Math.floor(sec / 60)}m ${Math.floor(sec % 60)}s`;
+    const h = Math.floor(sec / 3600); const m = Math.floor((sec % 3600) / 60);
+    return `${h}h ${m}m`;
+}
 
-                    if (!response.ok) {
-                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                    }
+function formatChannels(ch) {
+    if (!ch) return '—';
+    if (typeof ch === 'string') return ch;
+    if (Array.isArray(ch)) return ch.length ? ch.join(', ') : 'None';
+    return String(ch);
+}
 
-                    const data = await response.json();
-                    return data.response || 'No response received';
-                } catch (error) {
-                    throw new Error(`Failed to send message: ${error.message}`);
-                }
-            }
+function formatTime(t) {
+    if (!t) return '—';
+    try {
+        const d = new Date(t);
+        if (isNaN(d)) return t;
+        const now = Date.now();
+        const diff = (now - d.getTime()) / 1000;
+        if (diff < 60) return 'Just now';
+        if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+        if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+        return d.toLocaleString();
+    } catch { return t; }
+}
 
-            addChatMessage(sender, message) {
-                const messagesContainer = document.getElementById('chatMessages');
-                const messageDiv = document.createElement('div');
-                messageDiv.className = `chat-message ${sender}`;
-                
-                const bubbleDiv = document.createElement('div');
-                bubbleDiv.className = `chat-bubble ${sender}`;
-                bubbleDiv.textContent = message;
-                
-                messageDiv.appendChild(bubbleDiv);
-                messagesContainer.appendChild(messageDiv);
-                messagesContainer.scrollTop = messagesContainer.scrollHeight;
-            }
+// ─── Error banner ───
+function showError(msg) {
+    const b = $('#errorBanner');
+    b.textContent = '⚠️ ' + msg;
+    b.classList.add('visible');
+}
+function hideError() { $('#errorBanner').classList.remove('visible'); }
 
-            updateConnectionStatus(connected) {
-                const agentStatus = document.getElementById('agentStatus');
-                const agentStatusText = document.getElementById('agentStatusText');
-                const gatewayStatus = document.getElementById('gatewayStatus');
-                const gatewayStatusText = document.getElementById('gatewayStatusText');
+// ─── Chat ───
+function setupChat() {
+    const input = $('#chatInput');
+    const btn = $('#chatSendBtn');
+    const send = () => {
+        const msg = input.value.trim();
+        if (!msg || chatBusy) return;
+        sendChat(msg);
+        input.value = '';
+    };
+    btn.addEventListener('click', send);
+    input.addEventListener('keydown', e => {
+        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
+    });
+    input.addEventListener('input', () => {
+        btn.disabled = !input.value.trim() || !connected;
+    });
+}
 
-                if (connected) {
-                    gatewayStatus.className = 'status-dot running';
-                    gatewayStatusText.textContent = 'Gateway: Connected';
-                } else {
-                    gatewayStatus.className = 'status-dot stopped';
-                    gatewayStatusText.textContent = 'Gateway: Disconnected';
-                }
-            }
+function enableChat(on) {
+    $('#chatSendBtn').disabled = !on || !$('#chatInput').value.trim();
+    $('#chatInput').disabled = !on;
+    if (!on) $('#chatInput').placeholder = 'Connect to gateway first…';
+    else $('#chatInput').placeholder = 'Type a message…';
+}
 
-            async updateStatus() {
-                if (!this.isConnected) return;
+function addMsg(type, text) {
+    const wrap = $('#chatMessages');
+    const m = el('div', 'msg' + (type === 'user' ? ' user' : ''));
+    const b = el('div', 'bubble ' + type);
+    b.textContent = text;
+    m.appendChild(b);
+    wrap.appendChild(m);
+    wrap.scrollTop = wrap.scrollHeight;
+}
 
-                try {
-                    const response = await this.apiCall('/api/status');
-                    if (response.ok) {
-                        const data = await response.json();
-                        this.updateStatusDisplay(data);
-                    }
-                } catch (error) {
-                    console.error('Failed to fetch status:', error);
-                }
-            }
+async function sendChat(message) {
+    addMsg('user', message);
+    chatBusy = true;
+    $('#chatSendBtn').disabled = true;
+    $('#thinkingIndicator').classList.add('visible');
 
-            updateStatusDisplay(data) {
-                // Update header status
-                const agentStatus = document.getElementById('agentStatus');
-                const agentStatusText = document.getElementById('agentStatusText');
-                
-                if (data.agent_running) {
-                    agentStatus.className = 'status-dot running';
-                    agentStatusText.textContent = 'Agent: Running';
-                } else {
-                    agentStatus.className = 'status-dot stopped';
-                    agentStatusText.textContent = 'Agent: Stopped';
-                }
+    try {
+        const res = await api('/api/v1/chat', {
+            method: 'POST',
+            body: JSON.stringify({ message, sessionKey: 'agent:main' })
+        });
 
-                // Update overview tab
-                document.getElementById('overviewAgentStatus').textContent = 
-                    data.agent_running ? 'Running' : 'Stopped';
-                document.getElementById('uptime').textContent = 
-                    data.uptime || '--';
-                document.getElementById('currentModel').textContent = 
-                    data.model || '--';
-                document.getElementById('sessionInfo').textContent = 
-                    data.session || '--';
-                document.getElementById('messagesCount').textContent = 
-                    data.messages_today || '--';
-                document.getElementById('tokenUsage').textContent = 
-                    data.token_usage || '--';
-                document.getElementById('memoryStatus').textContent = 
-                    data.memory_status || '--';
-                document.getElementById('lastActivity').textContent = 
-                    data.last_activity || '--';
-            }
-
-            async loadConfiguration() {
-                const configContent = document.getElementById('configContent');
-                
-                try {
-                    const response = await this.apiCall('/api/config');
-                    if (response.ok) {
-                        const config = await response.json();
-                        this.displayConfiguration(config);
-                    } else {
-                        configContent.innerHTML = '<div class="error-state"><h3>Failed to load configuration</h3><p>Unable to fetch config data</p></div>';
-                    }
-                } catch (error) {
-                    configContent.innerHTML = '<div class="error-state"><h3>Connection Error</h3><p>Unable to connect to gateway</p></div>';
-                }
-            }
-
-            displayConfiguration(config) {
-                const configContent = document.getElementById('configContent');
-                const configItems = [
-                    { key: 'Model', value: config.model || 'Unknown' },
-                    { key: 'Thinking Mode', value: config.thinking_mode || 'Unknown' },
-                    { key: 'Subagent Model', value: config.subagent_model || 'Unknown' },
-                    { key: 'Workspace Path', value: config.workspace_path || 'Unknown' },
-                    { key: 'Connected Channels', value: (config.channels || []).join(', ') || 'None' },
-                    { key: 'Gateway Port', value: config.gateway_port || '18789' },
-                    { key: 'Security Level', value: config.security_level || 'Unknown' },
-                ];
-
-                const html = configItems.map(item => `
-                    <div class="config-item">
-                        <span class="config-key">${item.key}:</span>
-                        <span class="config-value">${item.value}</span>
-                    </div>
-                `).join('');
-
-                configContent.innerHTML = html;
-            }
-
-            async fetchLogs() {
-                try {
-                    const response = await this.apiCall('/api/logs');
-                    if (response.ok) {
-                        const logs = await response.json();
-                        this.displayLogs(logs);
-                    }
-                } catch (error) {
-                    console.error('Failed to fetch logs:', error);
-                }
-            }
-
-            displayLogs(logs) {
-                const logsContainer = document.getElementById('logsContainer');
-                
-                if (!logs || logs.length === 0) {
-                    logsContainer.innerHTML = '<div class="log-entry info">No logs available</div>';
-                    return;
-                }
-
-                const html = logs.map(log => {
-                    const level = log.level || 'info';
-                    const timestamp = new Date(log.timestamp).toLocaleString();
-                    return `<div class="log-entry ${level}">[${timestamp}] ${log.message}</div>`;
-                }).join('');
-
-                logsContainer.innerHTML = html;
-                logsContainer.scrollTop = logsContainer.scrollHeight;
-            }
-
-            async loadSecurityStatus() {
-                try {
-                    const response = await this.apiCall('/api/security');
-                    if (response.ok) {
-                        const security = await response.json();
-                        this.displaySecurityStatus(security);
-                    }
-                } catch (error) {
-                    console.error('Failed to load security status:', error);
-                }
-            }
-
-            displaySecurityStatus(security) {
-                document.getElementById('clawsecStatus').textContent = 
-                    security.clawsec_installed ? 'Installed' : 'Not Installed';
-                document.getElementById('soulGuardianStatus').textContent = 
-                    security.soul_guardian_active ? 'Active' : 'Inactive';
-                document.getElementById('lastAudit').textContent = 
-                    security.last_audit || 'Never';
-                document.getElementById('fileIntegrity').textContent = 
-                    security.file_integrity_status || 'Unknown';
-            }
+        if (!res.ok) {
+            const errText = await res.text().catch(() => '');
+            throw new Error(`HTTP ${res.status}${errText ? ': ' + errText : ''}`);
         }
 
-        // Initialize the dashboard
-        document.addEventListener('DOMContentLoaded', () => {
-            new GooseStackDashboard();
-        });
-    </script>
+        // Try streaming first, fall back to JSON
+        const ct = res.headers.get('content-type') || '';
+        if (ct.includes('text/event-stream') || ct.includes('stream')) {
+            await readStream(res);
+        } else if (ct.includes('application/x-ndjson') || ct.includes('ndjson')) {
+            await readNDJSON(res);
+        } else {
+            // JSON response
+            const data = await res.json();
+            const reply = data.response || data.reply || data.message || data.text || data.content || JSON.stringify(data);
+            addMsg('agent', reply);
+        }
+    } catch (e) {
+        const wrap = $('#chatMessages');
+        const m = el('div', 'msg');
+        const b = el('div', 'bubble error-bubble');
+        b.textContent = `Error: ${e.message}`;
+        m.appendChild(b);
+        wrap.appendChild(m);
+        wrap.scrollTop = wrap.scrollHeight;
+    } finally {
+        chatBusy = false;
+        $('#thinkingIndicator').classList.remove('visible');
+        $('#chatSendBtn').disabled = !$('#chatInput').value.trim() || !connected;
+    }
+}
+
+async function readStream(res) {
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let fullText = '';
+    let bubbleEl = null;
+
+    while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop();
+        for (const line of lines) {
+            if (line.startsWith('data: ')) {
+                const payload = line.slice(6).trim();
+                if (payload === '[DONE]') continue;
+                try {
+                    const obj = JSON.parse(payload);
+                    const chunk = obj.text || obj.content || obj.delta || obj.chunk || '';
+                    if (chunk) {
+                        fullText += chunk;
+                        if (!bubbleEl) {
+                            const wrap = $('#chatMessages');
+                            const m = el('div', 'msg');
+                            bubbleEl = el('div', 'bubble agent');
+                            m.appendChild(bubbleEl);
+                            wrap.appendChild(m);
+                        }
+                        bubbleEl.textContent = fullText;
+                        $('#chatMessages').scrollTop = $('#chatMessages').scrollHeight;
+                    }
+                } catch { /* non-JSON SSE line, skip */ }
+            }
+        }
+    }
+    if (fullText && !bubbleEl) addMsg('agent', fullText);
+    if (!fullText) addMsg('agent', '(empty response)');
+}
+
+async function readNDJSON(res) {
+    const text = await res.text();
+    let fullText = '';
+    for (const line of text.split('\n')) {
+        if (!line.trim()) continue;
+        try {
+            const obj = JSON.parse(line);
+            fullText += obj.text || obj.content || obj.chunk || '';
+        } catch {}
+    }
+    addMsg('agent', fullText || '(empty response)');
+}
+
+// ─── Configuration ───
+let configLoaded = false;
+
+async function loadConfig() {
+    if (configLoaded) return;
+    const box = $('#configContent');
+
+    if (!connected) {
+        box.innerHTML = '<div class="empty-state"><h3>Not Connected</h3><p>Connect to the gateway to view configuration.</p></div>';
+        return;
+    }
+
+    box.innerHTML = '<div class="loading-row"><span class="spinner"></span> Loading configuration…</div>';
+
+    try {
+        let res = await api('/api/v1/config');
+        if (res.status === 404) {
+            // Fallback: try status endpoint for config info
+            res = await api('/api/v1/status');
+        }
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        renderConfig(data);
+        configLoaded = true;
+    } catch (e) {
+        box.innerHTML = `
+            <div class="empty-state">
+                <h3>Configuration Unavailable</h3>
+                <p>Could not load config from the gateway API.<br>
+                The <code>/api/v1/config</code> endpoint may not be implemented yet.</p>
+                <p style="margin-top:12px;color:var(--text-dim);font-size:0.82rem;">
+                    Check your OpenClaw config file at:<br>
+                    <code>~/.openclaw/config.yaml</code>
+                </p>
+            </div>`;
+    }
+}
+
+function renderConfig(d) {
+    const box = $('#configContent');
+    const sections = [];
+
+    // Try to organize config sensibly regardless of shape
+    const general = [];
+    const mapField = (label, ...keys) => {
+        for (const k of keys) {
+            let v = d[k]; if (v !== undefined && v !== null) return { label, value: typeof v === 'object' ? JSON.stringify(v) : String(v) };
+        }
+        return null;
+    };
+
+    const fields = [
+        mapField('Model', 'model', 'defaultModel', 'default_model'),
+        mapField('Thinking Mode', 'thinking', 'thinkingMode', 'thinking_mode'),
+        mapField('Subagent Model', 'subagentModel', 'subagent_model'),
+        mapField('Channels', 'channels', 'connectedChannels', 'connected_channels'),
+        mapField('Workspace Path', 'workspace', 'workspacePath', 'workspace_path'),
+        mapField('Gateway Port', 'port', 'gatewayPort', 'gateway_port'),
+        mapField('Security Level', 'security', 'securityLevel', 'security_level'),
+        mapField('Exec Security', 'execSecurity', 'exec_security'),
+        mapField('Browser Security', 'browserSecurity', 'browser_security'),
+        mapField('Version', 'version', 'gatewayVersion', 'gateway_version'),
+    ];
+
+    let html = '';
+    for (const f of fields) {
+        if (f) {
+            let displayVal = f.value;
+            if (displayVal.startsWith('[') || displayVal.startsWith('{')) {
+                try {
+                    const arr = JSON.parse(displayVal);
+                    displayVal = Array.isArray(arr) ? arr.join(', ') : displayVal;
+                } catch {}
+            }
+            html += `<div class="cfg-row"><span class="cfg-key">${f.label}</span><span class="cfg-val">${escHtml(displayVal)}</span></div>`;
+        }
+    }
+
+    // Dump remaining keys that we didn't explicitly map
+    const mapped = new Set(['model','defaultModel','default_model','thinking','thinkingMode','thinking_mode',
+        'subagentModel','subagent_model','channels','connectedChannels','connected_channels',
+        'workspace','workspacePath','workspace_path','port','gatewayPort','gateway_port',
+        'security','securityLevel','security_level','execSecurity','exec_security',
+        'browserSecurity','browser_security','version','gatewayVersion','gateway_version']);
+    const extra = Object.keys(d).filter(k => !mapped.has(k));
+    if (extra.length) {
+        html += '<div class="cfg-section">Other</div>';
+        for (const k of extra) {
+            let v = d[k];
+            if (typeof v === 'object') v = JSON.stringify(v);
+            html += `<div class="cfg-row"><span class="cfg-key">${escHtml(k)}</span><span class="cfg-val">${escHtml(String(v))}</span></div>`;
+        }
+    }
+
+    if (!html) {
+        html = '<div class="empty-state"><p>No configuration data returned.</p></div>';
+    }
+
+    box.innerHTML = html;
+}
+
+// ─── Logs ───
+async function loadLogs() {
+    if (!connected) {
+        $('#logBox').innerHTML = '<div class="log-line info">Connect to the gateway first.</div>';
+        return;
+    }
+
+    try {
+        let res = await api('/api/v1/logs');
+        if (res.status === 404) {
+            // Endpoint doesn't exist
+            $('#logBox').innerHTML = `
+                <div style="padding:30px;text-align:center;color:var(--text-dim);">
+                    <p style="font-size:1rem;margin-bottom:8px;">📝 Log endpoint not available</p>
+                    <p>The <code>/api/v1/logs</code> endpoint is not implemented in this gateway version.</p>
+                    <p style="margin-top:12px;">Check the gateway terminal output or run:</p>
+                    <p style="margin-top:6px;"><code style="color:var(--accent);">openclaw gateway logs</code></p>
+                </div>`;
+            $('#logCount').textContent = 'N/A';
+            return;
+        }
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+        const ct = res.headers.get('content-type') || '';
+        let logs;
+        if (ct.includes('json')) {
+            const data = await res.json();
+            logs = Array.isArray(data) ? data : (data.logs || data.entries || []);
+        } else {
+            // Plain text logs
+            const text = await res.text();
+            logs = text.split('\n').filter(l => l.trim()).map(l => ({ message: l }));
+        }
+
+        renderLogs(logs);
+    } catch (e) {
+        $('#logBox').innerHTML = `<div class="log-line error">Failed to load logs: ${escHtml(e.message)}</div>`;
+    }
+}
+
+function renderLogs(logs) {
+    const box = $('#logBox');
+    if (!logs.length) {
+        box.innerHTML = '<div class="log-line info">No log entries.</div>';
+        $('#logCount').textContent = '0 entries';
+        return;
+    }
+    box.innerHTML = logs.map(l => {
+        const msg = l.message || l.msg || l.text || (typeof l === 'string' ? l : JSON.stringify(l));
+        const lvl = detectLogLevel(msg, l.level);
+        const ts = l.timestamp || l.time || l.ts || '';
+        const tsStr = ts ? `[${formatLogTime(ts)}] ` : '';
+        return `<div class="log-line ${lvl}">${escHtml(tsStr + msg)}</div>`;
+    }).join('');
+    box.scrollTop = box.scrollHeight;
+    $('#logCount').textContent = `${logs.length} entries`;
+}
+
+function detectLogLevel(msg, level) {
+    if (level) {
+        const l = level.toLowerCase();
+        if (l.includes('err') || l.includes('fatal')) return 'error';
+        if (l.includes('warn')) return 'warn';
+        if (l.includes('debug') || l.includes('trace')) return 'debug';
+        return 'info';
+    }
+    const m = msg.toLowerCase();
+    if (m.includes('error') || m.includes('fatal') || m.includes('exception')) return 'error';
+    if (m.includes('warn')) return 'warn';
+    if (m.includes('debug')) return 'debug';
+    return 'info';
+}
+
+function formatLogTime(t) {
+    try {
+        const d = new Date(t);
+        return isNaN(d) ? t : d.toLocaleTimeString();
+    } catch { return t; }
+}
+
+function setupLogRefresh() {
+    $('#btnRefreshLogs').addEventListener('click', loadLogs);
+}
+
+// ─── Security ───
+async function loadSecurity() {
+    if (!connected) return;
+
+    try {
+        const res = await api('/api/v1/security');
+        if (res.ok) {
+            const d = await res.json();
+            setText('mClawsec', d.clawsec || d.clawsec_installed ? 'Installed ✓' : 'Not Found');
+            setText('mSoulGuardian', d.soulGuardian || d.soul_guardian || d.soul_guardian_active ? 'Active ✓' : 'Inactive');
+            setText('mLastAudit', d.lastAudit || d.last_audit || 'Never');
+            setText('mFileIntegrity', d.fileIntegrity || d.file_integrity || d.file_integrity_status || 'Unknown');
+            return;
+        }
+    } catch {}
+
+    // Fallback: check via status
+    try {
+        const res = await api('/api/v1/status');
+        if (res.ok) {
+            const d = await res.json();
+            setText('mClawsec', d.security?.clawsec || 'Unknown');
+            setText('mSoulGuardian', d.security?.soulGuardian || 'Unknown');
+            setText('mLastAudit', d.security?.lastAudit || 'Unknown');
+            setText('mFileIntegrity', d.security?.fileIntegrity || 'Unknown');
+            return;
+        }
+    } catch {}
+
+    // Couldn't get data
+    setText('mClawsec', 'Unavailable');
+    setText('mSoulGuardian', 'Unavailable');
+    setText('mLastAudit', 'Unavailable');
+    setText('mFileIntegrity', 'Unavailable');
+}
+
+function setupSecurity() {
+    $('#btnAudit').addEventListener('click', async () => {
+        const btn = $('#btnAudit');
+        const result = $('#secResult');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner"></span> Running…';
+        result.classList.add('visible');
+        result.textContent = 'Starting security audit…\n';
+
+        try {
+            // Try API endpoint first
+            let res;
+            try {
+                res = await api('/api/v1/security/audit', { method: 'POST' });
+            } catch { res = null; }
+
+            if (res && res.ok) {
+                const data = await res.json();
+                result.textContent = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
+            } else {
+                // Fallback: try exec endpoint
+                try {
+                    res = await api('/api/v1/exec', {
+                        method: 'POST',
+                        body: JSON.stringify({ command: 'openclaw security audit' })
+                    });
+                    if (res && res.ok) {
+                        const data = await res.json();
+                        result.textContent = data.output || data.stdout || JSON.stringify(data, null, 2);
+                    } else {
+                        result.textContent = `Security audit endpoint not available (HTTP ${res ? res.status : '?'}).\n\nRun manually in terminal:\n  openclaw security audit`;
+                    }
+                } catch (e2) {
+                    result.textContent = `Cannot reach audit endpoint.\n\nRun manually in terminal:\n  openclaw security audit\n\nError: ${e2.message}`;
+                }
+            }
+        } catch (e) {
+            result.textContent = `Error: ${e.message}\n\nRun manually:\n  openclaw security audit`;
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '🔍 Run Security Audit';
+        }
+    });
+
+    $('#btnIntegrity').addEventListener('click', async () => {
+        const btn = $('#btnIntegrity');
+        const result = $('#secResult');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner"></span> Checking…';
+        result.classList.add('visible');
+        result.textContent = 'Running file integrity check…\n';
+
+        try {
+            let res;
+            try {
+                res = await api('/api/v1/security/integrity', { method: 'POST' });
+            } catch { res = null; }
+
+            if (res && res.ok) {
+                const data = await res.json();
+                result.textContent = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
+            } else {
+                try {
+                    res = await api('/api/v1/exec', {
+                        method: 'POST',
+                        body: JSON.stringify({ command: 'openclaw soul-guardian check' })
+                    });
+                    if (res && res.ok) {
+                        const data = await res.json();
+                        result.textContent = data.output || data.stdout || JSON.stringify(data, null, 2);
+                    } else {
+                        result.textContent = `File integrity endpoint not available.\n\nRun manually in terminal:\n  openclaw soul-guardian check`;
+                    }
+                } catch (e2) {
+                    result.textContent = `Cannot reach integrity endpoint.\n\nRun manually in terminal:\n  openclaw soul-guardian check\n\nError: ${e2.message}`;
+                }
+            }
+        } catch (e) {
+            result.textContent = `Error: ${e.message}\n\nRun manually:\n  openclaw soul-guardian check`;
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '🔐 Check File Integrity';
+        }
+    });
+}
+
+// ─── Utilities ───
+function setText(id, v) { const e = $(`#${id}`); if (e) e.textContent = v || '—'; }
+function escHtml(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+})();
+</script>
 </body>
 </html>

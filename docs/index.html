@@ -3,669 +3,1188 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GooseStack - Your AI agent. One command away.</title>
-    <meta name="description" content="One-command macOS installer for a fully optimized AI agent environment. Free, local, and ready in minutes.">
+    <title>GooseStack — Your AI Agent. One Command Away.</title>
+    <meta name="description" content="GooseStack is a one-command macOS installer for a fully optimized AI agent environment. Free, open-source, local-first. Ready in minutes.">
+    <meta name="keywords" content="AI agent, macOS, local AI, Ollama, open source, GooseStack, installer">
+    <meta name="author" content="GooseStack">
+    <link rel="llms-txt" href="/llms.txt">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://goosestack.dev/">
+    <meta property="og:title" content="GooseStack — Your AI Agent. One Command Away.">
+    <meta property="og:description" content="One-command macOS installer for a fully optimized AI agent environment. Free, open-source, local-first.">
+    <meta property="og:image" content="https://goosestack.dev/og-image.png">
+    <meta property="og:site_name" content="GooseStack">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="GooseStack — Your AI Agent. One Command Away.">
+    <meta name="twitter:description" content="One-command macOS installer for a fully optimized AI agent environment. Free, open-source, local-first.">
+    <meta name="twitter:image" content="https://goosestack.dev/og-image.png">
+
+    <!-- Schema: SoftwareApplication -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "GooseStack",
+      "operatingSystem": "macOS 13+",
+      "applicationCategory": "DeveloperApplication",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      },
+      "description": "One-command macOS installer for a fully optimized AI agent environment. Free, open-source, local-first.",
+      "url": "https://goosestack.dev",
+      "downloadUrl": "https://goosestack.dev/install.sh",
+      "softwareVersion": "1.0",
+      "license": "https://opensource.org/licenses/MIT"
+    }
+    </script>
+
+    <!-- Schema: FAQPage -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is GooseStack?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "GooseStack is a one-command macOS installer that sets up a fully optimized AI agent environment — local models, memory, search, web dashboard, and more. It detects your hardware and configures everything automatically."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Is GooseStack free?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. GooseStack is free and open-source under the MIT License. You can run local models at zero cost. If you want to use cloud models, you can bring your own API key (also free) or use the upcoming GooseStack API with prepaid credits."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What AI models does GooseStack support?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "GooseStack supports all Ollama-compatible local models (Llama, Mistral, Phi, Gemma, and more), plus cloud models from Anthropic (Claude), OpenAI (GPT-4), and others via BYOK or the GooseStack API."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Do I need an API key?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "No. GooseStack works out of the box with free local models. If you want cloud models, you can either bring your own API key (BYOK) or use the GooseStack API which requires no key — just prepaid credits."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Is my data private?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. GooseStack runs locally on your Mac. Your conversations, memory, and embeddings stay on your machine. When using cloud models, data is sent only to the model provider you choose."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What is the GooseStack API?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The GooseStack API is an upcoming proxy service that lets you access cloud models (Claude, GPT-4, etc.) without managing your own API keys. It runs on prepaid credits with a transparent 40% markup on token costs. You control your spending with a prepaid balance."
+          }
+        }
+      ]
+    }
+    </script>
+
     <style>
-        * {
+        /* ===== RESET & BASE ===== */
+        *, *::before, *::after {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
-        
+
+        :root {
+            --orange: #FF4500;
+            --orange-hover: #e03d00;
+            --orange-glow: rgba(255, 69, 0, 0.15);
+            --orange-soft: rgba(255, 69, 0, 0.08);
+            --bg: #0a0a0a;
+            --bg-card: #111111;
+            --bg-elevated: #161616;
+            --bg-input: #0d0d0d;
+            --border: #222;
+            --border-hover: #333;
+            --text: #f0f0f0;
+            --text-muted: #999;
+            --text-dim: #666;
+            --green: #22c55e;
+            --radius: 12px;
+            --radius-lg: 16px;
+            --radius-xl: 20px;
+        }
+
+        html {
+            scroll-behavior: smooth;
+            -webkit-text-size-adjust: 100%;
+        }
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-            background: #0a0a0a;
-            color: #ffffff;
-            line-height: 1.6;
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.65;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
-        
+
         .container {
-            max-width: 1200px;
+            max-width: 1140px;
             margin: 0 auto;
-            padding: 0 20px;
+            padding: 0 24px;
         }
-        
-        /* Hero Section */
+
+        a {
+            color: var(--orange);
+            text-decoration: none;
+            transition: opacity 0.2s;
+        }
+        a:hover { opacity: 0.85; }
+
+        /* ===== NAVIGATION ===== */
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            background: rgba(10, 10, 10, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+            padding: 0 24px;
+            transition: box-shadow 0.3s;
+        }
+        nav.scrolled {
+            box-shadow: 0 1px 30px rgba(0,0,0,0.5);
+        }
+        .nav-inner {
+            max-width: 1140px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 60px;
+        }
+        .nav-logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: var(--text);
+        }
+        .nav-logo svg { height: 32px; width: auto; }
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 28px;
+            list-style: none;
+        }
+        .nav-links a {
+            color: var(--text-muted);
+            font-size: 0.88rem;
+            font-weight: 500;
+            letter-spacing: 0.01em;
+            transition: color 0.2s;
+        }
+        .nav-links a:hover { color: var(--text); opacity: 1; }
+        .nav-cta {
+            background: var(--orange);
+            color: #fff !important;
+            padding: 7px 18px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            transition: background 0.2s, transform 0.2s;
+        }
+        .nav-cta:hover { background: var(--orange-hover); transform: translateY(-1px); opacity: 1 !important; }
+
+        .nav-hamburger {
+            display: none;
+            background: none;
+            border: none;
+            color: var(--text);
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 4px;
+        }
+
+        /* ===== HERO ===== */
         .hero {
-            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
             min-height: 100vh;
             display: flex;
             align-items: center;
+            justify-content: center;
             position: relative;
+            padding: 100px 24px 80px;
             overflow: hidden;
         }
-        
         .hero::before {
             content: '';
             position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: radial-gradient(ellipse at center, rgba(255, 69, 0, 0.1) 0%, transparent 70%);
+            top: -20%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 800px;
+            height: 800px;
+            background: radial-gradient(circle, var(--orange-glow) 0%, transparent 70%);
             pointer-events: none;
         }
-        
         .hero-content {
             text-align: center;
-            z-index: 2;
-        }
-        
-        .hero h1 {
-            font-size: clamp(2.5rem, 5vw, 4rem);
-            font-weight: 700;
-            margin-bottom: 2rem;
-            animation: fadeInUp 1s ease-out;
-        }
-        
-        .hero h1 .goose {
-            font-size: 0.8em;
-            opacity: 0.8;
-            margin-left: 0.5rem;
-        }
-        
-        .hero p {
-            font-size: 1.2rem;
-            margin-bottom: 3rem;
-            opacity: 0.9;
-            animation: fadeInUp 1s ease-out 0.2s both;
-        }
-        
-        .install-block {
-            background: #1a1a1a;
-            border: 1px solid #333;
-            border-radius: 12px;
-            padding: 2rem;
-            margin: 2rem 0;
             position: relative;
-            animation: fadeInUp 1s ease-out 0.4s both;
+            z-index: 2;
+            max-width: 720px;
         }
-        
+        .hero-logo {
+            margin-bottom: 2rem;
+            animation: fadeIn 0.8s ease-out;
+        }
+        .hero-logo svg { height: 100px; width: auto; }
+        .hero h1 {
+            font-size: clamp(2.2rem, 5vw, 3.5rem);
+            font-weight: 800;
+            line-height: 1.15;
+            margin-bottom: 1.2rem;
+            letter-spacing: -0.03em;
+            animation: fadeInUp 0.8s ease-out;
+        }
+        .hero h1 .accent { color: var(--orange); }
+        .hero-sub {
+            font-size: clamp(1.05rem, 2vw, 1.25rem);
+            color: var(--text-muted);
+            margin-bottom: 2.5rem;
+            max-width: 540px;
+            margin-left: auto;
+            margin-right: auto;
+            animation: fadeInUp 0.8s ease-out 0.15s both;
+        }
+        .install-block {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 4px;
+            display: flex;
+            align-items: center;
+            max-width: 560px;
+            margin: 0 auto;
+            animation: fadeInUp 0.8s ease-out 0.3s both;
+        }
         .install-command {
-            font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
-            font-size: 1.1rem;
-            color: #FF4500;
-            background: #0f0f0f;
-            padding: 1rem 3rem 1rem 1rem;
-            border-radius: 8px;
-            border: 1px solid #333;
-            user-select: all;
-            word-break: break-all;
-        }
-        
-        .copy-btn {
-            position: absolute;
-            right: 1rem;
-            top: 50%;
-            transform: translateY(-50%);
-            background: #FF4500;
-            color: white;
+            flex: 1;
+            font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+            font-size: 0.92rem;
+            color: var(--orange);
+            background: transparent;
+            padding: 12px 16px;
             border: none;
-            padding: 0.5rem 1rem;
-            border-radius: 6px;
+            user-select: all;
+            white-space: nowrap;
+            overflow-x: auto;
+        }
+        .copy-btn {
+            background: var(--orange);
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
             cursor: pointer;
-            font-size: 0.9rem;
-            transition: all 0.2s;
+            font-size: 0.85rem;
+            font-weight: 600;
+            white-space: nowrap;
+            transition: background 0.2s, transform 0.15s;
+            flex-shrink: 0;
         }
-        
         .copy-btn:hover {
-            background: #e03d00;
-            transform: translateY(-50%) scale(1.05);
+            background: var(--orange-hover);
+            transform: scale(1.03);
         }
-        
-        .copy-btn.copied {
-            background: #22c55e;
+        .copy-btn.copied { background: var(--green); }
+
+        .hero-note {
+            margin-top: 1.2rem;
+            font-size: 0.82rem;
+            color: var(--text-dim);
+            animation: fadeInUp 0.8s ease-out 0.45s both;
         }
-        
-        /* Section Styles */
+
+        /* ===== SECTIONS ===== */
         section {
-            padding: 5rem 0;
+            padding: 100px 0;
         }
-        
-        .section-title {
-            font-size: 2.5rem;
+        .section-label {
+            text-transform: uppercase;
+            font-size: 0.75rem;
             font-weight: 700;
+            letter-spacing: 0.12em;
+            color: var(--orange);
             text-align: center;
-            margin-bottom: 3rem;
+            margin-bottom: 0.75rem;
         }
-        
-        /* Features Grid */
+        .section-title {
+            font-size: clamp(1.8rem, 4vw, 2.5rem);
+            font-weight: 800;
+            text-align: center;
+            letter-spacing: -0.02em;
+            margin-bottom: 1rem;
+        }
+        .section-subtitle {
+            text-align: center;
+            color: var(--text-muted);
+            max-width: 560px;
+            margin: 0 auto 3.5rem;
+            font-size: 1.05rem;
+        }
+
+        /* ===== FEATURES ===== */
         .features-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 2rem;
-            margin-top: 3rem;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
         }
-        
         .feature-card {
-            background: #1a1a1a;
-            padding: 2rem;
-            border-radius: 16px;
-            border: 1px solid #333;
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
+            background: var(--bg-card);
+            padding: 28px 24px;
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border);
+            transition: border-color 0.3s, transform 0.3s, box-shadow 0.3s;
         }
-        
-        .feature-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 3px;
-            background: linear-gradient(90deg, #FF4500, #ff6b35);
-            transform: scaleX(0);
-            transition: transform 0.3s ease;
-        }
-        
         .feature-card:hover {
-            transform: translateY(-5px);
-            border-color: #FF4500;
-            box-shadow: 0 10px 40px rgba(255, 69, 0, 0.1);
+            border-color: var(--orange);
+            transform: translateY(-4px);
+            box-shadow: 0 12px 40px rgba(255, 69, 0, 0.08);
         }
-        
-        .feature-card:hover::before {
-            transform: scaleX(1);
-        }
-        
         .feature-icon {
-            font-size: 2.5rem;
-            margin-bottom: 1rem;
+            font-size: 2rem;
+            margin-bottom: 14px;
             display: block;
         }
-        
         .feature-title {
-            font-size: 1.3rem;
-            font-weight: 600;
-            margin-bottom: 1rem;
-            color: #FF4500;
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: var(--text);
         }
-        
         .feature-description {
-            opacity: 0.9;
+            color: var(--text-muted);
+            font-size: 0.92rem;
+            line-height: 1.6;
         }
-        
-        /* How it Works */
+
+        /* ===== HOW IT WORKS ===== */
         .steps {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 2rem;
-            margin-top: 3rem;
-        }
-        
-        .step {
-            text-align: center;
-            padding: 2rem;
-            background: #1a1a1a;
-            border-radius: 16px;
-            border: 1px solid #333;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
             position: relative;
         }
-        
+        .steps::before {
+            content: '';
+            position: absolute;
+            top: 36px;
+            left: calc(16.67% + 25px);
+            right: calc(16.67% + 25px);
+            height: 2px;
+            background: var(--border);
+            z-index: 0;
+        }
+        .step {
+            text-align: center;
+            padding: 32px 24px;
+            position: relative;
+            z-index: 1;
+        }
         .step-number {
-            background: #FF4500;
-            color: white;
-            width: 50px;
-            height: 50px;
+            background: var(--orange);
+            color: #fff;
+            width: 52px;
+            height: 52px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-weight: bold;
+            font-weight: 800;
             font-size: 1.2rem;
-            margin: 0 auto 1rem;
+            margin: 0 auto 18px;
+            box-shadow: 0 4px 20px rgba(255, 69, 0, 0.3);
         }
-        
         .step-title {
-            font-size: 1.2rem;
-            font-weight: 600;
-            margin-bottom: 1rem;
+            font-size: 1.15rem;
+            font-weight: 700;
+            margin-bottom: 8px;
         }
-        
-        /* Requirements */
-        .requirements {
-            background: #1a1a1a;
-            border-radius: 16px;
-            padding: 2rem;
-            border: 1px solid #333;
-            margin-top: 3rem;
+        .step-desc {
+            color: var(--text-muted);
+            font-size: 0.92rem;
         }
-        
-        .req-list {
+
+        /* ===== SETUP PATHS ===== */
+        .setup-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 1rem;
-            list-style: none;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 24px;
+            max-width: 900px;
+            margin: 0 auto;
         }
-        
-        .req-list li {
-            padding: 1rem;
-            background: #0f0f0f;
-            border-radius: 8px;
-            border: 1px solid #333;
-        }
-        
-        .req-list li::before {
-            content: '✅';
-            margin-right: 0.5rem;
-        }
-        
-        /* Pricing */
-        .pricing-cards {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 2rem;
-            margin-top: 3rem;
-        }
-        
-        .pricing-card {
-            background: #1a1a1a;
-            padding: 2.5rem;
-            border-radius: 16px;
-            border: 1px solid #333;
-            text-align: center;
+        .setup-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-xl);
+            padding: 36px 32px;
             position: relative;
         }
-        
-        .pricing-card.featured {
-            border-color: #FF4500;
-            background: linear-gradient(135deg, #1a1a1a 0%, #2a1a0a 100%);
+        .setup-card.primary {
+            border-color: var(--orange);
+            background: linear-gradient(160deg, var(--bg-card) 0%, rgba(255,69,0,0.04) 100%);
         }
-        
-        .pricing-card.featured::before {
-            content: 'Coming Soon';
+        .setup-badge {
+            display: inline-block;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            padding: 4px 12px;
+            border-radius: 20px;
+            margin-bottom: 18px;
+        }
+        .badge-free { background: rgba(34,197,94,0.15); color: var(--green); }
+        .badge-easy { background: var(--orange-soft); color: var(--orange); }
+        .setup-card h3 {
+            font-size: 1.4rem;
+            font-weight: 800;
+            margin-bottom: 8px;
+        }
+        .setup-card .setup-for {
+            color: var(--text-muted);
+            font-size: 0.88rem;
+            margin-bottom: 20px;
+            font-style: italic;
+        }
+        .setup-card ul {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+        .setup-card ul li {
+            padding: 6px 0;
+            font-size: 0.93rem;
+            color: var(--text-muted);
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+        .setup-card ul li::before {
+            content: '✓';
+            color: var(--orange);
+            font-weight: 700;
+            flex-shrink: 0;
+            margin-top: 1px;
+        }
+
+        /* ===== PRICING ===== */
+        #pricing { background: var(--bg); }
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 24px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        .pricing-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-xl);
+            padding: 40px 32px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+        .pricing-card.featured {
+            border-color: var(--orange);
+            background: linear-gradient(160deg, var(--bg-card) 0%, rgba(255,69,0,0.04) 100%);
+        }
+        .pricing-badge {
             position: absolute;
-            top: -10px;
+            top: -13px;
             left: 50%;
             transform: translateX(-50%);
-            background: #FF4500;
-            color: white;
-            padding: 0.5rem 1rem;
+            background: var(--orange);
+            color: #fff;
+            padding: 5px 16px;
             border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: 600;
-        }
-        
-        .price {
-            font-size: 2.5rem;
+            font-size: 0.72rem;
             font-weight: 700;
-            color: #FF4500;
-            margin-bottom: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            white-space: nowrap;
         }
-        
-        .price-label {
-            font-size: 1.2rem;
-            margin-bottom: 2rem;
+        .pricing-name {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 4px;
         }
-        
-        .features-list {
+        .pricing-price {
+            font-size: 2.8rem;
+            font-weight: 800;
+            color: var(--orange);
+            line-height: 1.1;
+            margin-bottom: 4px;
+        }
+        .pricing-price-sub {
+            font-size: 0.85rem;
+            color: var(--text-dim);
+            margin-bottom: 24px;
+        }
+        .pricing-divider {
+            height: 1px;
+            background: var(--border);
+            margin-bottom: 24px;
+        }
+        .pricing-features {
             list-style: none;
-            text-align: left;
+            flex: 1;
         }
-        
-        .features-list li {
-            padding: 0.5rem 0;
-            opacity: 0.9;
+        .pricing-features li {
+            padding: 5px 0;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
         }
-        
-        .features-list li::before {
-            content: '•';
-            color: #FF4500;
-            margin-right: 0.5rem;
+        .pricing-features li::before {
+            content: '✓';
+            color: var(--orange);
+            font-weight: 700;
+            flex-shrink: 0;
         }
-        
-        /* Footer */
-        footer {
-            background: #0f0f0f;
-            padding: 3rem 0;
+        .pricing-features li.plus::before {
+            content: '★';
+        }
+        .pricing-note {
+            margin-top: 20px;
+            padding: 14px 16px;
+            background: var(--bg-input);
+            border-radius: 8px;
+            font-size: 0.82rem;
+            color: var(--text-dim);
+            line-height: 1.5;
+        }
+        .pricing-note strong { color: var(--text-muted); }
+        .pricing-cta {
+            display: inline-block;
+            margin-top: 24px;
+            padding: 12px 28px;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 0.92rem;
             text-align: center;
-            border-top: 1px solid #333;
+            transition: transform 0.2s, box-shadow 0.2s;
+            cursor: pointer;
+            border: none;
+            text-decoration: none;
         }
-        
+        .pricing-cta:hover { transform: translateY(-2px); opacity: 1; }
+        .cta-outline {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text);
+        }
+        .cta-outline:hover { border-color: var(--orange); box-shadow: 0 4px 20px rgba(255,69,0,0.1); }
+        .cta-primary {
+            background: var(--orange);
+            color: #fff;
+        }
+        .cta-primary:hover { box-shadow: 0 8px 30px rgba(255,69,0,0.3); }
+
+        /* ===== FAQ ===== */
+        #faq { background: var(--bg); }
+        .faq-list {
+            max-width: 720px;
+            margin: 0 auto;
+        }
+        .faq-item {
+            border-bottom: 1px solid var(--border);
+        }
+        .faq-question {
+            width: 100%;
+            background: none;
+            border: none;
+            color: var(--text);
+            font-size: 1.05rem;
+            font-weight: 600;
+            text-align: left;
+            padding: 22px 40px 22px 0;
+            cursor: pointer;
+            position: relative;
+            font-family: inherit;
+            line-height: 1.4;
+        }
+        .faq-question::after {
+            content: '+';
+            position: absolute;
+            right: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1.4rem;
+            color: var(--orange);
+            font-weight: 300;
+            transition: transform 0.3s;
+        }
+        .faq-item.open .faq-question::after {
+            content: '−';
+        }
+        .faq-answer {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.35s ease, padding 0.35s ease;
+        }
+        .faq-item.open .faq-answer {
+            max-height: 300px;
+        }
+        .faq-answer-inner {
+            padding: 0 0 22px;
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            line-height: 1.65;
+        }
+
+        /* ===== REQUIREMENTS ===== */
+        #requirements {
+            background: var(--bg);
+        }
+        .req-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .req-item {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 24px 20px;
+            text-align: center;
+        }
+        .req-icon {
+            font-size: 1.8rem;
+            margin-bottom: 10px;
+            display: block;
+        }
+        .req-label {
+            font-weight: 700;
+            font-size: 0.95rem;
+            margin-bottom: 4px;
+        }
+        .req-detail {
+            color: var(--text-dim);
+            font-size: 0.8rem;
+        }
+
+        /* ===== FOOTER ===== */
+        footer {
+            background: var(--bg-input);
+            border-top: 1px solid var(--border);
+            padding: 48px 0 36px;
+        }
+        .footer-inner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        .footer-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .footer-brand svg { height: 28px; width: auto; }
+        .footer-brand span { font-weight: 700; font-size: 0.95rem; }
         .footer-links {
             display: flex;
-            justify-content: center;
-            gap: 2rem;
-            margin-bottom: 2rem;
+            gap: 24px;
             flex-wrap: wrap;
         }
-        
         .footer-links a {
-            color: #FF4500;
-            text-decoration: none;
-            transition: opacity 0.2s;
+            color: var(--text-muted);
+            font-size: 0.88rem;
+            font-weight: 500;
+            transition: color 0.2s;
         }
-        
-        .footer-links a:hover {
-            opacity: 0.8;
+        .footer-links a:hover { color: var(--orange); opacity: 1; }
+        .footer-bottom {
+            text-align: center;
+            margin-top: 32px;
+            padding-top: 24px;
+            border-top: 1px solid var(--border);
+            color: var(--text-dim);
+            font-size: 0.82rem;
         }
-        
-        .footer-text {
-            opacity: 0.7;
-            margin-top: 1rem;
+
+        /* ===== ANIMATIONS ===== */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
         }
-        
-        /* Animations */
         @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            from { opacity: 0; transform: translateY(24px); }
+            to { opacity: 1; transform: translateY(0); }
         }
-        
-        /* Smooth scroll */
-        html {
-            scroll-behavior: smooth;
-        }
-        
-        /* Mobile Responsive */
-        @media (max-width: 768px) {
-            .container {
-                padding: 0 15px;
-            }
-            
-            .features-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .steps {
-                grid-template-columns: 1fr;
-            }
-            
-            .pricing-cards {
-                grid-template-columns: 1fr;
-            }
-            
-            .footer-links {
-                flex-direction: column;
-                gap: 1rem;
-            }
-            
-            .install-command {
-                font-size: 0.9rem;
-            }
-        }
-        
-        /* Scroll animations — visible by default, enhanced with JS */
-        .scroll-animate {
+
+        .reveal {
             opacity: 1;
             transform: translateY(0);
-            transition: all 0.6s ease;
+            transition: opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1), transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
         }
-        
-        .scroll-animate.hidden {
+        .reveal.hidden {
             opacity: 0;
-            transform: translateY(30px);
+            transform: translateY(32px);
+        }
+        .reveal.hidden:nth-child(2) { transition-delay: 0.08s; }
+        .reveal.hidden:nth-child(3) { transition-delay: 0.16s; }
+        .reveal.hidden:nth-child(4) { transition-delay: 0.24s; }
+        .reveal.hidden:nth-child(5) { transition-delay: 0.32s; }
+        .reveal.hidden:nth-child(6) { transition-delay: 0.40s; }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 900px) {
+            .features-grid { grid-template-columns: repeat(2, 1fr); }
+            .req-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        @media (max-width: 700px) {
+            nav { padding: 0 16px; }
+            .nav-links { display: none; }
+            .nav-links.open {
+                display: flex;
+                flex-direction: column;
+                position: absolute;
+                top: 60px;
+                left: 0;
+                right: 0;
+                background: rgba(10,10,10,0.97);
+                backdrop-filter: blur(20px);
+                padding: 20px 24px;
+                gap: 16px;
+                border-bottom: 1px solid var(--border);
+            }
+            .nav-hamburger { display: block; }
+            .hero { padding: 100px 16px 60px; min-height: auto; }
+            .hero h1 { font-size: 2rem; }
+            .install-block { flex-direction: column; gap: 8px; padding: 12px; }
+            .install-command { font-size: 0.82rem; padding: 10px 12px; text-align: center; }
+            .copy-btn { width: 100%; padding: 12px; }
+            section { padding: 64px 0; }
+            .features-grid,
+            .steps,
+            .setup-grid,
+            .pricing-grid { grid-template-columns: 1fr; }
+            .steps::before { display: none; }
+            .req-grid { grid-template-columns: repeat(2, 1fr); }
+            .footer-inner { flex-direction: column; text-align: center; }
+            .footer-links { justify-content: center; }
         }
     </style>
 </head>
 <body>
-    <!-- Hero Section -->
-    <section class="hero">
-        <div class="container">
-            <div class="hero-content">
-                <!-- GooseStack Logo -->
-                <div style="margin-bottom: 2rem;">
-                    <svg width="240" height="120" viewBox="0 0 240 120" xmlns="http://www.w3.org/2000/svg" style="height: 120px;">
-                      <!-- Background circle for contrast -->
-                      <circle cx="60" cy="60" r="50" fill="#1a1a1a" stroke="#333" stroke-width="2" opacity="0.8"/>
-                      
-                      <!-- Stack layers (bottom to top) -->
-                      <rect x="20" y="80" width="80" height="8" rx="4" fill="#555" opacity="0.6"/>
-                      <rect x="25" y="70" width="70" height="8" rx="4" fill="#666" opacity="0.7"/>
-                      <rect x="30" y="60" width="60" height="8" rx="4" fill="#777" opacity="0.8"/>
-                      <rect x="35" y="50" width="50" height="8" rx="4" fill="#888" opacity="0.9"/>
-                      
-                      <!-- Goose silhouette -->
-                      <g transform="translate(35, 20)">
-                        <!-- Body -->
-                        <ellipse cx="25" cy="30" rx="18" ry="12" fill="#FF4500"/>
-                        
-                        <!-- Neck -->
-                        <ellipse cx="15" cy="20" rx="6" ry="16" fill="#FF4500" transform="rotate(-15 15 20)"/>
-                        
-                        <!-- Head -->
-                        <ellipse cx="8" cy="8" rx="8" ry="9" fill="#FF4500"/>
-                        
-                        <!-- Beak -->
-                        <polygon points="0,8 8,10 6,12" fill="#FF6B00"/>
-                        
-                        <!-- Wing detail -->
-                        <ellipse cx="30" cy="28" rx="10" ry="8" fill="#FF6B00" opacity="0.8"/>
-                        
-                        <!-- Eye -->
-                        <circle cx="10" cy="6" r="2" fill="#000"/>
-                        <circle cx="11" cy="5" r="0.8" fill="#FFF"/>
-                        
-                        <!-- Tail -->
-                        <ellipse cx="42" cy="32" rx="8" ry="5" fill="#FF6B00" transform="rotate(20 42 32)"/>
-                      </g>
-                      
-                      <!-- GooseStack text -->
-                      <text x="130" y="45" font-family="Arial, sans-serif" font-size="28" font-weight="bold" fill="#FFF">
-                        Goose
-                      </text>
-                      <text x="130" y="75" font-family="Arial, sans-serif" font-size="28" font-weight="bold" fill="#FF4500">
-                        Stack
-                      </text>
-                      
-                      <!-- Subtle connecting line -->
-                      <line x1="110" y1="60" x2="125" y2="60" stroke="#444" stroke-width="2" opacity="0.5"/>
-                    </svg>
-                </div>
-                
-                <h1>Your AI agent. One command away. <span class="goose">🪿</span></h1>
-                <p>GooseStack is a one-command macOS installer that sets up a fully optimized AI agent environment.</p>
-                
-                <div class="install-block">
-                    <div class="install-command" id="install-cmd">curl -fsSL https://goosestack.dev/install.sh | sh</div>
-                    <button class="copy-btn" onclick="copyInstallCommand()">Copy</button>
-                </div>
+
+<!-- ===== NAV ===== -->
+<nav id="navbar">
+    <div class="nav-inner">
+        <a href="#" class="nav-logo">
+            <svg viewBox="0 0 120 60" xmlns="http://www.w3.org/2000/svg">
+                <g transform="translate(10, 5) scale(0.5)">
+                    <ellipse cx="50" cy="60" rx="36" ry="24" fill="#FF4500"/>
+                    <ellipse cx="30" cy="40" rx="12" ry="32" fill="#FF4500" transform="rotate(-15 30 40)"/>
+                    <ellipse cx="16" cy="16" rx="16" ry="18" fill="#FF4500"/>
+                    <polygon points="0,16 16,20 12,24" fill="#FF6B00"/>
+                    <ellipse cx="60" cy="56" rx="20" ry="16" fill="#FF6B00" opacity="0.8"/>
+                    <circle cx="20" cy="12" r="4" fill="#000"/>
+                    <circle cx="22" cy="10" r="1.6" fill="#FFF"/>
+                    <ellipse cx="84" cy="64" rx="16" ry="10" fill="#FF6B00" transform="rotate(20 84 64)"/>
+                </g>
+            </svg>
+            GooseStack
+        </a>
+        <ul class="nav-links" id="navLinks">
+            <li><a href="#features">Features</a></li>
+            <li><a href="#how-it-works">How It Works</a></li>
+            <li><a href="#pricing">Pricing</a></li>
+            <li><a href="#faq">FAQ</a></li>
+            <li><a href="https://github.com/TheBigAndFamousGoose/goosestack" target="_blank" rel="noopener" class="nav-cta">GitHub ↗</a></li>
+        </ul>
+        <button class="nav-hamburger" id="navHamburger" aria-label="Menu">☰</button>
+    </div>
+</nav>
+
+<!-- ===== HERO ===== -->
+<section class="hero">
+    <div class="hero-content">
+        <div class="hero-logo">
+            <svg width="240" height="120" viewBox="0 0 240 120" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="60" cy="60" r="50" fill="#1a1a1a" stroke="#222" stroke-width="2" opacity="0.8"/>
+                <rect x="20" y="80" width="80" height="8" rx="4" fill="#555" opacity="0.6"/>
+                <rect x="25" y="70" width="70" height="8" rx="4" fill="#666" opacity="0.7"/>
+                <rect x="30" y="60" width="60" height="8" rx="4" fill="#777" opacity="0.8"/>
+                <rect x="35" y="50" width="50" height="8" rx="4" fill="#888" opacity="0.9"/>
+                <g transform="translate(35, 20)">
+                    <ellipse cx="25" cy="30" rx="18" ry="12" fill="#FF4500"/>
+                    <ellipse cx="15" cy="20" rx="6" ry="16" fill="#FF4500" transform="rotate(-15 15 20)"/>
+                    <ellipse cx="8" cy="8" rx="8" ry="9" fill="#FF4500"/>
+                    <polygon points="0,8 8,10 6,12" fill="#FF6B00"/>
+                    <ellipse cx="30" cy="28" rx="10" ry="8" fill="#FF6B00" opacity="0.8"/>
+                    <circle cx="10" cy="6" r="2" fill="#000"/>
+                    <circle cx="11" cy="5" r="0.8" fill="#FFF"/>
+                    <ellipse cx="42" cy="32" rx="8" ry="5" fill="#FF6B00" transform="rotate(20 42 32)"/>
+                </g>
+                <text x="130" y="45" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="28" font-weight="bold" fill="#FFF">Goose</text>
+                <text x="130" y="75" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="28" font-weight="bold" fill="#FF4500">Stack</text>
+                <line x1="110" y1="60" x2="125" y2="60" stroke="#333" stroke-width="2" opacity="0.5"/>
+            </svg>
+        </div>
+        <h1>Your AI agent.<br><span class="accent">One command away.</span></h1>
+        <p class="hero-sub">A one-command macOS installer that sets up a fully optimized AI agent environment. Free, local-first, and ready in minutes.</p>
+        <div class="install-block">
+            <div class="install-command" id="install-cmd">curl -fsSL https://goosestack.dev/install.sh | sh</div>
+            <button class="copy-btn" id="copyBtn" onclick="copyInstall()">Copy</button>
+        </div>
+        <p class="hero-note">Requires macOS 13+ · Free &amp; open-source · MIT License</p>
+    </div>
+</section>
+
+<!-- ===== WHAT IT DOES ===== -->
+<section id="features">
+    <div class="container">
+        <div class="section-label reveal">Features</div>
+        <h2 class="section-title reveal">What It Does</h2>
+        <p class="section-subtitle reveal">Everything you need for a production-grade AI agent, configured automatically for your hardware.</p>
+        <div class="features-grid">
+            <div class="feature-card reveal">
+                <span class="feature-icon">🔍</span>
+                <h3 class="feature-title">Smart Hardware Detection</h3>
+                <p class="feature-description">Automatically detects your Mac's chip (M1–M4 / Intel) and RAM, then optimizes models and settings for your specific hardware.</p>
+            </div>
+            <div class="feature-card reveal">
+                <span class="feature-icon">🤖</span>
+                <h3 class="feature-title">Local AI Models</h3>
+                <p class="feature-description">Installs Ollama with the optimal model for your system. Runs completely free — no API costs, no external dependencies.</p>
+            </div>
+            <div class="feature-card reveal">
+                <span class="feature-icon">🧠</span>
+                <h3 class="feature-title">Memory &amp; Search</h3>
+                <p class="feature-description">Local embeddings and conversation history that stays private. Your agent remembers context and learns your preferences over time.</p>
+            </div>
+            <div class="feature-card reveal">
+                <span class="feature-icon">⚡</span>
+                <h3 class="feature-title">Token Optimization</h3>
+                <p class="feature-description">Intelligent thinking modes and smart routing between local and cloud models to maximize performance while minimizing costs.</p>
+            </div>
+            <div class="feature-card reveal">
+                <span class="feature-icon">🛡️</span>
+                <h3 class="feature-title">Built-in Security</h3>
+                <p class="feature-description">ClawSec security suite protects your agent's core files from tampering, monitors for vulnerabilities, and runs automated audits.</p>
+            </div>
+            <div class="feature-card reveal">
+                <span class="feature-icon">🚀</span>
+                <h3 class="feature-title">24/7 Always-On</h3>
+                <p class="feature-description">LaunchAgent auto-start, built-in watchdog that restarts on failure, and sleep prevention. Your agent never goes down.</p>
             </div>
         </div>
-    </section>
+    </div>
+</section>
 
-    <!-- What It Does -->
-    <section id="features">
-        <div class="container">
-            <h2 class="section-title scroll-animate">What It Does</h2>
-            <div class="features-grid">
-                <div class="feature-card scroll-animate">
-                    <span class="feature-icon">🔍</span>
-                    <h3 class="feature-title">Smart Hardware Detection</h3>
-                    <p class="feature-description">Automatically detects your Mac's chip (M1/M2/M3/M4/Intel) and RAM, then optimizes everything for your specific hardware.</p>
-                </div>
-                
-                <div class="feature-card scroll-animate">
-                    <span class="feature-icon">🤖</span>
-                    <h3 class="feature-title">Local AI Models</h3>
-                    <p class="feature-description">Installs Ollama with the optimal AI model for your system. Runs completely free with no API costs or external dependencies.</p>
-                </div>
-                
-                <div class="feature-card scroll-animate">
-                    <span class="feature-icon">🧠</span>
-                    <h3 class="feature-title">Memory & Search</h3>
-                    <p class="feature-description">Local embeddings and conversation history that stays private. Your agent remembers context and learns your preferences over time.</p>
-                </div>
-                
-                <div class="feature-card scroll-animate">
-                    <span class="feature-icon">⚡</span>
-                    <h3 class="feature-title">Token Optimization</h3>
-                    <p class="feature-description">Intelligent thinking modes and smart routing between local and cloud models to maximize performance while minimizing costs.</p>
-                </div>
-                
-                <div class="feature-card scroll-animate">
-                    <span class="feature-icon">🛡️</span>
-                    <h3 class="feature-title">Built-in Security</h3>
-                    <p class="feature-description">Optional ClawSec security suite protects your agent's core files from tampering, monitors for vulnerabilities, and runs automated security audits.</p>
-                </div>
-                
-                <div class="feature-card scroll-animate">
-                    <span class="feature-icon">🚀</span>
-                    <h3 class="feature-title">24/7 Always-On</h3>
-                    <p class="feature-description">LaunchAgent auto-start, built-in watchdog that restarts if anything goes wrong, and full sleep/hibernate prevention. Your agent never goes down.</p>
-                </div>
+<!-- ===== HOW IT WORKS ===== -->
+<section id="how-it-works" style="background: var(--bg-card);">
+    <div class="container">
+        <div class="section-label reveal">Simple</div>
+        <h2 class="section-title reveal">How It Works</h2>
+        <p class="section-subtitle reveal">Three steps. Five minutes. That's it.</p>
+        <div class="steps">
+            <div class="step reveal">
+                <div class="step-number">1</div>
+                <h3 class="step-title">Run the Command</h3>
+                <p class="step-desc">Paste the install command in your terminal. The installer detects your hardware and handles everything.</p>
+            </div>
+            <div class="step reveal">
+                <div class="step-number">2</div>
+                <h3 class="step-title">Answer a Few Questions</h3>
+                <p class="step-desc">Choose your agent persona, configure integrations, and set your preferences. Takes about a minute.</p>
+            </div>
+            <div class="step reveal">
+                <div class="step-number">3</div>
+                <h3 class="step-title">Agent is Live</h3>
+                <p class="step-desc">Your dashboard opens at localhost:3000. Your AI agent is running, learning, and ready to help.</p>
             </div>
         </div>
-    </section>
+    </div>
+</section>
 
-    <!-- How It Works -->
-    <section id="how-it-works">
-        <div class="container">
-            <h2 class="section-title scroll-animate">How It Works</h2>
-            <div class="steps">
-                <div class="step scroll-animate">
-                    <div class="step-number">1</div>
-                    <h3 class="step-title">Run Command</h3>
-                    <p>Paste the curl command in your terminal and hit enter. The installer handles everything automatically.</p>
-                </div>
-                
-                <div class="step scroll-animate">
-                    <div class="step-number">2</div>
-                    <h3 class="step-title">Answer 5 Questions</h3>
-                    <p>Choose your agent personality, set up optional integrations, and configure your preferences.</p>
-                </div>
-                
-                <div class="step scroll-animate">
-                    <div class="step-number">3</div>
-                    <h3 class="step-title">Your Agent is Live</h3>
-                    <p>Dashboard opens at localhost:3000. Your AI agent is running and ready to help with anything you need.</p>
-                </div>
+<!-- ===== CHOOSE YOUR SETUP ===== -->
+<section id="setup">
+    <div class="container">
+        <div class="section-label reveal">Flexible</div>
+        <h2 class="section-title reveal">Choose Your Setup</h2>
+        <p class="section-subtitle reveal">Use your own keys for full control, or let us handle the infrastructure. Both work beautifully.</p>
+        <div class="setup-grid">
+            <div class="setup-card reveal">
+                <span class="setup-badge badge-free">Free Forever</span>
+                <h3>BYOK</h3>
+                <p class="setup-for">For developers who want maximum flexibility</p>
+                <ul>
+                    <li>Bring your own Anthropic or OpenAI key</li>
+                    <li>Pay providers directly at their rates</li>
+                    <li>Full control over model selection</li>
+                    <li>Use any supported provider</li>
+                    <li>No middleman, no markup</li>
+                </ul>
             </div>
-        </div>
-    </section>
-
-    <!-- Requirements -->
-    <section id="requirements">
-        <div class="container">
-            <h2 class="section-title scroll-animate">Requirements</h2>
-            <div class="requirements scroll-animate">
-                <ul class="req-list">
-                    <li><strong>macOS 13+</strong> (Ventura or newer)</li>
-                    <li><strong>8GB+ RAM</strong> (16GB+ recommended)</li>
-                    <li><strong>Apple Silicon</strong> recommended (Intel supported)</li>
-                    <li><strong>15GB free disk space</strong> for models and dependencies</li>
+            <div class="setup-card primary reveal">
+                <span class="setup-badge badge-easy">Zero Friction</span>
+                <h3>GooseStack API</h3>
+                <p class="setup-for">For people who want it to just work</p>
+                <ul>
+                    <li>No API key needed — ever</li>
+                    <li>Prepaid credits, you control spending</li>
+                    <li>Transparent 40% markup on token costs</li>
+                    <li>Auto-routes to the best model</li>
+                    <li>One-click setup, zero configuration</li>
                 </ul>
             </div>
         </div>
-    </section>
+    </div>
+</section>
 
-    <!-- Pricing -->
-    <section id="pricing">
-        <div class="container">
-            <h2 class="section-title scroll-animate">Pricing</h2>
-            <div class="pricing-cards">
-                <div class="pricing-card scroll-animate">
-                    <div class="price">Free</div>
-                    <div class="price-label">Open Source</div>
-                    <ul class="features-list">
-                        <li>Complete GooseStack installer</li>
-                        <li>Local AI models (Ollama)</li>
-                        <li>Web dashboard & chat interface</li>
-                        <li>Memory & embeddings</li>
-                        <li>4 persona templates</li>
-                        <li>Auto-start LaunchAgent</li>
-                        <li>Community support</li>
-                        <li>MIT License</li>
-                    </ul>
+<!-- ===== PRICING ===== -->
+<section id="pricing" style="background: var(--bg-card);">
+    <div class="container">
+        <div class="section-label reveal">Pricing</div>
+        <h2 class="section-title reveal">Start Free. Scale When Ready.</h2>
+        <p class="section-subtitle reveal">Everything you need is in the free tier. Pro adds managed cloud access.</p>
+        <div class="pricing-grid">
+            <!-- FREE -->
+            <div class="pricing-card reveal">
+                <div class="pricing-name">Free</div>
+                <div class="pricing-price">$0</div>
+                <div class="pricing-price-sub">Free forever · Open source</div>
+                <div class="pricing-divider"></div>
+                <ul class="pricing-features">
+                    <li>Full GooseStack installer</li>
+                    <li>All local models (Ollama)</li>
+                    <li>BYOK support (Anthropic, OpenAI, etc.)</li>
+                    <li>Web dashboard &amp; chat interface</li>
+                    <li>Memory &amp; embeddings</li>
+                    <li>Security suite (ClawSec)</li>
+                    <li>All persona templates</li>
+                    <li>Auto-start watchdog</li>
+                    <li>Community support</li>
+                    <li>MIT License</li>
+                </ul>
+                <a href="https://github.com/TheBigAndFamousGoose/goosestack" target="_blank" rel="noopener" class="pricing-cta cta-outline">Get Started →</a>
+            </div>
+            <!-- PRO -->
+            <div class="pricing-card featured reveal">
+                <div class="pricing-badge">Coming Soon</div>
+                <div class="pricing-name">Pro</div>
+                <div class="pricing-price">$10+</div>
+                <div class="pricing-price-sub">Prepaid credits · You control spending</div>
+                <div class="pricing-divider"></div>
+                <ul class="pricing-features">
+                    <li>Everything in Free</li>
+                    <li class="plus">GooseStack Proxy API (no key needed)</li>
+                    <li class="plus">Token Router — auto-routes to cheapest model</li>
+                    <li class="plus">Advanced analytics dashboard</li>
+                    <li class="plus">Premium skill packs</li>
+                    <li class="plus">Priority support</li>
+                </ul>
+                <div class="pricing-note">
+                    <strong>Example:</strong> Claude Opus input is $15/M tokens from Anthropic → <strong>$21/M through GooseStack API</strong> (40% transparent markup).<br><br>
+                    Prepaid balance — you control spending. No surprises, no subscriptions.
                 </div>
-                
-                <div class="pricing-card featured scroll-animate">
-                    <div class="price">Pro</div>
-                    <div class="price-label">Coming Soon</div>
-                    <ul class="features-list">
-                        <li>Everything in Free</li>
-                        <li>Proxy API service</li>
-                        <li>Token Router optimization</li>
-                        <li>Premium skill packs</li>
-                        <li>Priority support</li>
-                        <li>Advanced analytics</li>
-                        <li>Team collaboration features</li>
-                        <li>Custom model fine-tuning</li>
-                    </ul>
-                </div>
+                <a href="#" class="pricing-cta cta-primary">Buy Credits →</a>
             </div>
         </div>
-    </section>
+    </div>
+</section>
 
-    <!-- Footer -->
-    <footer>
-        <div class="container">
+<!-- ===== FAQ ===== -->
+<section id="faq">
+    <div class="container">
+        <div class="section-label reveal">FAQ</div>
+        <h2 class="section-title reveal">Frequently Asked Questions</h2>
+        <div class="faq-list reveal">
+            <div class="faq-item">
+                <button class="faq-question">What is GooseStack?</button>
+                <div class="faq-answer"><div class="faq-answer-inner">GooseStack is a one-command macOS installer that sets up a fully optimized AI agent environment. It detects your hardware, installs local models, configures memory and embeddings, sets up a web dashboard, and gets your agent running — all in about five minutes.</div></div>
+            </div>
+            <div class="faq-item">
+                <button class="faq-question">Is GooseStack free?</button>
+                <div class="faq-answer"><div class="faq-answer-inner">Yes. GooseStack is free and open-source under the MIT License. You can run local models at zero cost indefinitely. If you want cloud models (Claude, GPT-4), you can bring your own API key (also free to use with GooseStack) or use the upcoming GooseStack API with prepaid credits.</div></div>
+            </div>
+            <div class="faq-item">
+                <button class="faq-question">What AI models does it support?</button>
+                <div class="faq-answer"><div class="faq-answer-inner">GooseStack supports all Ollama-compatible local models (Llama, Mistral, Phi, Gemma, and more), plus cloud models from Anthropic (Claude), OpenAI (GPT-4o, o1), Google (Gemini), and others — either via your own API key (BYOK) or through the GooseStack API.</div></div>
+            </div>
+            <div class="faq-item">
+                <button class="faq-question">Do I need an API key?</button>
+                <div class="faq-answer"><div class="faq-answer-inner">No. GooseStack works out of the box with free local models. If you want cloud models, you have two options: bring your own API key (BYOK, free) or use the GooseStack API which requires no key — just prepaid credits.</div></div>
+            </div>
+            <div class="faq-item">
+                <button class="faq-question">Is my data private?</button>
+                <div class="faq-answer"><div class="faq-answer-inner">Yes. GooseStack runs entirely on your Mac. Your conversations, memory, and embeddings stay on your machine. When using cloud models, data is sent only to the model provider you choose — GooseStack never stores or reads your conversations.</div></div>
+            </div>
+            <div class="faq-item">
+                <button class="faq-question">What is the GooseStack API?</button>
+                <div class="faq-answer"><div class="faq-answer-inner">The GooseStack API is an upcoming proxy service that lets you access cloud models (Claude, GPT-4, etc.) without managing your own API keys. You purchase prepaid credits and the API routes your requests with a transparent 40% markup on token costs. You see exactly what you're paying and control your spending with a prepaid balance.</div></div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ===== REQUIREMENTS ===== -->
+<section id="requirements" style="background: var(--bg-card);">
+    <div class="container">
+        <div class="section-label reveal">System</div>
+        <h2 class="section-title reveal">Requirements</h2>
+        <p class="section-subtitle reveal">GooseStack runs on any modern Mac. Apple Silicon gets the best performance.</p>
+        <div class="req-grid">
+            <div class="req-item reveal">
+                <span class="req-icon">💻</span>
+                <div class="req-label">macOS 13+</div>
+                <div class="req-detail">Ventura or newer</div>
+            </div>
+            <div class="req-item reveal">
+                <span class="req-icon">🧠</span>
+                <div class="req-label">8 GB+ RAM</div>
+                <div class="req-detail">16 GB+ recommended</div>
+            </div>
+            <div class="req-item reveal">
+                <span class="req-icon">⚡</span>
+                <div class="req-label">Apple Silicon</div>
+                <div class="req-detail">Recommended · Intel OK</div>
+            </div>
+            <div class="req-item reveal">
+                <span class="req-icon">💾</span>
+                <div class="req-label">15 GB Disk</div>
+                <div class="req-detail">For models &amp; deps</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ===== FOOTER ===== -->
+<footer>
+    <div class="container">
+        <div class="footer-inner">
+            <div class="footer-brand">
+                <svg viewBox="0 0 120 60" xmlns="http://www.w3.org/2000/svg">
+                    <g transform="translate(10, 5) scale(0.5)">
+                        <ellipse cx="50" cy="60" rx="36" ry="24" fill="#FF4500"/>
+                        <ellipse cx="30" cy="40" rx="12" ry="32" fill="#FF4500" transform="rotate(-15 30 40)"/>
+                        <ellipse cx="16" cy="16" rx="16" ry="18" fill="#FF4500"/>
+                        <polygon points="0,16 16,20 12,24" fill="#FF6B00"/>
+                        <circle cx="20" cy="12" r="4" fill="#000"/>
+                        <circle cx="22" cy="10" r="1.6" fill="#FFF"/>
+                    </g>
+                </svg>
+                <span>GooseStack</span>
+            </div>
             <div class="footer-links">
-                <a href="https://github.com/openclaw-dev/goosestack" target="_blank">GitHub</a>
-                <a href="https://goosestack.dev/docs" target="_blank">Documentation</a>
-                <a href="https://discord.gg/openclaw" target="_blank">Discord</a>
+                <a href="https://github.com/TheBigAndFamousGoose/goosestack" target="_blank" rel="noopener">GitHub</a>
+                <a href="https://goosestack.dev/docs" target="_blank" rel="noopener">Docs</a>
+                <a href="https://discord.gg/openclaw" target="_blank" rel="noopener">Discord</a>
                 <a href="mailto:support@goosestack.dev">Support</a>
             </div>
-            <div class="footer-text">
-                Built by two geese 🪿🪿 • MIT License
-            </div>
         </div>
-    </footer>
+        <div class="footer-bottom">
+            Built by two geese 🪿🪿 · MIT License · © 2025 GooseStack
+        </div>
+    </div>
+</footer>
 
-    <script>
-        // Copy install command functionality
-        function copyInstallCommand() {
-            const cmd = document.getElementById('install-cmd');
-            const btn = document.querySelector('.copy-btn');
-            
-            if (navigator.clipboard) {
-                navigator.clipboard.writeText(cmd.textContent).then(() => {
-                    btn.textContent = 'Copied!';
-                    btn.classList.add('copied');
-                    setTimeout(() => {
-                        btn.textContent = 'Copy';
-                        btn.classList.remove('copied');
-                    }, 2000);
-                });
-            } else {
-                // Fallback for older browsers
-                const range = document.createRange();
-                range.selectNode(cmd);
-                window.getSelection().removeAllRanges();
-                window.getSelection().addRange(range);
-                try {
-                    document.execCommand('copy');
-                    btn.textContent = 'Copied!';
-                    btn.classList.add('copied');
-                    setTimeout(() => {
-                        btn.textContent = 'Copy';
-                        btn.classList.remove('copied');
-                    }, 2000);
-                } catch (err) {
-                    console.error('Copy failed:', err);
-                }
-                window.getSelection().removeAllRanges();
-            }
-        }
+<script>
+// ===== COPY INSTALL COMMAND =====
+function copyInstall() {
+    const cmd = document.getElementById('install-cmd').textContent;
+    const btn = document.getElementById('copyBtn');
+    if (navigator.clipboard) {
+        navigator.clipboard.writeText(cmd).then(() => showCopied(btn));
+    } else {
+        const ta = document.createElement('textarea');
+        ta.value = cmd;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand('copy'); showCopied(btn); } catch(e) {}
+        document.body.removeChild(ta);
+    }
+}
+function showCopied(btn) {
+    btn.textContent = 'Copied!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
+}
 
-        // Scroll animations
-        const observerOptions = {
-            threshold: 0.1,
-            rootMargin: '0px 0px -50px 0px'
-        };
+// ===== NAV SCROLL SHADOW =====
+const nav = document.getElementById('navbar');
+window.addEventListener('scroll', () => {
+    nav.classList.toggle('scrolled', window.scrollY > 10);
+}, { passive: true });
 
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.classList.remove('hidden');
-                }
-            });
-        }, observerOptions);
+// ===== MOBILE NAV =====
+document.getElementById('navHamburger').addEventListener('click', () => {
+    document.getElementById('navLinks').classList.toggle('open');
+});
+// Close nav on link click
+document.querySelectorAll('#navLinks a').forEach(a => {
+    a.addEventListener('click', () => {
+        document.getElementById('navLinks').classList.remove('open');
+    });
+});
 
-        // Hide elements first, then observe for reveal on scroll
-        document.addEventListener('DOMContentLoaded', () => {
-            const animateElements = document.querySelectorAll('.scroll-animate');
-            animateElements.forEach(el => {
-                el.classList.add('hidden');
-                observer.observe(el);
-            });
-        });
-    </script>
+// ===== SCROLL REVEAL =====
+const revealObserver = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) e.target.classList.remove('hidden'); });
+}, { threshold: 0.08, rootMargin: '0px 0px -40px 0px' });
+
+document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.reveal').forEach(el => {
+        el.classList.add('hidden');
+        revealObserver.observe(el);
+    });
+});
+
+// ===== FAQ ACCORDION =====
+document.querySelectorAll('.faq-question').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const item = btn.parentElement;
+        const wasOpen = item.classList.contains('open');
+        // close all
+        document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('open'));
+        // toggle clicked
+        if (!wasOpen) item.classList.add('open');
+    });
+});
+</script>
 </body>
 </html>
