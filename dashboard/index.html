@@ -196,13 +196,16 @@
             outline: none; font-family: inherit;
         }
         .chat-input::placeholder { color: var(--text-dim); }
-        .chat-send-btn {
+        .chat-send-btn, .chat-stop-btn {
             padding: 14px 22px; background: var(--accent); border: none;
             color: #fff; cursor: pointer; font-size: 0.95rem; font-weight: 600;
             border-radius: 0 0 12px 0; transition: background 0.2s;
         }
-        .chat-send-btn:hover { background: var(--accent-hover); }
+        .chat-send-btn:hover, .chat-stop-btn:hover { background: var(--accent-hover); }
         .chat-send-btn:disabled { background: #444; cursor: not-allowed; }
+        .chat-stop-btn { background: var(--red); border-radius: 0; }
+        .chat-stop-btn:hover { background: #dc2626; }
+        .chat-stop-btn.hidden { display: none; }
 
         /* ─── Config ─── */
         .cfg-row {
@@ -427,7 +430,7 @@
         <div class="card" style="padding:0; overflow:hidden;">
             <div class="chat-wrap">
                 <div class="chat-messages" id="chatMessages">
-                    <div class="msg"><div class="bubble system">Send a message to chat with your agent via the gateway webchat API.</div></div>
+                    <div class="msg"><div class="bubble system">Send a message to chat with your agent via the gateway WebSocket API.</div></div>
                 </div>
                 <div class="thinking-indicator" id="thinkingIndicator">
                     <div class="thinking-dots"><span></span><span></span><span></span></div>
@@ -435,6 +438,7 @@
                 </div>
                 <div class="chat-bar">
                     <input type="text" class="chat-input" id="chatInput" placeholder="Type a message…" autocomplete="off">
+                    <button class="chat-stop-btn hidden" id="chatStopBtn">Stop</button>
                     <button class="chat-send-btn" id="chatSendBtn" disabled>Send</button>
                 </div>
             </div>
@@ -486,9 +490,14 @@
             <div class="card">
                 <div class="card-title"><span class="ct-icon">🛠️</span> Security Actions</div>
                 <p style="color:var(--text-muted);font-size:0.88rem;margin-bottom:14px;">
-                    Run security checks against your OpenClaw installation. Results appear below.
+                    Security checks are not available via the gateway RPC. Run these commands manually in your terminal:
                 </p>
-                <div class="sec-actions">
+                <div style="background:var(--bg-input);border:1px solid var(--border);border-radius:8px;padding:14px;font-family:'SF Mono',monospace;font-size:0.85rem;color:var(--text-muted);line-height:2;">
+                    <div><span style="color:var(--accent);">$</span> openclaw security audit</div>
+                    <div><span style="color:var(--accent);">$</span> openclaw soul-guardian check</div>
+                    <div><span style="color:var(--accent);">$</span> openclaw security integrity</div>
+                </div>
+                <div class="sec-actions" style="margin-top:16px;">
                     <button class="btn" id="btnAudit">🔍 Run Security Audit</button>
                     <button class="btn btn-outline" id="btnIntegrity">🔐 Check File Integrity</button>
                 </div>
@@ -532,8 +541,8 @@
 
 <script>
 /* ═══════════════════════════════════════════════
-   GooseStack Dashboard — Production Build
-   Connects to OpenClaw Gateway REST API
+   GooseStack Dashboard — WebSocket Build
+   Connects to OpenClaw Gateway via WS RPC
    ═══════════════════════════════════════════════ */
 
 (() => {
@@ -543,9 +552,23 @@
 let gwUrl = localStorage.getItem('gsd_gw_url') || 'http://localhost:18789';
 let token = localStorage.getItem('gsd_token') || '';
 let connected = false;
+let ws = null;
+let wsReady = false;
+let reqId = 0;
+let pendingRpc = {};      // id → { resolve, reject, timer }
 let statusTimer = null;
 let logsTimer = null;
 let chatBusy = false;
+let currentRunId = null;
+let streamBubble = null;
+let streamText = '';
+let activeTab = 'overview';
+let logsCursor = null;
+let allLogLines = [];
+let configLoaded = false;
+let chatHistoryLoaded = false;
+let reconnectTimer = null;
+let reconnectDelay = 1000;
 
 // ─── DOM helpers ───
 const $ = (s, p) => (p || document).querySelector(s);
@@ -567,57 +590,238 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-// ─── API helper ───
-async function api(path, opts = {}) {
-    const url = `${gwUrl}${path}`;
-    const headers = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json', ...(opts.headers || {}) };
-    const res = await fetch(url, { ...opts, headers });
-    return res;
+// ─── WebSocket URL from gateway URL ───
+function getWsUrl() {
+    return gwUrl.replace(/^http:\/\//, 'ws://').replace(/^https:\/\//, 'wss://');
+}
+
+// ─── RPC call over WebSocket ───
+function rpc(method, params = {}, timeoutMs = 10000) {
+    return new Promise((resolve, reject) => {
+        if (!ws || ws.readyState !== WebSocket.OPEN) {
+            reject(new Error('WebSocket not connected'));
+            return;
+        }
+        const id = String(++reqId);
+        const timer = setTimeout(() => {
+            delete pendingRpc[id];
+            reject(new Error(`RPC timeout: ${method}`));
+        }, timeoutMs);
+
+        pendingRpc[id] = { resolve, reject, timer };
+        ws.send(JSON.stringify({ type: 'req', id, method, params }));
+    });
+}
+
+// ─── WebSocket connection ───
+function wsConnect() {
+    if (ws) {
+        try { ws.close(); } catch {}
+        ws = null;
+    }
+    wsReady = false;
+    const url = getWsUrl();
+    console.log('[GSD] Connecting to', url);
+
+    try {
+        ws = new WebSocket(url);
+    } catch (e) {
+        console.error('[GSD] WebSocket create error:', e);
+        setGwDot(false); setAgentDot(false);
+        showError(`Cannot create WebSocket to ${url}: ${e.message}`);
+        scheduleReconnect();
+        return;
+    }
+
+    ws.onopen = () => {
+        console.log('[GSD] WebSocket open, sending connect handshake');
+        clearReconnect();
+        // Send connect handshake
+        const connectId = String(++reqId);
+        const timer = setTimeout(() => {
+            delete pendingRpc[connectId];
+            console.error('[GSD] Connect handshake timeout');
+            showError('WebSocket connect handshake timed out.');
+            setGwDot(false);
+        }, 15000);
+
+        pendingRpc[connectId] = {
+            resolve: (payload) => {
+                console.log('[GSD] Connected!', payload);
+                window._gsdHello = payload;
+                wsReady = true;
+                connected = true;
+                reconnectDelay = 1000;
+                setGwDot(true);
+                hideError();
+                enableChat(true);
+                // Kick off initial data loads
+                pollStatus();
+                startPolling();
+                if (activeTab === 'config') loadConfig();
+                if (activeTab === 'logs') loadLogs();
+                if (activeTab === 'chat' && !chatHistoryLoaded) loadChatHistory();
+            },
+            reject: (err) => {
+                console.error('[GSD] Connect handshake failed:', err);
+                showError('WebSocket handshake failed: ' + err.message);
+                setGwDot(false);
+            },
+            timer
+        };
+
+        ws.send(JSON.stringify({
+            type: 'req',
+            id: connectId,
+            method: 'connect',
+            params: {
+                minProtocol: 3,
+                maxProtocol: 3,
+                client: { id: 'webchat-ui', version: '1.0', platform: 'web', mode: 'webchat' },
+                role: 'operator',
+                scopes: ['operator.admin'],
+                auth: { token },
+                userAgent: 'GooseStack Dashboard'
+            }
+        }));
+    };
+
+    ws.onmessage = (ev) => {
+        let msg;
+        try { msg = JSON.parse(ev.data); } catch { return; }
+        handleWsMessage(msg);
+    };
+
+    ws.onerror = (ev) => {
+        console.error('[GSD] WebSocket error', ev);
+    };
+
+    ws.onclose = (ev) => {
+        console.log('[GSD] WebSocket closed:', ev.code, ev.reason);
+        wsReady = false;
+        connected = false;
+        setGwDot(false); setAgentDot(false);
+        enableChat(false);
+        // Reject all pending RPCs
+        for (const id of Object.keys(pendingRpc)) {
+            clearTimeout(pendingRpc[id].timer);
+            pendingRpc[id].reject(new Error('WebSocket closed'));
+            delete pendingRpc[id];
+        }
+        if (token) {
+            showError('WebSocket disconnected. Reconnecting…');
+            scheduleReconnect();
+        }
+    };
+}
+
+function handleWsMessage(msg) {
+    // Response to a pending RPC
+    if (msg.type === 'res' && msg.id && pendingRpc[msg.id]) {
+        const p = pendingRpc[msg.id];
+        clearTimeout(p.timer);
+        delete pendingRpc[msg.id];
+        if (msg.ok || msg.ok === undefined) {
+            p.resolve(msg.payload || msg);
+        } else {
+            p.reject(new Error(msg.error || msg.message || 'RPC error'));
+        }
+        return;
+    }
+
+    // Server-push events
+    if (msg.type === 'event') {
+        handleEvent(msg.event, msg.payload || {});
+        return;
+    }
+}
+
+function handleEvent(event, payload) {
+    // Handle connect challenge — retry connect
+    if (event === 'connect.challenge') {
+        console.log('[GSD] Got connect.challenge, retrying connect');
+        // Re-send connect (the nonce is handled server-side for token auth)
+        const connectId = String(++reqId);
+        const timer = setTimeout(() => { delete pendingRpc[connectId]; }, 15000);
+        pendingRpc[connectId] = {
+            resolve: (p) => {
+                wsReady = true; connected = true; reconnectDelay = 1000;
+                setGwDot(true); hideError(); enableChat(true);
+                pollStatus(); startPolling();
+            },
+            reject: () => {},
+            timer
+        };
+        ws.send(JSON.stringify({
+            type: 'req', id: connectId, method: 'connect',
+            params: {
+                minProtocol: 3, maxProtocol: 3,
+                client: { id: 'webchat-ui', version: '1.0', platform: 'web', mode: 'webchat' },
+                role: 'operator', scopes: ['operator.admin'],
+                auth: { token }, userAgent: 'GooseStack Dashboard'
+            }
+        }));
+        return;
+    }
+
+    // Chat streaming events
+    if (event === 'chat') {
+        handleChatEvent(payload);
+        return;
+    }
+}
+
+// ─── Reconnect ───
+function scheduleReconnect() {
+    clearReconnect();
+    reconnectTimer = setTimeout(() => {
+        console.log('[GSD] Reconnecting…');
+        wsConnect();
+        reconnectDelay = Math.min(reconnectDelay * 1.5, 30000);
+    }, reconnectDelay);
+}
+
+function clearReconnect() {
+    if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
 }
 
 // ─── Boot ───
 function boot() {
-    checkConnection();
-    startPolling();
+    stopPolling();
+    wsConnect();
 }
 
-async function checkConnection() {
-    try {
-        const res = await api('/api/v1/status');
-        if (res.status === 401 || res.status === 403) {
-            showError('Authentication failed — check your bearer token.');
-            setGwDot(false); setAgentDot(false);
-            connected = false;
-            return;
-        }
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        connected = true;
-        hideError();
-        setGwDot(true);
-        const data = await res.json();
-        renderStatus(data);
-        enableChat(true);
-    } catch (e) {
-        connected = false;
-        setGwDot(false); setAgentDot(false);
-        showError(`Cannot reach gateway at ${gwUrl} — ${e.message}`);
-        enableChat(false);
-    }
+function stopPolling() {
+    clearInterval(statusTimer); statusTimer = null;
+    clearInterval(logsTimer); logsTimer = null;
 }
 
 function startPolling() {
-    clearInterval(statusTimer);
-    clearInterval(logsTimer);
-    statusTimer = setInterval(async () => {
-        if (!token) return;
-        try {
-            const res = await api('/api/v1/status');
-            if (res.ok) {
-                connected = true; setGwDot(true); hideError();
-                renderStatus(await res.json());
-            } else { connected = false; setGwDot(false); }
-        } catch { connected = false; setGwDot(false); setAgentDot(false); }
+    stopPolling();
+    // Status polling every 5s
+    statusTimer = setInterval(() => {
+        if (wsReady) pollStatus();
     }, 5000);
+    // Logs polling every 2s when on logs tab
+    logsTimer = setInterval(() => {
+        if (wsReady && activeTab === 'logs') loadLogs();
+    }, 2000);
+}
+
+async function pollStatus() {
+    try {
+        const [statusData, healthData] = await Promise.all([
+            rpc('status').catch(() => null),
+            rpc('health').catch(() => null)
+        ]);
+        connected = true;
+        setGwDot(true);
+        hideError();
+        renderStatus(statusData, healthData);
+    } catch (e) {
+        // Don't mark disconnected on single RPC fail
+        console.warn('[GSD] Status poll error:', e.message);
+    }
 }
 
 // ─── Tabs ───
@@ -629,10 +833,12 @@ function setupTabs() {
         panels.forEach(x => x.classList.remove('active'));
         b.classList.add('active');
         const t = b.dataset.tab;
+        activeTab = t;
         $(`#panel${t.charAt(0).toUpperCase() + t.slice(1)}`).classList.add('active');
-        if (t === 'config') loadConfig();
-        if (t === 'logs') loadLogs();
-        if (t === 'security') loadSecurity();
+        if (t === 'config' && wsReady) loadConfig();
+        if (t === 'logs' && wsReady) loadLogs();
+        if (t === 'chat' && wsReady && !chatHistoryLoaded) loadChatHistory();
+        if (t === 'security' && wsReady) loadSecurity();
     }));
 }
 
@@ -652,6 +858,10 @@ function setupSettings() {
         localStorage.setItem('gsd_gw_url', gwUrl);
         localStorage.setItem('gsd_token', token);
         closeModal('modalSettings');
+        configLoaded = false;
+        chatHistoryLoaded = false;
+        logsCursor = null;
+        allLogLines = [];
         boot();
     });
 
@@ -675,32 +885,46 @@ function openModal(id) { $(`#${id}`).classList.add('open'); }
 function closeModal(id) { $(`#${id}`).classList.remove('open'); }
 
 // ─── Status rendering ───
-function renderStatus(d) {
-    // Agent dot
-    const running = d.agent === 'running' || d.agentRunning || d.agent_running || d.status === 'running';
+function renderStatus(statusData, healthData) {
+    console.log('[GSD] status:', JSON.stringify(statusData));
+    console.log('[GSD] health:', JSON.stringify(healthData));
+    const d = { ...(statusData || {}), ...(healthData || {}) };
+
+    // Agent dot — health.ok means the gateway is healthy and agent is operational
+    const running = d.ok === true || d.agent === 'running' || d.agentRunning || d.status === 'running';
     setAgentDot(running);
 
     const s = (id, v) => { const el = $(`#${id}`); if (el) el.textContent = v || '—'; };
     const sc = (id, v, cls) => { const el = $(`#${id}`); if (el) { el.textContent = v || '—'; el.className = 'metric-value ' + (cls || ''); } };
 
+    // Extract from nested payloads
+    const sessDefaults = statusData?.sessions?.defaults || {};
+    const recentSessions = statusData?.sessions?.recent || [];
+    const mainSession = recentSessions.find(r => r.key === 'agent:main:main');
+    const channelSummary = statusData?.channelSummary || [];
+    const channelLabels = healthData?.channelLabels || {};
+    const agents = healthData?.agents || [];
+    const mainAgent = agents.find(a => a.isDefault) || agents[0];
+    const server = window._gsdHello?.server || {};
+
     // Agent metrics
     sc('mAgentStatus', running ? 'Running' : 'Stopped', running ? 'ok' : 'err');
-    s('mUptime', formatUptime(d.uptime || d.uptimeMs || d.uptime_seconds));
-    s('mModel', d.model || d.defaultModel || d.default_model);
-    s('mVersion', d.version || d.gatewayVersion || d.gateway_version);
-    s('mChannels', formatChannels(d.channels || d.connectedChannels || d.connected_channels));
-    s('mMemory', d.memorySearch || d.memory_search || d.memorySearchStatus || (d.memory && d.memory.status));
-    s('mLastActivity', formatTime(d.lastActivity || d.last_activity || d.lastActivityAt));
-    s('mSession', d.session || d.activeSession || d.active_session);
+    s('mUptime', server.uptime ? formatUptime(server.uptime) : (mainSession ? formatTime(Date.now() - mainSession.age) : '—'));
+    s('mModel', sessDefaults.model || d.model || '—');
+    s('mVersion', server.version || d.version || '—');
+    s('mChannels', Object.values(channelLabels).join(', ') || channelSummary[0] || formatChannels(d.channels) || '—');
+    s('mMemory', d.memorySearch || (sessDefaults.model ? 'Local' : '—'));
+    s('mLastActivity', mainSession ? formatTime(Date.now() - mainSession.age) : '—');
+    s('mSession', mainSession ? `${mainSession.percentUsed}% used (${mainSession.totalTokens} tokens)` : `${recentSessions.length} sessions`);
 
-    // System info
-    s('mHostname', d.hostname || d.host);
-    s('mOS', d.os || d.osVersion || d.os_version || d.macos || d.macosVersion);
-    s('mChip', d.chip || d.cpu || d.arch || d.architecture);
-    s('mRAM', d.ram || d.memory || d.totalMemory || d.total_memory);
+    // System info — from hello snapshot or server
+    s('mHostname', server.hostname || d.hostname || '—');
+    s('mOS', server.os || d.os || '—');
+    s('mChip', server.arch || d.chip || '—');
+    s('mRAM', server.ram || d.ram || '—');
 
     // Refresh ts
-    $('#overviewTs').textContent = `Last refreshed: ${new Date().toLocaleTimeString()}`;
+    $('#overviewTs').textContent = `Last refreshed: ${new Date().toLocaleTimeString()} (via WebSocket)`;
 }
 
 function setGwDot(ok) {
@@ -728,6 +952,11 @@ function formatChannels(ch) {
     if (!ch) return '—';
     if (typeof ch === 'string') return ch;
     if (Array.isArray(ch)) return ch.length ? ch.join(', ') : 'None';
+    if (typeof ch === 'object') {
+        // Object like {telegram: {...}, webchat: {...}} — extract enabled channel names
+        const names = Object.keys(ch).filter(k => ch[k]?.enabled !== false);
+        return names.length ? names.join(', ') : 'None';
+    }
     return String(ch);
 }
 
@@ -756,24 +985,33 @@ function hideError() { $('#errorBanner').classList.remove('visible'); }
 // ─── Chat ───
 function setupChat() {
     const input = $('#chatInput');
-    const btn = $('#chatSendBtn');
+    const sendBtn = $('#chatSendBtn');
+    const stopBtn = $('#chatStopBtn');
+
     const send = () => {
         const msg = input.value.trim();
         if (!msg || chatBusy) return;
         sendChat(msg);
         input.value = '';
+        sendBtn.disabled = true;
     };
-    btn.addEventListener('click', send);
+    sendBtn.addEventListener('click', send);
     input.addEventListener('keydown', e => {
         if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
     });
     input.addEventListener('input', () => {
-        btn.disabled = !input.value.trim() || !connected;
+        sendBtn.disabled = !input.value.trim() || !connected || chatBusy;
+    });
+
+    // Stop button
+    stopBtn.addEventListener('click', () => {
+        abortChat();
     });
 }
 
 function enableChat(on) {
-    $('#chatSendBtn').disabled = !on || !$('#chatInput').value.trim();
+    const sendBtn = $('#chatSendBtn');
+    sendBtn.disabled = !on || !$('#chatInput').value.trim() || chatBusy;
     $('#chatInput').disabled = !on;
     if (!on) $('#chatInput').placeholder = 'Connect to gateway first…';
     else $('#chatInput').placeholder = 'Type a message…';
@@ -787,38 +1025,61 @@ function addMsg(type, text) {
     m.appendChild(b);
     wrap.appendChild(m);
     wrap.scrollTop = wrap.scrollHeight;
+    return b;
+}
+
+async function loadChatHistory() {
+    if (!wsReady) return;
+    try {
+        const data = await rpc('chat.history', { sessionKey: 'agent:main', limit: 50 });
+        const msgs = data.messages || data.entries || data.history || [];
+        if (msgs.length) {
+            const wrap = $('#chatMessages');
+            wrap.innerHTML = ''; // Clear placeholder
+            for (const m of msgs) {
+                const role = m.role || m.from || m.type || 'agent';
+                const text = m.content || m.text || m.message || '';
+                if (!text) continue;
+                const isUser = role === 'user' || role === 'human';
+                addMsg(isUser ? 'user' : 'agent', text);
+            }
+        }
+        chatHistoryLoaded = true;
+    } catch (e) {
+        console.warn('[GSD] Failed to load chat history:', e.message);
+        // Not critical, continue
+    }
 }
 
 async function sendChat(message) {
     addMsg('user', message);
     chatBusy = true;
+    streamBubble = null;
+    streamText = '';
+    currentRunId = null;
     $('#chatSendBtn').disabled = true;
+    $('#chatStopBtn').classList.remove('hidden');
     $('#thinkingIndicator').classList.add('visible');
 
     try {
-        const res = await api('/api/v1/chat', {
-            method: 'POST',
-            body: JSON.stringify({ message, sessionKey: 'agent:main' })
-        });
+        const data = await rpc('chat.send', {
+            sessionKey: 'agent:main',
+            message: message,
+            deliver: false
+        }, 30000);
 
-        if (!res.ok) {
-            const errText = await res.text().catch(() => '');
-            throw new Error(`HTTP ${res.status}${errText ? ': ' + errText : ''}`);
-        }
-
-        // Try streaming first, fall back to JSON
-        const ct = res.headers.get('content-type') || '';
-        if (ct.includes('text/event-stream') || ct.includes('stream')) {
-            await readStream(res);
-        } else if (ct.includes('application/x-ndjson') || ct.includes('ndjson')) {
-            await readNDJSON(res);
-        } else {
-            // JSON response
-            const data = await res.json();
-            const reply = data.response || data.reply || data.message || data.text || data.content || JSON.stringify(data);
+        currentRunId = data.runId || data.run_id || null;
+        // The actual response will stream in via chat events
+        // If we got a direct response (no streaming), show it
+        if (data.response || data.reply || data.text || data.content) {
+            finishStream();
+            const reply = data.response || data.reply || data.text || data.content;
             addMsg('agent', reply);
+            chatDone();
         }
+        // Otherwise, wait for streaming events...
     } catch (e) {
+        finishStream();
         const wrap = $('#chatMessages');
         const m = el('div', 'msg');
         const b = el('div', 'bubble error-bubble');
@@ -826,74 +1087,118 @@ async function sendChat(message) {
         m.appendChild(b);
         wrap.appendChild(m);
         wrap.scrollTop = wrap.scrollHeight;
-    } finally {
-        chatBusy = false;
-        $('#thinkingIndicator').classList.remove('visible');
-        $('#chatSendBtn').disabled = !$('#chatInput').value.trim() || !connected;
+        chatDone();
     }
 }
 
-async function readStream(res) {
-    const reader = res.body.getReader();
-    const decoder = new TextDecoder();
-    let buffer = '';
-    let fullText = '';
-    let bubbleEl = null;
+function handleChatEvent(payload) {
+    const state = payload.state;
 
-    while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n');
-        buffer = lines.pop();
-        for (const line of lines) {
-            if (line.startsWith('data: ')) {
-                const payload = line.slice(6).trim();
-                if (payload === '[DONE]') continue;
-                try {
-                    const obj = JSON.parse(payload);
-                    const chunk = obj.text || obj.content || obj.delta || obj.chunk || '';
-                    if (chunk) {
-                        fullText += chunk;
-                        if (!bubbleEl) {
-                            const wrap = $('#chatMessages');
-                            const m = el('div', 'msg');
-                            bubbleEl = el('div', 'bubble agent');
-                            m.appendChild(bubbleEl);
-                            wrap.appendChild(m);
-                        }
-                        bubbleEl.textContent = fullText;
-                        $('#chatMessages').scrollTop = $('#chatMessages').scrollHeight;
-                    }
-                } catch { /* non-JSON SSE line, skip */ }
+    if (state === 'delta') {
+        // Streaming delta
+        const msg = payload.message || {};
+        // Content can be in various shapes
+        let chunk = '';
+        if (typeof msg.content === 'string') {
+            chunk = msg.content;
+        } else if (Array.isArray(msg.content)) {
+            for (const part of msg.content) {
+                if (part.type === 'text' && part.text) chunk += part.text;
+                else if (typeof part === 'string') chunk += part;
+            }
+        } else if (msg.text) {
+            chunk = msg.text;
+        } else if (msg.delta) {
+            chunk = msg.delta;
+        } else if (payload.text) {
+            chunk = payload.text;
+        } else if (payload.delta) {
+            chunk = payload.delta;
+        }
+
+        if (chunk) {
+            streamText += chunk;
+            if (!streamBubble) {
+                // Create the bubble on first delta
+                $('#thinkingIndicator').classList.remove('visible');
+                const wrap = $('#chatMessages');
+                const m = el('div', 'msg');
+                streamBubble = el('div', 'bubble agent');
+                m.appendChild(streamBubble);
+                wrap.appendChild(m);
+            }
+            streamBubble.textContent = streamText;
+            $('#chatMessages').scrollTop = $('#chatMessages').scrollHeight;
+        }
+    } else if (state === 'final' || state === 'done' || state === 'complete') {
+        // Stream finished
+        if (!streamBubble && !streamText) {
+            // Got final without any deltas — check for full message
+            const msg = payload.message || {};
+            let fullText = '';
+            if (typeof msg.content === 'string') fullText = msg.content;
+            else if (Array.isArray(msg.content)) {
+                for (const part of msg.content) {
+                    if (part.type === 'text' && part.text) fullText += part.text;
+                    else if (typeof part === 'string') fullText += part;
+                }
+            } else if (msg.text) fullText = msg.text;
+
+            if (fullText) {
+                addMsg('agent', fullText);
+            } else if (payload.text) {
+                addMsg('agent', payload.text);
             }
         }
+        finishStream();
+        chatDone();
+    } else if (state === 'error') {
+        finishStream();
+        const errMsg = payload.error || payload.message || 'Unknown streaming error';
+        const wrap = $('#chatMessages');
+        const m = el('div', 'msg');
+        const b = el('div', 'bubble error-bubble');
+        b.textContent = `Error: ${typeof errMsg === 'object' ? JSON.stringify(errMsg) : errMsg}`;
+        m.appendChild(b);
+        wrap.appendChild(m);
+        wrap.scrollTop = wrap.scrollHeight;
+        chatDone();
     }
-    if (fullText && !bubbleEl) addMsg('agent', fullText);
-    if (!fullText) addMsg('agent', '(empty response)');
+    // Other states (thinking, etc) — just keep the indicator
 }
 
-async function readNDJSON(res) {
-    const text = await res.text();
-    let fullText = '';
-    for (const line of text.split('\n')) {
-        if (!line.trim()) continue;
-        try {
-            const obj = JSON.parse(line);
-            fullText += obj.text || obj.content || obj.chunk || '';
-        } catch {}
+function finishStream() {
+    streamBubble = null;
+    streamText = '';
+    currentRunId = null;
+}
+
+function chatDone() {
+    chatBusy = false;
+    $('#thinkingIndicator').classList.remove('visible');
+    $('#chatStopBtn').classList.add('hidden');
+    $('#chatSendBtn').disabled = !$('#chatInput').value.trim() || !connected;
+}
+
+async function abortChat() {
+    try {
+        await rpc('chat.abort', { sessionKey: 'agent:main' }, 5000);
+    } catch (e) {
+        console.warn('[GSD] Abort error:', e.message);
     }
-    addMsg('agent', fullText || '(empty response)');
+    finishStream();
+    if (!streamText) {
+        addMsg('system', '(generation aborted)');
+    }
+    chatDone();
 }
 
 // ─── Configuration ───
-let configLoaded = false;
-
 async function loadConfig() {
     if (configLoaded) return;
     const box = $('#configContent');
 
-    if (!connected) {
+    if (!wsReady) {
         box.innerHTML = '<div class="empty-state"><h3>Not Connected</h3><p>Connect to the gateway to view configuration.</p></div>';
         return;
     }
@@ -901,21 +1206,15 @@ async function loadConfig() {
     box.innerHTML = '<div class="loading-row"><span class="spinner"></span> Loading configuration…</div>';
 
     try {
-        let res = await api('/api/v1/config');
-        if (res.status === 404) {
-            // Fallback: try status endpoint for config info
-            res = await api('/api/v1/status');
-        }
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
+        const data = await rpc('config.get');
         renderConfig(data);
         configLoaded = true;
     } catch (e) {
         box.innerHTML = `
             <div class="empty-state">
                 <h3>Configuration Unavailable</h3>
-                <p>Could not load config from the gateway API.<br>
-                The <code>/api/v1/config</code> endpoint may not be implemented yet.</p>
+                <p>Could not load config via <code>config.get</code> RPC.<br>
+                Error: ${escHtml(e.message)}</p>
                 <p style="margin-top:12px;color:var(--text-dim);font-size:0.82rem;">
                     Check your OpenClaw config file at:<br>
                     <code>~/.openclaw/config.yaml</code>
@@ -926,10 +1225,7 @@ async function loadConfig() {
 
 function renderConfig(d) {
     const box = $('#configContent');
-    const sections = [];
 
-    // Try to organize config sensibly regardless of shape
-    const general = [];
     const mapField = (label, ...keys) => {
         for (const k of keys) {
             let v = d[k]; if (v !== undefined && v !== null) return { label, value: typeof v === 'object' ? JSON.stringify(v) : String(v) };
@@ -964,7 +1260,7 @@ function renderConfig(d) {
         }
     }
 
-    // Dump remaining keys that we didn't explicitly map
+    // Dump remaining keys
     const mapped = new Set(['model','defaultModel','default_model','thinking','thinkingMode','thinking_mode',
         'subagentModel','subagent_model','channels','connectedChannels','connected_channels',
         'workspace','workspacePath','workspace_path','port','gatewayPort','gateway_port',
@@ -975,7 +1271,7 @@ function renderConfig(d) {
         html += '<div class="cfg-section">Other</div>';
         for (const k of extra) {
             let v = d[k];
-            if (typeof v === 'object') v = JSON.stringify(v);
+            if (typeof v === 'object') v = JSON.stringify(v, null, 2);
             html += `<div class="cfg-row"><span class="cfg-key">${escHtml(k)}</span><span class="cfg-val">${escHtml(String(v))}</span></div>`;
         }
     }
@@ -989,41 +1285,35 @@ function renderConfig(d) {
 
 // ─── Logs ───
 async function loadLogs() {
-    if (!connected) {
+    if (!wsReady) {
         $('#logBox').innerHTML = '<div class="log-line info">Connect to the gateway first.</div>';
         return;
     }
 
     try {
-        let res = await api('/api/v1/logs');
-        if (res.status === 404) {
-            // Endpoint doesn't exist
-            $('#logBox').innerHTML = `
-                <div style="padding:30px;text-align:center;color:var(--text-dim);">
-                    <p style="font-size:1rem;margin-bottom:8px;">📝 Log endpoint not available</p>
-                    <p>The <code>/api/v1/logs</code> endpoint is not implemented in this gateway version.</p>
-                    <p style="margin-top:12px;">Check the gateway terminal output or run:</p>
-                    <p style="margin-top:6px;"><code style="color:var(--accent);">openclaw gateway logs</code></p>
-                </div>`;
-            $('#logCount').textContent = 'N/A';
-            return;
-        }
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const params = { limit: 200 };
+        if (logsCursor) params.cursor = logsCursor;
+        const data = await rpc('logs.tail', params);
+        const lines = data.lines || data.logs || data.entries || [];
+        if (data.cursor) logsCursor = data.cursor;
 
-        const ct = res.headers.get('content-type') || '';
-        let logs;
-        if (ct.includes('json')) {
-            const data = await res.json();
-            logs = Array.isArray(data) ? data : (data.logs || data.entries || []);
+        if (logsCursor && allLogLines.length > 0) {
+            // Append new lines (incremental)
+            allLogLines = allLogLines.concat(lines);
         } else {
-            // Plain text logs
-            const text = await res.text();
-            logs = text.split('\n').filter(l => l.trim()).map(l => ({ message: l }));
+            allLogLines = lines;
         }
 
-        renderLogs(logs);
+        // Keep a reasonable buffer
+        if (allLogLines.length > 2000) {
+            allLogLines = allLogLines.slice(-1500);
+        }
+
+        renderLogs(allLogLines);
     } catch (e) {
-        $('#logBox').innerHTML = `<div class="log-line error">Failed to load logs: ${escHtml(e.message)}</div>`;
+        if (allLogLines.length === 0) {
+            $('#logBox').innerHTML = `<div class="log-line error">Failed to load logs: ${escHtml(e.message)}</div>`;
+        }
     }
 }
 
@@ -1034,6 +1324,9 @@ function renderLogs(logs) {
         $('#logCount').textContent = '0 entries';
         return;
     }
+
+    const wasAtBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 50;
+
     box.innerHTML = logs.map(l => {
         const msg = l.message || l.msg || l.text || (typeof l === 'string' ? l : JSON.stringify(l));
         const lvl = detectLogLevel(msg, l.level);
@@ -1041,7 +1334,8 @@ function renderLogs(logs) {
         const tsStr = ts ? `[${formatLogTime(ts)}] ` : '';
         return `<div class="log-line ${lvl}">${escHtml(tsStr + msg)}</div>`;
     }).join('');
-    box.scrollTop = box.scrollHeight;
+
+    if (wasAtBottom) box.scrollTop = box.scrollHeight;
     $('#logCount').textContent = `${logs.length} entries`;
 }
 
@@ -1068,43 +1362,38 @@ function formatLogTime(t) {
 }
 
 function setupLogRefresh() {
-    $('#btnRefreshLogs').addEventListener('click', loadLogs);
+    $('#btnRefreshLogs').addEventListener('click', () => {
+        logsCursor = null;
+        allLogLines = [];
+        loadLogs();
+    });
 }
 
 // ─── Security ───
 async function loadSecurity() {
-    if (!connected) return;
+    if (!wsReady) return;
 
+    // Try to get security info from status
     try {
-        const res = await api('/api/v1/security');
-        if (res.ok) {
-            const d = await res.json();
-            setText('mClawsec', d.clawsec || d.clawsec_installed ? 'Installed ✓' : 'Not Found');
-            setText('mSoulGuardian', d.soulGuardian || d.soul_guardian || d.soul_guardian_active ? 'Active ✓' : 'Inactive');
-            setText('mLastAudit', d.lastAudit || d.last_audit || 'Never');
-            setText('mFileIntegrity', d.fileIntegrity || d.file_integrity || d.file_integrity_status || 'Unknown');
+        const d = await rpc('status');
+        if (d.security) {
+            setText('mClawsec', d.security.clawsec || 'Unknown');
+            setText('mSoulGuardian', d.security.soulGuardian || d.security.soul_guardian || 'Unknown');
+            setText('mLastAudit', d.security.lastAudit || d.security.last_audit || 'Unknown');
+            setText('mFileIntegrity', d.security.fileIntegrity || d.security.file_integrity || 'Unknown');
             return;
         }
-    } catch {}
-
-    // Fallback: check via status
-    try {
-        const res = await api('/api/v1/status');
-        if (res.ok) {
-            const d = await res.json();
-            setText('mClawsec', d.security?.clawsec || 'Unknown');
-            setText('mSoulGuardian', d.security?.soulGuardian || 'Unknown');
-            setText('mLastAudit', d.security?.lastAudit || 'Unknown');
-            setText('mFileIntegrity', d.security?.fileIntegrity || 'Unknown');
-            return;
-        }
-    } catch {}
-
-    // Couldn't get data
-    setText('mClawsec', 'Unavailable');
-    setText('mSoulGuardian', 'Unavailable');
-    setText('mLastAudit', 'Unavailable');
-    setText('mFileIntegrity', 'Unavailable');
+        // Maybe top-level
+        setText('mClawsec', d.clawsec || 'Unknown');
+        setText('mSoulGuardian', d.soulGuardian || d.soul_guardian || 'Unknown');
+        setText('mLastAudit', d.lastAudit || d.last_audit || 'Unknown');
+        setText('mFileIntegrity', d.fileIntegrity || d.file_integrity || 'Unknown');
+    } catch {
+        setText('mClawsec', 'Unavailable');
+        setText('mSoulGuardian', 'Unavailable');
+        setText('mLastAudit', 'Unavailable');
+        setText('mFileIntegrity', 'Unavailable');
+    }
 }
 
 function setupSecurity() {
@@ -1114,41 +1403,24 @@ function setupSecurity() {
         btn.disabled = true;
         btn.innerHTML = '<span class="spinner"></span> Running…';
         result.classList.add('visible');
-        result.textContent = 'Starting security audit…\n';
+        result.textContent = 'Security audit is not available via gateway RPC.\n\nRun manually in terminal:\n  openclaw security audit';
 
+        // Try sending it as a chat message as a workaround
         try {
-            // Try API endpoint first
-            let res;
-            try {
-                res = await api('/api/v1/security/audit', { method: 'POST' });
-            } catch { res = null; }
-
-            if (res && res.ok) {
-                const data = await res.json();
-                result.textContent = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
-            } else {
-                // Fallback: try exec endpoint
-                try {
-                    res = await api('/api/v1/exec', {
-                        method: 'POST',
-                        body: JSON.stringify({ command: 'openclaw security audit' })
-                    });
-                    if (res && res.ok) {
-                        const data = await res.json();
-                        result.textContent = data.output || data.stdout || JSON.stringify(data, null, 2);
-                    } else {
-                        result.textContent = `Security audit endpoint not available (HTTP ${res ? res.status : '?'}).\n\nRun manually in terminal:\n  openclaw security audit`;
-                    }
-                } catch (e2) {
-                    result.textContent = `Cannot reach audit endpoint.\n\nRun manually in terminal:\n  openclaw security audit\n\nError: ${e2.message}`;
-                }
+            if (wsReady) {
+                const data = await rpc('chat.send', {
+                    sessionKey: 'agent:main',
+                    message: 'Run a security audit of the OpenClaw installation',
+                    deliver: false
+                }, 15000);
+                result.textContent += '\n\nSent audit request to agent. Check the Chat tab for results.';
             }
         } catch (e) {
-            result.textContent = `Error: ${e.message}\n\nRun manually:\n  openclaw security audit`;
-        } finally {
-            btn.disabled = false;
-            btn.innerHTML = '🔍 Run Security Audit';
+            // Silently ignore
         }
+
+        btn.disabled = false;
+        btn.innerHTML = '🔍 Run Security Audit';
     });
 
     $('#btnIntegrity').addEventListener('click', async () => {
@@ -1157,39 +1429,10 @@ function setupSecurity() {
         btn.disabled = true;
         btn.innerHTML = '<span class="spinner"></span> Checking…';
         result.classList.add('visible');
-        result.textContent = 'Running file integrity check…\n';
+        result.textContent = 'File integrity check is not available via gateway RPC.\n\nRun manually in terminal:\n  openclaw soul-guardian check';
 
-        try {
-            let res;
-            try {
-                res = await api('/api/v1/security/integrity', { method: 'POST' });
-            } catch { res = null; }
-
-            if (res && res.ok) {
-                const data = await res.json();
-                result.textContent = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
-            } else {
-                try {
-                    res = await api('/api/v1/exec', {
-                        method: 'POST',
-                        body: JSON.stringify({ command: 'openclaw soul-guardian check' })
-                    });
-                    if (res && res.ok) {
-                        const data = await res.json();
-                        result.textContent = data.output || data.stdout || JSON.stringify(data, null, 2);
-                    } else {
-                        result.textContent = `File integrity endpoint not available.\n\nRun manually in terminal:\n  openclaw soul-guardian check`;
-                    }
-                } catch (e2) {
-                    result.textContent = `Cannot reach integrity endpoint.\n\nRun manually in terminal:\n  openclaw soul-guardian check\n\nError: ${e2.message}`;
-                }
-            }
-        } catch (e) {
-            result.textContent = `Error: ${e.message}\n\nRun manually:\n  openclaw soul-guardian check`;
-        } finally {
-            btn.disabled = false;
-            btn.innerHTML = '🔐 Check File Integrity';
-        }
+        btn.disabled = false;
+        btn.innerHTML = '🔐 Check File Integrity';
     });
 }
 
