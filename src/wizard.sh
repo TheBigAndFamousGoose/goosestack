@@ -79,7 +79,7 @@ prompt_api_setup() {
     echo -e ""
     echo -e "  ${BOLD}2)${NC} ${BLUE}GooseStack API${NC} - Zero friction (prepaid credits)"
     echo -e "     No API key needed. Buy credits, start chatting."
-    echo -e "     40% markup on token costs. You control spending."
+    echo -e "     Optimized routing saves 5-10x vs direct API. You control spending."
     echo -e ""
     echo -e "  ${BOLD}3)${NC} ${YELLOW}Local only${NC} - 100% free, 100% private"
     echo -e "     Use only local Ollama models. No cloud, no costs."
@@ -139,7 +139,7 @@ prompt_proxy_key() {
     echo -e "\n${CYAN}GooseStack API Setup${NC}"
     echo -e ""
     echo -e "To use the GooseStack API, you need prepaid credits."
-    echo -e "Buy credits at: ${BLUE}https://goosestack.dev/credits${NC}"
+    echo -e "Buy credits at: ${BLUE}https://goosestack.com/credits${NC}"
     echo -e ""
     echo -e "${YELLOW}Paste your GooseStack API key (or press Enter to set up later):${NC}"
     echo -n "> "
@@ -151,7 +151,7 @@ prompt_proxy_key() {
         log_success "GooseStack API key saved"
     else
         log_info "No key yet — your agent will use local models until you add credits"
-        echo -e "${YELLOW}Visit https://goosestack.dev/credits to buy credits and get your key.${NC}"
+        echo -e "${YELLOW}Visit https://goosestack.com/credits to buy credits and get your key.${NC}"
     fi
 }
 

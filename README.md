@@ -3,7 +3,7 @@
 **One-command macOS installer for your personal AI agent environment.**
 
 ```bash
-curl -fsSL https://goosestack.dev/install.sh | sh
+curl -fsSL https://goosestack.com/install.sh | sh
 ```
 
 <pre>
@@ -66,7 +66,7 @@ GooseStack automatically installs and configures:
 
 1. **Install GooseStack:**
    ```bash
-   curl -fsSL https://goosestack.dev/install.sh | sh
+   curl -fsSL https://goosestack.com/install.sh | sh
    ```
 
 2. **Chat with your agent:**
@@ -89,25 +89,23 @@ Choose your agent's personality during setup:
 - **⚡ Coder** - Technical, direct, development-focused
 - **🎨 Creative** - Witty, expressive, imaginative
 
-### API Setup — Choose Your Path
+### API Setup — Choose Your Tier
 
-During setup, you'll choose one of three modes:
+GooseStack has two tiers:
 
-**🟢 BYOK (Bring Your Own Key)** — Free forever
-- Use your own Anthropic/OpenAI API key
-- Full control over costs and provider choice
-- Get a key at: https://console.anthropic.com/
+**🟢 Free** — Everything you need to get started
+- One-command installer, dashboards, security suite
+- GooseStack API with prepaid token credits ($10/$25/$50/$100 top-ups)
+- Optimized AI routing that saves 5-10x vs direct API costs
+- Local models (Ollama) at zero cost
 
-**🔵 GooseStack API** — Zero friction (prepaid credits)
-- No API key needed — just buy credits and go
-- 40% markup on token costs (transparent pricing)
-- Prepaid balance — you control spending
-- Buy credits at: https://goosestack.dev/credits
-
-**⚪ Local Only** — 100% free, 100% private
-- Uses only local Ollama models
-- No cloud, no costs, no API key needed
-- Less capable than cloud models but fully private
+**🔵 Pro ($10/mo)** — Full power, maximum flexibility
+- Everything in Free, plus:
+- BYOK — bring your own API keys (Anthropic, OpenAI, etc.)
+- Token Router — automatically picks the cheapest model per task
+- Premium Skills
+- Priority Support
+- Go Pro at: https://goosestack.com/pro
 
 ### Telegram Integration
 
@@ -195,10 +193,10 @@ ollama run qwen2.5:7b "test"
 
 ### Getting Help
 
-- **📖 Documentation:** Full guides at [goosestack.dev/docs](https://goosestack.dev/docs)
+- **📖 Documentation:** Full guides at [goosestack.com/docs](https://goosestack.com/docs)
 - **🐛 Bug Reports:** [GitHub Issues](https://github.com/TheBigAndFamousGoose/goosestack/issues)
 - **💬 Community:** [Discord Server](https://discord.gg/openclaw)
-- **✉️  Email:** support@goosestack.dev
+- **✉️  Email:** support@goosestack.com
 
 ## Development
 

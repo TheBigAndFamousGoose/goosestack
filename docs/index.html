@@ -13,17 +13,17 @@
 
     <!-- Open Graph -->
     <meta property="og:type" content="website">
-    <meta property="og:url" content="https://goosestack.dev/">
+    <meta property="og:url" content="https://goosestack.com/">
     <meta property="og:title" content="GooseStack — Your AI Agent. One Command Away.">
     <meta property="og:description" content="One-command macOS installer for a fully optimized AI agent environment. Free, open-source, local-first.">
-    <meta property="og:image" content="https://goosestack.dev/og-image.png">
+    <meta property="og:image" content="https://goosestack.com/og-image.png">
     <meta property="og:site_name" content="GooseStack">
 
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="GooseStack — Your AI Agent. One Command Away.">
     <meta name="twitter:description" content="One-command macOS installer for a fully optimized AI agent environment. Free, open-source, local-first.">
-    <meta name="twitter:image" content="https://goosestack.dev/og-image.png">
+    <meta name="twitter:image" content="https://goosestack.com/og-image.png">
 
     <!-- Schema: SoftwareApplication -->
     <script type="application/ld+json">
@@ -39,8 +39,8 @@
         "priceCurrency": "USD"
       },
       "description": "One-command macOS installer for a fully optimized AI agent environment. Free, open-source, local-first.",
-      "url": "https://goosestack.dev",
-      "downloadUrl": "https://goosestack.dev/install.sh",
+      "url": "https://goosestack.com",
+      "downloadUrl": "https://goosestack.com/install.sh",
       "softwareVersion": "1.0",
       "license": "https://opensource.org/licenses/MIT"
     }
@@ -65,7 +65,7 @@
           "name": "Is GooseStack free?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Yes. GooseStack is free and open-source under the MIT License. You can run local models at zero cost. If you want to use cloud models, you can bring your own API key (also free) or use the upcoming GooseStack API with prepaid credits."
+            "text": "GooseStack has a Free tier and a Pro tier ($10/mo). Both include the one-command installer, local dashboard, web dashboard, security suite, and access to the GooseStack API with prepaid token credits. Pro unlocks BYOK (bring your own API keys), Token Router for automatic cheapest-model routing, premium skills, and priority support."
           }
         },
         {
@@ -81,7 +81,7 @@
           "name": "Do I need an API key?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "No. GooseStack works out of the box with free local models. If you want cloud models, you can either bring your own API key (BYOK) or use the GooseStack API which requires no key — just prepaid credits."
+            "text": "Not on the Free tier. The GooseStack API uses prepaid credits — no API key management needed. If you upgrade to Pro ($10/mo), you can bring your own API keys (BYOK) for direct provider access."
           }
         },
         {
@@ -97,7 +97,7 @@
           "name": "What is the GooseStack API?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "The GooseStack API is an upcoming proxy service that lets you access cloud models (Claude, GPT-4, etc.) without managing your own API keys. It runs on prepaid credits with a transparent 40% markup on token costs. You control your spending with a prepaid balance."
+            "text": "The GooseStack API is a managed proxy service that gives you access to cloud models (Claude, GPT-4, etc.) without managing your own API keys. It uses optimized AI routing that saves 5-10x vs direct API costs. You purchase prepaid token credits and control your spending with a prepaid balance. Available on both Free and Pro tiers."
           }
         }
       ]
@@ -821,7 +821,8 @@
             <li><a href="#how-it-works">How It Works</a></li>
             <li><a href="#pricing">Pricing</a></li>
             <li><a href="#faq">FAQ</a></li>
-            <li><a href="https://github.com/TheBigAndFamousGoose/goosestack" target="_blank" rel="noopener" class="nav-cta">GitHub ↗</a></li>
+            <li><a href="https://github.com/TheBigAndFamousGoose/goosestack" target="_blank" rel="noopener">GitHub</a></li>
+            <li><a href="https://goosestack.com/pro" class="nav-cta">Go Pro →</a></li>
         </ul>
         <button class="nav-hamburger" id="navHamburger" aria-label="Menu">☰</button>
     </div>
@@ -837,10 +838,14 @@
             </div>
         </div>
         <h1>Your AI agent.<br><span class="accent">One command away.</span></h1>
-        <p class="hero-sub">A one-command macOS installer that sets up a fully optimized AI agent environment. Free, local-first, and ready in minutes.</p>
+        <p class="hero-sub">A one-command macOS installer that sets up a fully optimized AI agent environment. Free tier included. Ready in minutes.</p>
         <div class="install-block">
-            <div class="install-command" id="install-cmd">curl -fsSL https://goosestack.dev/install.sh | sh</div>
+            <div class="install-command" id="install-cmd">curl -fsSL https://goosestack.com/install.sh | sh</div>
             <button class="copy-btn" id="copyBtn" onclick="copyInstall()">Copy</button>
+        </div>
+        <div style="display:flex;gap:12px;justify-content:center;margin-top:1.5rem;flex-wrap:wrap;animation:fadeInUp 0.8s ease-out 0.45s both;">
+            <a href="https://goosestack.com/install" class="pricing-cta cta-outline">Get Started Free →</a>
+            <a href="https://goosestack.com/pro" class="pricing-cta cta-primary">Go Pro — $10/mo →</a>
         </div>
         <p class="hero-note">Requires macOS 13+ · Free &amp; open-source · MIT License</p>
     </div>
@@ -913,38 +918,19 @@
     </div>
 </section>
 
-<!-- ===== CHOOSE YOUR SETUP ===== -->
-<section id="setup">
+<!-- ===== TOP UP CREDITS ===== -->
+<section id="credits">
     <div class="container">
-        <div class="section-label reveal">Flexible</div>
-        <h2 class="section-title reveal">Choose Your Setup</h2>
-        <p class="section-subtitle reveal">Use your own keys for full control, or let us handle the infrastructure. Both work beautifully.</p>
-        <div class="setup-grid">
-            <div class="setup-card reveal">
-                <span class="setup-badge badge-free">Free Forever</span>
-                <h3>BYOK</h3>
-                <p class="setup-for">For developers who want maximum flexibility</p>
-                <ul>
-                    <li>Bring your own Anthropic or OpenAI key</li>
-                    <li>Pay providers directly at their rates</li>
-                    <li>Full control over model selection</li>
-                    <li>Use any supported provider</li>
-                    <li>No middleman, no markup</li>
-                </ul>
-            </div>
-            <div class="setup-card primary reveal">
-                <span class="setup-badge badge-easy">Zero Friction</span>
-                <h3>GooseStack API</h3>
-                <p class="setup-for">For people who want it to just work</p>
-                <ul>
-                    <li>No API key needed — ever</li>
-                    <li>Prepaid credits, you control spending</li>
-                    <li>Transparent 40% markup on token costs</li>
-                    <li>Auto-routes to the best model</li>
-                    <li>One-click setup, zero configuration</li>
-                </ul>
-            </div>
+        <div class="section-label reveal">Credits</div>
+        <h2 class="section-title reveal">Top Up. Start Building.</h2>
+        <p class="section-subtitle reveal">The GooseStack API uses optimized AI routing that saves 5‑10× vs direct API costs. Buy prepaid token credits and start using cloud models instantly — no API key management needed.</p>
+        <div style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap;" class="reveal">
+            <a href="https://goosestack.com/credits" class="pricing-cta cta-outline" style="min-width:110px;">$10</a>
+            <a href="https://goosestack.com/credits" class="pricing-cta cta-outline" style="min-width:110px;">$25</a>
+            <a href="https://goosestack.com/credits" class="pricing-cta cta-primary" style="min-width:110px;">$50</a>
+            <a href="https://goosestack.com/credits" class="pricing-cta cta-outline" style="min-width:110px;">$100</a>
         </div>
+        <p class="reveal" style="text-align:center;color:var(--text-dim);font-size:0.85rem;margin-top:1.2rem;">Works on Free &amp; Pro tiers · Prepaid balance — you control spending · No surprises</p>
     </div>
 </section>
 
@@ -952,8 +938,8 @@
 <section id="pricing" style="background: var(--bg-card);">
     <div class="container">
         <div class="section-label reveal">Pricing</div>
-        <h2 class="section-title reveal">Start Free. Scale When Ready.</h2>
-        <p class="section-subtitle reveal">Everything you need is in the free tier. Pro adds managed cloud access.</p>
+        <h2 class="section-title reveal">Start Free. Go Pro When Ready.</h2>
+        <p class="section-subtitle reveal">Both tiers include the GooseStack API with prepaid token credits. Pro unlocks BYOK, smart routing, and more.</p>
         <div class="pricing-grid">
             <!-- FREE -->
             <div class="pricing-card reveal">
@@ -962,39 +948,43 @@
                 <div class="pricing-price-sub">Free forever · Open source</div>
                 <div class="pricing-divider"></div>
                 <ul class="pricing-features">
-                    <li>Full GooseStack installer</li>
+                    <li>One-command installer</li>
+                    <li>GooseStack API (prepaid credits)</li>
+                    <li>Local Dashboard</li>
+                    <li>Web Dashboard</li>
+                    <li>Security Suite (ClawSec)</li>
                     <li>All local models (Ollama)</li>
-                    <li>BYOK support (Anthropic, OpenAI, etc.)</li>
-                    <li>Web dashboard &amp; chat interface</li>
                     <li>Memory &amp; embeddings</li>
-                    <li>Security suite (ClawSec)</li>
                     <li>All persona templates</li>
-                    <li>Auto-start watchdog</li>
                     <li>Community support</li>
-                    <li>MIT License</li>
                 </ul>
-                <a href="https://github.com/TheBigAndFamousGoose/goosestack" target="_blank" rel="noopener" class="pricing-cta cta-outline">Get Started →</a>
+                <div class="pricing-note">
+                    <strong>How it works:</strong> Buy prepaid token credits ($10 / $25 / $50 / $100) and use cloud models instantly — optimized routing saves 5‑10× vs direct API costs.
+                </div>
+                <a href="https://goosestack.com/install" class="pricing-cta cta-outline">Get Started →</a>
             </div>
             <!-- PRO -->
             <div class="pricing-card featured reveal">
-                <div class="pricing-badge">Coming Soon</div>
+                <div class="pricing-badge">Recommended</div>
                 <div class="pricing-name">Pro</div>
-                <div class="pricing-price">$10+</div>
-                <div class="pricing-price-sub">Prepaid credits · You control spending</div>
+                <div class="pricing-price">$10<span style="font-size:1rem;font-weight:500;color:var(--text-muted);">/mo</span></div>
+                <div class="pricing-price-sub">Everything in Free, plus:</div>
                 <div class="pricing-divider"></div>
                 <ul class="pricing-features">
-                    <li>Everything in Free</li>
-                    <li class="plus">GooseStack Proxy API (no key needed)</li>
-                    <li class="plus">Token Router — auto-routes to cheapest model</li>
-                    <li class="plus">Advanced analytics dashboard</li>
-                    <li class="plus">Premium skill packs</li>
-                    <li class="plus">Priority support</li>
+                    <li>One-command installer</li>
+                    <li>GooseStack API (prepaid credits)</li>
+                    <li class="plus">BYOK — bring your own API keys</li>
+                    <li class="plus">Token Router — auto-cheapest model</li>
+                    <li>Local Dashboard</li>
+                    <li>Web Dashboard</li>
+                    <li>Security Suite (ClawSec)</li>
+                    <li class="plus">Premium Skills</li>
+                    <li class="plus">Priority Support</li>
                 </ul>
                 <div class="pricing-note">
-                    <strong>Example:</strong> Claude Opus input is $15/M tokens from Anthropic → <strong>$21/M through GooseStack API</strong> (40% transparent markup).<br><br>
-                    Prepaid balance — you control spending. No surprises, no subscriptions.
+                    <strong>BYOK:</strong> Use your own Anthropic, OpenAI, or other API keys for direct access. <strong>Token Router</strong> automatically picks the cheapest model for each task.
                 </div>
-                <a href="#" class="pricing-cta cta-primary">Buy Credits →</a>
+                <a href="https://goosestack.com/pro" class="pricing-cta cta-primary">Go Pro →</a>
             </div>
         </div>
     </div>
@@ -1012,15 +1002,15 @@
             </div>
             <div class="faq-item">
                 <button class="faq-question">Is GooseStack free?</button>
-                <div class="faq-answer"><div class="faq-answer-inner">Yes. GooseStack is free and open-source under the MIT License. You can run local models at zero cost indefinitely. If you want cloud models (Claude, GPT-4), you can bring your own API key (also free to use with GooseStack) or use the upcoming GooseStack API with prepaid credits.</div></div>
+                <div class="faq-answer"><div class="faq-answer-inner">Yes! The Free tier includes the full installer, local and web dashboards, security suite, and access to the GooseStack API with prepaid token credits. You can run local models at zero cost. For cloud models, buy prepaid credits — our optimized routing saves 5‑10× vs direct API costs. The Pro tier ($10/mo) adds BYOK, Token Router, premium skills, and priority support.</div></div>
             </div>
             <div class="faq-item">
                 <button class="faq-question">What AI models does it support?</button>
-                <div class="faq-answer"><div class="faq-answer-inner">GooseStack supports all Ollama-compatible local models (Llama, Mistral, Phi, Gemma, and more), plus cloud models from Anthropic (Claude), OpenAI (GPT-4o, o1), Google (Gemini), and others — either via your own API key (BYOK) or through the GooseStack API.</div></div>
+                <div class="faq-answer"><div class="faq-answer-inner">GooseStack supports all Ollama-compatible local models (Llama, Mistral, Phi, Gemma, and more), plus cloud models from Anthropic (Claude), OpenAI (GPT-4o, o1), Google (Gemini), and others — through the GooseStack API (prepaid credits) or via BYOK on the Pro tier.</div></div>
             </div>
             <div class="faq-item">
                 <button class="faq-question">Do I need an API key?</button>
-                <div class="faq-answer"><div class="faq-answer-inner">No. GooseStack works out of the box with free local models. If you want cloud models, you have two options: bring your own API key (BYOK, free) or use the GooseStack API which requires no key — just prepaid credits.</div></div>
+                <div class="faq-answer"><div class="faq-answer-inner">Not on the Free tier. The GooseStack API uses prepaid credits — no API key management needed. Just top up and start using cloud models. If you upgrade to Pro ($10/mo), you can bring your own API keys (BYOK) for direct provider access.</div></div>
             </div>
             <div class="faq-item">
                 <button class="faq-question">Is my data private?</button>
@@ -1028,7 +1018,7 @@
             </div>
             <div class="faq-item">
                 <button class="faq-question">What is the GooseStack API?</button>
-                <div class="faq-answer"><div class="faq-answer-inner">The GooseStack API is an upcoming proxy service that lets you access cloud models (Claude, GPT-4, etc.) without managing your own API keys. You purchase prepaid credits and the API routes your requests with a transparent 40% markup on token costs. You see exactly what you're paying and control your spending with a prepaid balance.</div></div>
+                <div class="faq-answer"><div class="faq-answer-inner">The GooseStack API is a managed proxy service that gives you access to cloud models (Claude, GPT-4, etc.) without managing your own API keys. It uses optimized AI routing that saves 5‑10× vs direct API costs. You purchase prepaid token credits ($10 / $25 / $50 / $100 top-ups) and control your spending with a prepaid balance. Available on both Free and Pro tiers.</div></div>
             </div>
         </div>
     </div>
@@ -1074,9 +1064,10 @@
             </div>
             <div class="footer-links">
                 <a href="https://github.com/TheBigAndFamousGoose/goosestack" target="_blank" rel="noopener">GitHub</a>
-                <a href="https://goosestack.dev/docs" target="_blank" rel="noopener">Docs</a>
+                <a href="https://goosestack.com/docs" target="_blank" rel="noopener">Docs</a>
+                <a href="https://goosestack.com/credits" target="_blank" rel="noopener">Buy Credits</a>
                 <a href="https://discord.gg/openclaw" target="_blank" rel="noopener">Discord</a>
-                <a href="mailto:support@goosestack.dev">Support</a>
+                <a href="mailto:support@goosestack.com">Support</a>
             </div>
         </div>
         <div class="footer-bottom">
