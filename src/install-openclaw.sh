@@ -12,8 +12,15 @@ install_openclaw_npm() {
         local current_version
         current_version=$(openclaw --version 2>/dev/null || echo "unknown")
         log_info "OpenClaw already installed: $current_version"
-        log_info "Checking for updates..."
-        npm update -g openclaw 2>/dev/null || log_warning "Update check failed (continuing)"
+        
+        # Verify the install is healthy (node_modules intact)
+        if openclaw --help >/dev/null 2>&1; then
+            log_info "Checking for updates..."
+            npm update -g openclaw 2>/dev/null || log_warning "Update check failed (continuing)"
+        else
+            log_warning "OpenClaw install appears broken — reinstalling..."
+            npm install -g openclaw --force
+        fi
     else
         log_info "Installing OpenClaw globally via npm..."
         npm install -g openclaw
