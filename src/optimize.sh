@@ -128,8 +128,16 @@ TELEOF
 CONFIGEOF
 
     # Store API key in auth-profiles.json
+    # Create all required directories upfront (prevents openclaw doctor complaints)
     local agent_dir="$config_dir/agents/main/agent"
     mkdir -p "$agent_dir"
+    mkdir -p "$config_dir/agents/main/sessions"
+    mkdir -p "$config_dir/credentials"
+    mkdir -p "$config_dir/logs"
+    
+    # Set proper permissions
+    chmod 700 "$config_dir"
+    chmod 600 "$config_file"
     
     if [[ "$api_mode" == "proxy" && -n "${GOOSE_PROXY_KEY:-}" ]]; then
         cat > "$agent_dir/auth-profiles.json" <<AUTHFILEEOF

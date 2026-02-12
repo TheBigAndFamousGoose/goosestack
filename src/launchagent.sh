@@ -15,10 +15,10 @@ create_launch_agent() {
     # Create LaunchAgents directory if it doesn't exist
     mkdir -p "$launch_agents_dir"
     
-    # Get the path to openclaw binary
+    # Get the path to openclaw binary (resolve symlinks for launchd)
     local openclaw_path
     if command -v openclaw >/dev/null 2>&1; then
-        openclaw_path=$(which openclaw)
+        openclaw_path=$(readlink -f "$(which openclaw)" 2>/dev/null || realpath "$(which openclaw)" 2>/dev/null || which openclaw)
     else
         log_error "OpenClaw binary not found in PATH"
         exit 1
@@ -46,12 +46,7 @@ create_launch_agent() {
     <true/>
     
     <key>KeepAlive</key>
-    <dict>
-        <key>SuccessfulExit</key>
-        <false/>
-        <key>Crashed</key>
-        <true/>
-    </dict>
+    <true/>
     
     <key>StandardOutPath</key>
     <string>$HOME/.openclaw/logs/gateway-stdout.log</string>
@@ -133,7 +128,7 @@ verify_gateway_running() {
         # Check if the process is running via launchctl
         if launchctl list | grep -q "ai.openclaw.gateway"; then
             # Check if the gateway is responding
-            if curl -s -f "http://localhost:3721/status" >/dev/null 2>&1; then
+            if curl -s -f "http://localhost:18789/status" >/dev/null 2>&1; then
                 log_success "OpenClaw gateway is running and responding"
                 return 0
             fi
@@ -200,7 +195,7 @@ case "${1:-status}" in
             echo "  ❌ LaunchAgent: Not running"
         fi
         
-        if curl -s -f "http://localhost:3721/status" >/dev/null 2>&1; then
+        if curl -s -f "http://localhost:18789/status" >/dev/null 2>&1; then
             echo "  ✅ HTTP Gateway: Responding"
         else
             echo "  ❌ HTTP Gateway: Not responding"
@@ -356,7 +351,7 @@ main_setup_launchagent() {
         # Summary
         echo -e "\n${BOLD}${BLUE}🎯 Auto-Start Summary:${NC}"
         echo -e "  ✅ LaunchAgent created and loaded"
-        echo -e "  ✅ OpenClaw gateway running on port 3721"
+        echo -e "  ✅ OpenClaw gateway running on port 18789"
         echo -e "  ✅ Auto-starts on login"
         echo -e "  ✅ Restarts automatically if crashed"
         echo -e "  ✅ Management script available"

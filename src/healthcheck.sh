@@ -39,12 +39,12 @@ add_health_result() {
 check_gateway() {
     log_info "🌐 Checking OpenClaw gateway..."
     
-    if curl -s -f -m 5 "http://localhost:3721/status" >/dev/null 2>&1; then
-        add_health_result "pass" "OpenClaw gateway responding on port 3721"
+    if curl -s -f -m 5 "http://localhost:18789/status" >/dev/null 2>&1; then
+        add_health_result "pass" "OpenClaw gateway responding on port 18789"
         
         # Try to get gateway info
         local gateway_info
-        gateway_info=$(curl -s -m 5 "http://localhost:3721/status" 2>/dev/null)
+        gateway_info=$(curl -s -m 5 "http://localhost:18789/status" 2>/dev/null)
         if [[ -n "$gateway_info" ]]; then
             log_info "Gateway info retrieved successfully"
         fi
@@ -305,7 +305,7 @@ test_memory_search() {
 get_dashboard_info() {
     local gateway_token="$GOOSE_GATEWAY_TOKEN"
     local dashboard_url="http://localhost:18789"
-    local gateway_url="http://localhost:3721"
+    local gateway_url="http://localhost:18789"
     
     echo -e "\n${BOLD}${GREEN}🎉 Your AI Agent is Ready!${NC}\n"
     
@@ -415,7 +415,7 @@ main_healthcheck() {
         echo -e "${YELLOW}You can re-run this check with: ~/.openclaw/manage-gateway.sh status${NC}"
     fi
     
-    echo -e "\n${BOLD}${CYAN}📊 Dashboard available at: http://localhost:3721${NC}"
+    echo -e "\n${BOLD}${CYAN}📊 Dashboard available at: http://localhost:18789${NC}"
     
     log_success "Health check complete!"
 }

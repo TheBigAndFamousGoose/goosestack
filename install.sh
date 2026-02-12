@@ -150,6 +150,19 @@ main() {
     # shellcheck source=src/launchagent.sh
     source "$INSTALL_DIR/src/launchagent.sh"
     
+    # Run openclaw doctor to auto-fix any remaining issues
+    log_info "Running openclaw doctor..."
+    if command -v openclaw >/dev/null 2>&1; then
+        # Auto-accept all fixes (create dirs, fix permissions, update plist)
+        echo "y" | openclaw doctor 2>/dev/null || true
+    fi
+    
+    # Use openclaw's own gateway start (handles plist correctly)
+    log_info "Starting gateway via openclaw..."
+    if command -v openclaw >/dev/null 2>&1; then
+        openclaw gateway start 2>/dev/null || true
+    fi
+    
     log_step "Phase 8: Health Check & Verification"
     # shellcheck source=src/healthcheck.sh
     source "$INSTALL_DIR/src/healthcheck.sh"
