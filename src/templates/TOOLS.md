@@ -17,7 +17,7 @@ This file is for your specific setup details - the stuff that's unique to your e
 
 ## Services
 
-**OpenClaw Gateway:** http://localhost:3721  
+**OpenClaw Gateway:** http://localhost:18789
 **Web Dashboard:** http://localhost:3000  
 **Ollama Service:** Running via Homebrew  
 

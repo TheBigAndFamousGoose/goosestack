@@ -154,13 +154,19 @@ main() {
     log_info "Running openclaw doctor..."
     if command -v openclaw >/dev/null 2>&1; then
         # Auto-accept all fixes (create dirs, fix permissions, update plist)
-        echo "y" | openclaw doctor 2>/dev/null || true
+        echo "y" | openclaw doctor 2>/dev/null || {
+            log_warning "openclaw doctor had issues, but continuing installation"
+            true
+        }
     fi
     
-    # Use openclaw's own gateway start (handles plist correctly)
+    # Use openclaw's own gateway start (handles plist correctly)  
     log_info "Starting gateway via openclaw..."
     if command -v openclaw >/dev/null 2>&1; then
-        openclaw gateway start 2>/dev/null || true
+        openclaw gateway start 2>/dev/null || {
+            log_warning "openclaw gateway start failed, LaunchAgent will handle startup"
+            true
+        }
     fi
     
     log_step "Phase 8: Health Check & Verification"

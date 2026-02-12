@@ -46,7 +46,10 @@ install_homebrew() {
     
     # Update Homebrew
     log_info "Updating Homebrew..."
-    brew update --quiet || log_warning "Homebrew update had issues (continuing anyway)"
+    brew update --quiet || {
+        log_warning "Homebrew update had issues (continuing anyway)"
+        true  # Ensure this doesn't fail the script
+    }
 }
 
 # Install Node.js

@@ -15,11 +15,27 @@ install_openclaw_npm() {
         
         # Verify the install is healthy (node_modules intact)
         if openclaw --help >/dev/null 2>&1; then
+            log_success "OpenClaw installation is healthy"
             log_info "Checking for updates..."
-            npm update -g openclaw 2>/dev/null || log_warning "Update check failed (continuing)"
+            npm update -g openclaw 2>/dev/null || {
+                log_warning "Update check failed (continuing)"
+                true
+            }
         else
-            log_warning "OpenClaw install appears broken — reinstalling..."
-            npm install -g openclaw --force
+            log_warning "OpenClaw install appears broken (--help failed) — reinstalling..."
+            log_info "This usually means incomplete node_modules (missing @mariozechner/jiti, undici, etc)"
+            npm install -g openclaw --force || {
+                log_error "Failed to reinstall OpenClaw"
+                exit 1
+            }
+            
+            # Verify the fix worked
+            if openclaw --help >/dev/null 2>&1; then
+                log_success "OpenClaw reinstallation successful"
+            else
+                log_error "OpenClaw still not working after reinstall"
+                exit 1
+            fi
         fi
     else
         log_info "Installing OpenClaw globally via npm..."
@@ -58,6 +74,7 @@ setup_directories() {
     mkdir -p "$config_dir/logs"
     mkdir -p "$config_dir/agents/main/agent"
 
+    # Export for other scripts to use
     export GOOSE_WORKSPACE_DIR="$workspace_dir"
     log_success "Directories ready"
 }

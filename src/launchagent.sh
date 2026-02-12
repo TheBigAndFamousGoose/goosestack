@@ -18,7 +18,18 @@ create_launch_agent() {
     # Get the path to openclaw binary (resolve symlinks for launchd)
     local openclaw_path
     if command -v openclaw >/dev/null 2>&1; then
-        openclaw_path=$(readlink -f "$(which openclaw)" 2>/dev/null || realpath "$(which openclaw)" 2>/dev/null || which openclaw)
+        # Try different ways to resolve symlinks (different macOS versions have different tools)
+        if command -v greadlink >/dev/null 2>&1; then
+            # If GNU coreutils is installed
+            openclaw_path=$(greadlink -f "$(which openclaw)")
+        elif command -v readlink >/dev/null 2>&1 && readlink -f "$(which openclaw)" >/dev/null 2>&1; then
+            # If readlink supports -f
+            openclaw_path=$(readlink -f "$(which openclaw)")
+        else
+            # Fallback: use the symlink as-is (should work fine for most cases)
+            openclaw_path=$(which openclaw)
+            log_info "Using openclaw path as-is (symlink resolution not available): $openclaw_path"
+        fi
     else
         log_error "OpenClaw binary not found in PATH"
         exit 1
@@ -127,8 +138,9 @@ verify_gateway_running() {
     while [[ $attempt -lt $max_attempts ]]; do
         # Check if the process is running via launchctl
         if launchctl list | grep -q "ai.openclaw.gateway"; then
-            # Check if the gateway is responding
-            if curl -s -f "http://localhost:18789/status" >/dev/null 2>&1; then
+            # Check if the gateway is responding (try both /status and root)
+            if curl -s -f -m 3 "http://localhost:18789/status" >/dev/null 2>&1 || \
+               curl -s -f -m 3 "http://localhost:18789" >/dev/null 2>&1; then
                 log_success "OpenClaw gateway is running and responding"
                 return 0
             fi

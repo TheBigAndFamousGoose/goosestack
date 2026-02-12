@@ -39,6 +39,18 @@ AUTHEOF
     }
 AUTHEOF
 )
+    else
+        # No API key provided - create a local-only auth profile
+        auth_block=$(cat <<AUTHEOF
+    "profiles": {
+      "local:default": {
+        "provider": "ollama",
+        "mode": "endpoint",
+        "baseUrl": "http://localhost:11434"
+      }
+    }
+AUTHEOF
+)
     fi
 
     # Build telegram channel block
@@ -91,7 +103,7 @@ TELEOF
       "maxConcurrent": ${max_concurrent},
       "subagents": {
         "maxConcurrent": ${subagent_concurrent},
-        "model": "ollama/${GOOSE_OLLAMA_MODEL:-qwen3:14b}",
+        "model": "ollama/${GOOSE_OLLAMA_MODEL:-qwen2.5:14b}",
         "thinking": "off"
       }
     }
@@ -130,13 +142,23 @@ CONFIGEOF
     # Store API key in auth-profiles.json
     # Create all required directories upfront (prevents openclaw doctor complaints)
     local agent_dir="$config_dir/agents/main/agent"
+    local workspace_dir="${config_dir}/workspace"
     mkdir -p "$agent_dir"
-    mkdir -p "$config_dir/agents/main/sessions"
+    mkdir -p "$config_dir/agents/main/sessions"  
     mkdir -p "$config_dir/credentials"
     mkdir -p "$config_dir/logs"
+    mkdir -p "$workspace_dir/memory"
     
-    # Set proper permissions
+    # Set proper permissions (secure by default)
     chmod 700 "$config_dir"
+    chmod 700 "$config_dir/agents"
+    chmod 700 "$config_dir/agents/main"
+    chmod 700 "$agent_dir"
+    chmod 700 "$config_dir/agents/main/sessions"
+    chmod 700 "$config_dir/credentials"
+    chmod 700 "$config_dir/logs"
+    chmod 755 "$workspace_dir"  # Workspace can be slightly more permissive
+    chmod 755 "$workspace_dir/memory"
     chmod 600 "$config_file"
     
     if [[ "$api_mode" == "proxy" && -n "${GOOSE_PROXY_KEY:-}" ]]; then
@@ -176,13 +198,44 @@ AUTHFILEEOF
 AUTHFILEEOF
         chmod 600 "$agent_dir/auth-profiles.json"
         log_success "API key stored securely"
+    else
+        # Local-only mode - create auth profile for Ollama
+        cat > "$agent_dir/auth-profiles.json" <<AUTHFILEEOF
+{
+  "version": 1,
+  "profiles": {
+    "local:default": {
+      "type": "endpoint",
+      "provider": "ollama",
+      "baseUrl": "http://localhost:11434"
+    }
+  },
+  "lastGood": {
+    "ollama": "local:default"
+  }
+}
+AUTHFILEEOF
+        chmod 600 "$agent_dir/auth-profiles.json"
+        log_success "Local-only auth profile created"
     fi
 
-    # Validate JSON
+    # Validate JSON syntax
     if python3 -m json.tool "$config_file" > /dev/null 2>&1; then
-        log_success "OpenClaw configuration generated"
+        log_success "OpenClaw configuration generated and validated"
+        
+        # Also validate the auth-profiles.json if it was created
+        if [[ -f "$agent_dir/auth-profiles.json" ]]; then
+            if python3 -m json.tool "$agent_dir/auth-profiles.json" > /dev/null 2>&1; then
+                log_success "Auth profiles configuration validated"
+            else
+                log_error "Generated auth-profiles.json has invalid JSON"
+                exit 1
+            fi
+        fi
     else
-        log_error "Generated config has invalid JSON — please report this bug"
+        log_error "Generated openclaw.json has invalid JSON — please report this bug"
+        echo -e "${YELLOW}Generated config for debugging:${NC}"
+        cat "$config_file" | head -20
         exit 1
     fi
 
@@ -200,24 +253,39 @@ setup_workspace() {
     local workspace_dir="${GOOSE_WORKSPACE_DIR:-$HOME/.openclaw/workspace}"
 
     mkdir -p "$workspace_dir/memory"
+    
+    # Verify template directory exists
+    if [[ ! -d "$template_dir" ]]; then
+        log_error "Template directory not found: $template_dir"
+        exit 1
+    fi
 
     # AGENTS.md — always overwrite with our version
     cp "$template_dir/AGENTS.md" "$workspace_dir/AGENTS.md"
+    chmod 644 "$workspace_dir/AGENTS.md"
 
     # SOUL.md — from selected persona
     local persona="${GOOSE_AGENT_PERSONA:-assistant}"
     local soul_file="$template_dir/SOUL-${persona}.md"
     if [[ -f "$soul_file" ]]; then
         cp "$soul_file" "$workspace_dir/SOUL.md"
+        chmod 644 "$workspace_dir/SOUL.md"
         log_success "Persona: $persona"
     else
         cp "$template_dir/SOUL-assistant.md" "$workspace_dir/SOUL.md"
+        chmod 644 "$workspace_dir/SOUL.md"
         log_warning "Persona '$persona' not found, using assistant"
     fi
 
-    # USER.md — substitute name
+    # USER.md — substitute name, date, and hardware specs
     local user_name="${GOOSE_USER_NAME:-$(whoami)}"
-    sed "s/{{USER_NAME}}/${user_name}/g" "$template_dir/USER.md.tmpl" > "$workspace_dir/USER.md"
+    local setup_date=$(date +"%Y-%m-%d")
+    sed -e "s/{{USER_NAME}}/${user_name}/g" \
+        -e "s/{{SETUP_DATE}}/${setup_date}/g" \
+        -e "s/{{GOOSE_CHIP}}/${GOOSE_CHIP:-Unknown}/g" \
+        -e "s/{{GOOSE_RAM_GB}}/${GOOSE_RAM_GB:-8}/g" \
+        "$template_dir/USER.md.tmpl" > "$workspace_dir/USER.md"
+    chmod 644 "$workspace_dir/USER.md"
     log_success "User: $user_name"
 
     # TOOLS.md, MEMORY.md — process templates with sed, only create if missing
@@ -226,20 +294,23 @@ setup_workspace() {
             -e "s|{{GOOSE_RAM_GB:-8}}|${GOOSE_RAM_GB:-8}|g" \
             -e "s|{{GOOSE_ARCH:-arm64}}|${GOOSE_ARCH:-arm64}|g" \
             -e "s|{{GOOSE_MACOS_VER:-Unknown}}|${GOOSE_MACOS_VER:-Unknown}|g" \
-            -e "s|{{GOOSE_OLLAMA_MODEL:-qwen2.5:7b}}|${GOOSE_OLLAMA_MODEL:-qwen3:14b}|g" \
+            -e "s|{{GOOSE_OLLAMA_MODEL:-qwen2.5:7b}}|${GOOSE_OLLAMA_MODEL:-qwen2.5:14b}|g" \
             "$template_dir/TOOLS.md" > "$workspace_dir/TOOLS.md"
+        chmod 644 "$workspace_dir/TOOLS.md"
     fi
 
     if [[ ! -f "$workspace_dir/MEMORY.md" && -f "$template_dir/MEMORY.md" ]]; then
         sed -e "s|{{GOOSE_AGENT_PERSONA:-partner}}|${GOOSE_AGENT_PERSONA:-partner}|g" \
-            -e "s|{{GOOSE_OLLAMA_MODEL:-qwen2.5:7b}}|${GOOSE_OLLAMA_MODEL:-qwen3:14b}|g" \
+            -e "s|{{GOOSE_OLLAMA_MODEL:-qwen2.5:7b}}|${GOOSE_OLLAMA_MODEL:-qwen2.5:14b}|g" \
             -e "s|{{GOOSE_RAM_GB:-8}}|${GOOSE_RAM_GB:-8}|g" \
             "$template_dir/MEMORY.md" > "$workspace_dir/MEMORY.md"
+        chmod 644 "$workspace_dir/MEMORY.md"
     fi
 
     # HEARTBEAT.md — copy only if missing
     if [[ ! -f "$workspace_dir/HEARTBEAT.md" && -f "$template_dir/HEARTBEAT.md" ]]; then
         cp "$template_dir/HEARTBEAT.md" "$workspace_dir/HEARTBEAT.md"
+        chmod 644 "$workspace_dir/HEARTBEAT.md"
     fi
 
     log_success "Workspace ready at $workspace_dir"
@@ -286,7 +357,7 @@ main_optimize() {
     log_success "System optimization complete!"
     echo -e "  ${GREEN}✅${NC} OpenClaw config generated (optimized for ${GOOSE_RAM_GB:-?}GB RAM)"
     echo -e "  ${GREEN}✅${NC} Local embeddings configured (\$0 cost)"
-    echo -e "  ${GREEN}✅${NC} Subagents: ollama/${GOOSE_OLLAMA_MODEL:-qwen3:14b} (local, \$0)"
+    echo -e "  ${GREEN}✅${NC} Subagents: ollama/${GOOSE_OLLAMA_MODEL:-qwen2.5:14b} (local, \$0)"
     echo -e "  ${GREEN}✅${NC} Thinking mode: low (best quality/cost ratio)"
     echo -e "  ${GREEN}✅${NC} Workspace files ready"
     if [[ -d "$HOME/.openclaw/dashboard" ]]; then

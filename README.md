@@ -181,7 +181,7 @@ brew services restart ollama
 **Dashboard won't load:**
 ```bash
 # Verify ports are free
-lsof -i :3000 -i :3721
+lsof -i :3000 -i :18789
 ```
 
 **Model errors:**
