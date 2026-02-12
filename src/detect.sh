@@ -101,9 +101,9 @@ detect_ram() {
 
 # Check available disk space
 check_disk_space() {
-    local available_gb
     # Get available space in 1GB blocks for root volume
-    available_gb=$(df -g / | tail -1 | awk '{print $4}')
+    GOOSE_DISK_GB=$(df -g / | tail -1 | awk '{print $4}')
+    local available_gb="$GOOSE_DISK_GB"
     
     log_info "Available disk space: ${available_gb}GB"
     
@@ -146,7 +146,7 @@ main_detect() {
     check_xcode_clt
     
     # Export all variables for use in other scripts
-    export GOOSE_CHIP GOOSE_RAM_GB GOOSE_MACOS_VER GOOSE_ARCH
+    export GOOSE_CHIP GOOSE_RAM_GB GOOSE_MACOS_VER GOOSE_ARCH GOOSE_DISK_GB
     
     log_success "System detection complete"
     
@@ -156,7 +156,7 @@ main_detect() {
     echo -e "  Chip: $GOOSE_CHIP"
     echo -e "  RAM: ${GOOSE_RAM_GB}GB"
     echo -e "  Architecture: $GOOSE_ARCH"
-    echo -e "  Disk Space: ${available_gb}GB available"
+    echo -e "  Disk Space: ${GOOSE_DISK_GB}GB available"
 }
 
 # Run detection
