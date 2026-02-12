@@ -278,7 +278,7 @@ prevent_sleep() {
 setup_watchdog() {
     log_info "🐕 Setting up gateway watchdog..."
     
-    local src_watchdog="/Users/bfg/goosestack/src/templates/watchdog.sh"
+    local src_watchdog="${INSTALL_DIR}/src/templates/watchdog.sh"
     local dest_watchdog="$HOME/.openclaw/watchdog.sh"
     local plist_file="$HOME/Library/LaunchAgents/ai.openclaw.watchdog.plist"
     
