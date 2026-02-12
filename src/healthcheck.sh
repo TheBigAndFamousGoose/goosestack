@@ -200,10 +200,19 @@ check_macos_permissions() {
     fi
     
     # Always show general permissions guidance
+    local node_path
+    if command -v node >/dev/null 2>&1; then
+        node_path=$(which node)
+    elif [[ "$GOOSE_ARCH" == "arm64" ]]; then
+        node_path="/opt/homebrew/bin/node"
+    else
+        node_path="/usr/local/bin/node"
+    fi
+    
     echo -e "\n${CYAN}💡 macOS Permissions Setup:${NC}"
-    echo -e "  1. Grant permissions to: ${BOLD}/opt/homebrew/bin/node${NC}"
+    echo -e "  1. Grant permissions to: ${BOLD}${node_path}${NC}"
     echo -e "     • Go to System Settings → Privacy & Security"
-    echo -e "     • Add /opt/homebrew/bin/node to relevant permissions"
+    echo -e "     • Add ${node_path} to relevant permissions"
     echo -e ""
     echo -e "  2. For Accessibility access, you may need to create a .app wrapper"
     echo -e "     • See: https://support.apple.com/guide/mac-help/allow-accessibility-apps-mchlc01d91f1/mac"

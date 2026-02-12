@@ -29,6 +29,22 @@ generate_openclaw_config() {
     }
 AUTHEOF
 )
+    elif [[ "$api_mode" == "proxy" && -z "${GOOSE_PROXY_KEY:-}" ]]; then
+        # Proxy mode requested but no key provided - fallback to local-only with warning
+        log_warning "GooseStack Proxy mode selected but no key provided - falling back to local-only mode"
+        log_info "Visit https://goosestack.com/credits to get your proxy key, then update ~/.openclaw/openclaw.json"
+        auth_block=$(cat <<AUTHEOF
+    "profiles": {
+      "local:default": {
+        "provider": "ollama",
+        "mode": "endpoint",
+        "baseUrl": "http://localhost:11434"
+      }
+    }
+AUTHEOF
+)
+        # Override the API mode so the rest of the config logic works correctly
+        api_mode="local"
     elif [[ -n "${GOOSE_API_KEY:-}" ]]; then
         auth_block=$(cat <<AUTHEOF
     "profiles": {
@@ -180,6 +196,25 @@ CONFIGEOF
 AUTHFILEEOF
         chmod 600 "$agent_dir/auth-profiles.json"
         log_success "GooseStack Proxy API key stored securely"
+    elif [[ "$api_mode" == "local" || -z "${GOOSE_API_KEY:-}" ]]; then
+        # Local-only mode or fallback from proxy mode - create auth profile for Ollama
+        cat > "$agent_dir/auth-profiles.json" <<AUTHFILEEOF
+{
+  "version": 1,
+  "profiles": {
+    "local:default": {
+      "type": "endpoint",
+      "provider": "ollama",
+      "baseUrl": "http://localhost:11434"
+    }
+  },
+  "lastGood": {
+    "ollama": "local:default"
+  }
+}
+AUTHFILEEOF
+        chmod 600 "$agent_dir/auth-profiles.json"
+        log_success "Local-only auth profile created"
     elif [[ -n "${GOOSE_API_KEY:-}" ]]; then
         cat > "$agent_dir/auth-profiles.json" <<AUTHFILEEOF
 {
@@ -198,25 +233,6 @@ AUTHFILEEOF
 AUTHFILEEOF
         chmod 600 "$agent_dir/auth-profiles.json"
         log_success "API key stored securely"
-    else
-        # Local-only mode - create auth profile for Ollama
-        cat > "$agent_dir/auth-profiles.json" <<AUTHFILEEOF
-{
-  "version": 1,
-  "profiles": {
-    "local:default": {
-      "type": "endpoint",
-      "provider": "ollama",
-      "baseUrl": "http://localhost:11434"
-    }
-  },
-  "lastGood": {
-    "ollama": "local:default"
-  }
-}
-AUTHFILEEOF
-        chmod 600 "$agent_dir/auth-profiles.json"
-        log_success "Local-only auth profile created"
     fi
 
     # Validate JSON syntax

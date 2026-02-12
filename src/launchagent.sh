@@ -22,11 +22,14 @@ create_launch_agent() {
         if command -v greadlink >/dev/null 2>&1; then
             # If GNU coreutils is installed
             openclaw_path=$(greadlink -f "$(which openclaw)")
+        elif command -v realpath >/dev/null 2>&1; then
+            # If realpath is available (fallback option)
+            openclaw_path=$(realpath "$(which openclaw)")
         elif command -v readlink >/dev/null 2>&1 && readlink -f "$(which openclaw)" >/dev/null 2>&1; then
             # If readlink supports -f
             openclaw_path=$(readlink -f "$(which openclaw)")
         else
-            # Fallback: use the symlink as-is (should work fine for most cases)
+            # Final fallback: use the symlink as-is and hope launchd can handle it
             openclaw_path=$(which openclaw)
             log_info "Using openclaw path as-is (symlink resolution not available): $openclaw_path"
         fi
