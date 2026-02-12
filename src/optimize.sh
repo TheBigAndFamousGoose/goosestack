@@ -244,12 +244,15 @@ setup_dashboard() {
     local dashboard_src="$INSTALL_DIR/dashboard"
     local dashboard_dest="$HOME/.openclaw/dashboard"
     
-    # Copy dashboard files
-    mkdir -p "$dashboard_dest"
-    cp -r "$dashboard_src/"* "$dashboard_dest/"
-    chmod +x "$dashboard_dest/server.sh"
-    
-    log_success "Dashboard files copied to ~/.openclaw/dashboard/"
+    # Copy dashboard files if they exist
+    if [[ -d "$dashboard_src" ]]; then
+        mkdir -p "$dashboard_dest"
+        cp -r "$dashboard_src/"* "$dashboard_dest/"
+        [[ -f "$dashboard_dest/server.sh" ]] && chmod +x "$dashboard_dest/server.sh"
+        log_success "Dashboard files copied to ~/.openclaw/dashboard/"
+    else
+        log_info "Dashboard files not bundled — use web dashboard at https://goosestack.com"
+    fi
     
     # Create convenience alias script
     local alias_script="$HOME/.openclaw/dashboard-start.sh"
@@ -278,7 +281,11 @@ main_optimize() {
     echo -e "  ${GREEN}✅${NC} Subagents: ollama/${GOOSE_OLLAMA_MODEL:-qwen3:14b} (local, \$0)"
     echo -e "  ${GREEN}✅${NC} Thinking mode: low (best quality/cost ratio)"
     echo -e "  ${GREEN}✅${NC} Workspace files ready"
-    echo -e "  ${GREEN}✅${NC} Dashboard ready at ~/.openclaw/dashboard/"
+    if [[ -d "$HOME/.openclaw/dashboard" ]]; then
+        echo -e "  ${GREEN}✅${NC} Dashboard ready at ~/.openclaw/dashboard/"
+    else
+        echo -e "  ${GREEN}✅${NC} Web dashboard at https://goosestack.com"
+    fi
 }
 
 main_optimize
