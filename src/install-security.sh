@@ -2,36 +2,11 @@
 # install-security.sh - ClawSec Security Suite Installation for GooseStack
 set -euo pipefail
 
-# Colors (matching other GooseStack scripts)
-readonly RED='\033[0;31m'
-readonly GREEN='\033[0;32m'
-readonly YELLOW='\033[1;33m'
-readonly BLUE='\033[0;34m'
-readonly PURPLE='\033[0;35m'
-readonly CYAN='\033[0;36m'
-readonly BOLD='\033[1m'
-readonly NC='\033[0m' # No Color
 
-# Logging functions (matching other GooseStack scripts)
-log_info() {
-    echo -e "${CYAN}ℹ️  $1${NC}"
-}
 
-log_success() {
-    echo -e "${GREEN}✅ $1${NC}"
-}
 
-log_warning() {
-    echo -e "${YELLOW}⚠️  $1${NC}"
-}
 
-log_error() {
-    echo -e "${RED}❌ $1${NC}" >&2
-}
 
-log_step() {
-    echo -e "\n${BOLD}${PURPLE}🛡️  $1${NC}"
-}
 
 # Check if OpenClaw is available for cron setup
 check_openclaw() {
