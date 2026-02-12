@@ -26,7 +26,7 @@ GooseStack automatically installs and configures:
 - ✅ **Ollama** - Local AI models
 - ✅ **Optimized Models** - Selected based on your RAM
 - ✅ **Auto-Start Service** - Runs on login via LaunchAgent
-- ✅ **Web Dashboard** - Chat interface at http://localhost:3000
+- ✅ **Web Dashboard** - Chat interface at http://localhost:18789
 - ✅ **Local Memory Search** - Privacy-focused embeddings
 - ✅ **Telegram Integration** - Optional bot connection
 
@@ -70,7 +70,7 @@ GooseStack automatically installs and configures:
    ```
 
 2. **Chat with your agent:**
-   - Dashboard opens automatically at http://localhost:3000
+   - Dashboard opens automatically at http://localhost:18789
    - Or visit it manually in your browser
 
 3. **Try these commands:**
@@ -181,7 +181,7 @@ brew services restart ollama
 **Dashboard won't load:**
 ```bash
 # Verify ports are free
-lsof -i :3000 -i :18789
+lsof -i :18789
 ```
 
 **Model errors:**
