@@ -8,11 +8,41 @@ set -euo pipefail
 # Wizard state variables
 GOOSE_USER_NAME=""
 GOOSE_AGENT_PERSONA=""
-GOOSE_API_MODE=""  # "byok" or "proxy"
+GOOSE_API_MODE=""  # "byok" or "proxy" or "local"
 GOOSE_API_KEY=""
 GOOSE_PROXY_KEY=""
 GOOSE_TELEGRAM_ENABLED="false"
 GOOSE_TELEGRAM_BOT_TOKEN=""
+
+# Check if we have a TTY for interactive input
+HAS_TTY="false"
+if [[ -t 0 ]]; then
+    HAS_TTY="true"
+elif [[ -e /dev/tty ]]; then
+    HAS_TTY="true"
+fi
+
+# Read from TTY even when stdin is a pipe
+wizard_read() {
+    local varname="$1"
+    local default="${2:-}"
+    if [[ "$HAS_TTY" == "true" && -e /dev/tty ]]; then
+        read -r "$varname" < /dev/tty || eval "$varname='$default'"
+    else
+        eval "$varname='$default'"
+    fi
+}
+
+wizard_read_secret() {
+    local varname="$1"
+    local default="${2:-}"
+    if [[ "$HAS_TTY" == "true" && -e /dev/tty ]]; then
+        read -r -s "$varname" < /dev/tty || eval "$varname='$default'"
+        echo ""
+    else
+        eval "$varname='$default'"
+    fi
+}
 
 # Prompt for user's name
 prompt_user_name() {
@@ -24,7 +54,9 @@ prompt_user_name() {
     echo -e "${CYAN}What's your name?${NC}"
     echo -e "${YELLOW}Press Enter for default: $default_name${NC}"
     echo -n "> "
-    read -r user_input
+    
+    local user_input
+    wizard_read user_input "$default_name"
     
     if [[ -n "$user_input" ]]; then
         GOOSE_USER_NAME="$user_input"
@@ -45,7 +77,9 @@ prompt_agent_persona() {
     echo -e ""
     echo -e "${YELLOW}Choose 1-4 (default: 2 - Partner):${NC}"
     echo -n "> "
-    read -r persona_choice
+    
+    local persona_choice
+    wizard_read persona_choice "2"
     
     case "${persona_choice:-2}" in
         1)
@@ -86,7 +120,9 @@ prompt_api_setup() {
     echo -e ""
     echo -e "${YELLOW}Choose 1-3 (default: 1 - BYOK):${NC}"
     echo -n "> "
-    read -r api_choice
+    
+    local api_choice
+    wizard_read api_choice "1"
 
     case "${api_choice:-1}" in
         1)
@@ -117,8 +153,9 @@ prompt_api_key_byok() {
     echo -e ""
     echo -e "${YELLOW}Paste your API key (or press Enter to skip for now):${NC}"
     echo -n "> "
-    read -r -s api_key_input
-    echo ""
+    
+    local api_key_input
+    wizard_read_secret api_key_input ""
 
     if [[ -n "$api_key_input" ]]; then
         if [[ "$api_key_input" =~ ^sk-ant-[a-zA-Z0-9_-]+$ ]]; then
@@ -143,8 +180,9 @@ prompt_proxy_key() {
     echo -e ""
     echo -e "${YELLOW}Paste your GooseStack API key (or press Enter to set up later):${NC}"
     echo -n "> "
-    read -r -s proxy_key_input
-    echo ""
+    
+    local proxy_key_input
+    wizard_read_secret proxy_key_input ""
 
     if [[ -n "$proxy_key_input" ]]; then
         GOOSE_PROXY_KEY="$proxy_key_input"
@@ -162,7 +200,9 @@ prompt_telegram() {
     echo -e ""
     echo -e "${YELLOW}Enable Telegram? (y/N):${NC}"
     echo -n "> "
-    read -r telegram_choice
+    
+    local telegram_choice
+    wizard_read telegram_choice "n"
     
     if [[ "$telegram_choice" =~ ^[Yy]$ ]]; then
         GOOSE_TELEGRAM_ENABLED="true"
@@ -175,10 +215,11 @@ prompt_telegram() {
         echo -e ""
         echo -e "${YELLOW}Paste your Telegram bot token:${NC}"
         echo -n "> "
-        read -r telegram_token
+        
+        local telegram_token
+        wizard_read telegram_token ""
         
         if [[ -n "$telegram_token" ]]; then
-            # Basic validation
             if [[ "$telegram_token" =~ ^[0-9]+:[a-zA-Z0-9_-]+$ ]]; then
                 GOOSE_TELEGRAM_BOT_TOKEN="$telegram_token"
                 log_success "Telegram bot token saved"
@@ -229,7 +270,9 @@ show_summary() {
     
     echo -e "\n${YELLOW}Is this correct? (Y/n):${NC}"
     echo -n "> "
-    read -r confirm
+    
+    local confirm
+    wizard_read confirm "y"
     
     if [[ "$confirm" =~ ^[Nn]$ ]]; then
         log_info "Restarting wizard..."

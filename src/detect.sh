@@ -12,7 +12,7 @@ if [[ $EUID -eq 0 ]]; then
     log_warning "Running as root is not recommended!"
     log_warning "GooseStack should be installed as a regular user."
     echo -e "${YELLOW}Continue anyway? (y/N): ${NC}"
-    read -r continue_root
+    if [[ -e /dev/tty ]]; then read -r continue_root < /dev/tty || continue_root="y"; else continue_root="y"; fi
     if [[ ! "$continue_root" =~ ^[Yy]$ ]]; then
         log_error "Installation cancelled. Please run without sudo."
         exit 1
@@ -89,7 +89,7 @@ detect_ram() {
         log_warning "GooseStack recommends 8GB+ RAM (found ${GOOSE_RAM_GB}GB)"
         log_warning "Performance may be limited with local models"
         echo -e "${YELLOW}Continue installation? (y/N): ${NC}"
-        read -r continue_low_ram
+        if [[ -e /dev/tty ]]; then read -r continue_low_ram < /dev/tty || continue_low_ram="y"; else continue_low_ram="y"; fi
         if [[ ! "$continue_low_ram" =~ ^[Yy]$ ]]; then
             log_error "Installation cancelled"
             exit 1
@@ -125,7 +125,7 @@ check_xcode_clt() {
         
         echo -e "${YELLOW}Please complete the Command Line Tools installation in the dialog,"
         echo -e "then press Enter to continue...${NC}"
-        read -r
+        if [[ -e /dev/tty ]]; then read -r < /dev/tty || true; else true; fi
         
         # Verify installation
         if ! xcode-select -p >/dev/null 2>&1; then

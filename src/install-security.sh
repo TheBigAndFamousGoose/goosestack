@@ -123,7 +123,11 @@ main_install_security() {
     # Ask user if they want to install ClawSec
     while true; do
         echo -e "${BOLD}Would you like to install ClawSec security suite? (Recommended) [Y/n]${NC}"
-        read -r response
+        if [[ -e /dev/tty ]]; then
+            read -r response < /dev/tty || response="Y"
+        else
+            response="Y"
+        fi
         
         case "${response:-Y}" in
             [Yy]|[Yy][Ee][Ss]|"")
