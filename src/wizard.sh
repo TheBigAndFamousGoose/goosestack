@@ -14,84 +14,89 @@ GOOSE_PROXY_KEY=""
 GOOSE_TELEGRAM_ENABLED="false"
 GOOSE_TELEGRAM_BOT_TOKEN=""
 
-# Internationalization
-if [[ "${GOOSE_LANG:-en}" == "ru" ]]; then
-    I18N_WELCOME="👋 Давайте настроим вашего AI-агента!"
-    I18N_WHATS_YOUR_NAME="Как вас зовут?"
-    I18N_PRESS_ENTER_DEFAULT="Нажмите Enter для значения по умолчанию:"
-    I18N_HELLO="Привет,"
-    I18N_PERSONA_QUESTION="Какой характер должен быть у вашего агента?"
-    I18N_PERSONA_1="Ассистент - Профессиональный, полезный, формальный"
-    I18N_PERSONA_2="Партнёр - Дружелюбный, неформальный"
-    I18N_PERSONA_3="Кодер - Технический, прямолинейный"
-    I18N_PERSONA_4="Креативный - Остроумный, творческий"
-    I18N_CHOOSE="Выберите 1-4 (по умолчанию: 2 - Партнёр):"
-    I18N_SELECTED="Выбрано:"
-    I18N_API_TITLE="🔑 Как вы хотите подключиться к AI моделям?"
-    I18N_API_BYOK="Свой ключ (BYOK) - Бесплатно навсегда"
-    I18N_API_BYOK_DESC="Используйте свой API ключ Anthropic/OpenAI. Полный контроль."
-    I18N_API_PROXY="GooseStack API - Без настройки (предоплаченные кредиты)"
-    I18N_API_PROXY_DESC="Не нужен API ключ. Купите кредиты и начните общение."
-    I18N_API_LOCAL="Только локально - 100% бесплатно, 100% приватно"
-    I18N_API_LOCAL_DESC="Только локальные модели Ollama. Без облака, без затрат."
-    I18N_CHOOSE_API="Выберите 1-3 (по умолчанию: 1 - Свой ключ):"
-    I18N_PASTE_API_KEY="Вставьте ваш API ключ Anthropic:"
-    I18N_GET_KEY="Получить ключ:"
-    I18N_PASTE_OR_SKIP="Вставьте ключ (или нажмите Enter чтобы пропустить):"
-    I18N_KEY_SAVED="API ключ сохранён"
-    I18N_KEY_SKIPPED="Ключ пропущен — можно добавить позже"
-    I18N_TELEGRAM_QUESTION="Хотите подключить агента к Telegram?"
-    I18N_TELEGRAM_DESC="Это позволит общаться с агентом откуда угодно через Telegram"
-    I18N_TELEGRAM_ENABLE="Включить Telegram? (y/N):"
-    I18N_TELEGRAM_SETUP="Для настройки Telegram:"
-    I18N_PASTE_TOKEN="Вставьте токен бота:"
-    I18N_SUMMARY="📋 Итого:"
-    I18N_NAME="Имя:"
-    I18N_PERSONA="Характер:"
-    I18N_CORRECT="Всё верно? (Y/n):"
-    I18N_RESTARTING="Перезапуск мастера..."
-    I18N_CONFIRMED="Настройка подтверждена!"
-    I18N_WIZARD_START="🧙 Запуск мастера настройки..."
-    I18N_WIZARD_DONE="Мастер настройки завершён!"
-else
-    I18N_WELCOME="👋 Let's personalize your AI agent!"
-    I18N_WHATS_YOUR_NAME="What's your name?"
-    I18N_PRESS_ENTER_DEFAULT="Press Enter for default:"
-    I18N_HELLO="Hello,"
-    I18N_PERSONA_QUESTION="What personality should your agent have?"
-    I18N_PERSONA_1="Assistant - Professional, helpful, formal"
-    I18N_PERSONA_2="Partner - Collaborative, friendly, casual"
-    I18N_PERSONA_3="Coder - Technical, direct, development-focused"
-    I18N_PERSONA_4="Creative - Witty, expressive, imaginative"
-    I18N_CHOOSE="Choose 1-4 (default: 2 - Partner):"
-    I18N_SELECTED="Selected:"
-    I18N_API_TITLE="🔑 How do you want to connect to AI models?"
-    I18N_API_BYOK="Bring Your Own Key (BYOK) - Free forever"
-    I18N_API_BYOK_DESC="Use your own Anthropic/OpenAI API key. Full control over costs."
-    I18N_API_PROXY="GooseStack API - Zero friction (prepaid credits)"
-    I18N_API_PROXY_DESC="No API key needed. Buy credits, start chatting."
-    I18N_API_LOCAL="Local only - 100% free, 100% private"
-    I18N_API_LOCAL_DESC="Use only local Ollama models. No cloud, no costs."
-    I18N_CHOOSE_API="Choose 1-3 (default: 1 - BYOK):"
-    I18N_PASTE_API_KEY="Paste your Anthropic API key:"
-    I18N_GET_KEY="Get one at:"
-    I18N_PASTE_OR_SKIP="Paste your API key (or press Enter to skip for now):"
-    I18N_KEY_SAVED="API key saved and validated"
-    I18N_KEY_SKIPPED="Skipped API key — you can add it later"
-    I18N_TELEGRAM_QUESTION="Want to connect your agent to Telegram?"
-    I18N_TELEGRAM_DESC="This lets you chat with your agent from anywhere via Telegram"
-    I18N_TELEGRAM_ENABLE="Enable Telegram? (y/N):"
-    I18N_TELEGRAM_SETUP="To set up Telegram:"
-    I18N_PASTE_TOKEN="Paste your Telegram bot token:"
-    I18N_SUMMARY="📋 Configuration Summary:"
-    I18N_NAME="Name:"
-    I18N_PERSONA="Persona:"
-    I18N_CORRECT="Is this correct? (Y/n):"
-    I18N_RESTARTING="Restarting wizard..."
-    I18N_CONFIRMED="Configuration confirmed!"
-    I18N_WIZARD_START="🧙 Starting configuration wizard..."
-    I18N_WIZARD_DONE="Configuration wizard complete!"
-fi
+# Load internationalization strings
+load_i18n() {
+    if [[ "${GOOSE_LANG:-en}" == "ru" ]]; then
+        I18N_WELCOME="👋 Давайте настроим вашего AI-агента!"
+        I18N_WHATS_YOUR_NAME="Как вас зовут?"
+        I18N_PRESS_ENTER_DEFAULT="Нажмите Enter для значения по умолчанию:"
+        I18N_HELLO="Привет,"
+        I18N_PERSONA_QUESTION="Какой характер должен быть у вашего агента?"
+        I18N_PERSONA_1="Ассистент - Профессиональный, полезный, формальный"
+        I18N_PERSONA_2="Партнёр - Дружелюбный, неформальный"
+        I18N_PERSONA_3="Кодер - Технический, прямолинейный"
+        I18N_PERSONA_4="Креативный - Остроумный, творческий"
+        I18N_CHOOSE="Выберите 1-4 (по умолчанию: 2 - Партнёр):"
+        I18N_SELECTED="Выбрано:"
+        I18N_API_TITLE="🔑 Как вы хотите подключиться к AI моделям?"
+        I18N_API_BYOK="Свой ключ (BYOK) - Бесплатно навсегда"
+        I18N_API_BYOK_DESC="Используйте свой API ключ Anthropic/OpenAI. Полный контроль."
+        I18N_API_PROXY="GooseStack API - Без настройки (предоплаченные кредиты)"
+        I18N_API_PROXY_DESC="Не нужен API ключ. Купите кредиты и начните общение."
+        I18N_API_LOCAL="Только локально - 100% бесплатно, 100% приватно"
+        I18N_API_LOCAL_DESC="Только локальные модели Ollama. Без облака, без затрат."
+        I18N_CHOOSE_API="Выберите 1-3 (по умолчанию: 1 - Свой ключ):"
+        I18N_PASTE_API_KEY="Вставьте ваш API ключ Anthropic:"
+        I18N_GET_KEY="Получить ключ:"
+        I18N_PASTE_OR_SKIP="Вставьте ключ (или нажмите Enter чтобы пропустить):"
+        I18N_KEY_SAVED="API ключ сохранён"
+        I18N_KEY_SKIPPED="Ключ пропущен — можно добавить позже"
+        I18N_TELEGRAM_QUESTION="Хотите подключить агента к Telegram?"
+        I18N_TELEGRAM_DESC="Это позволит общаться с агентом откуда угодно через Telegram"
+        I18N_TELEGRAM_ENABLE="Включить Telegram? (y/N):"
+        I18N_TELEGRAM_SETUP="Для настройки Telegram:"
+        I18N_PASTE_TOKEN="Вставьте токен бота:"
+        I18N_SUMMARY="📋 Итого:"
+        I18N_NAME="Имя:"
+        I18N_PERSONA="Характер:"
+        I18N_CORRECT="Всё верно? (Y/n):"
+        I18N_RESTARTING="Перезапуск мастера..."
+        I18N_CONFIRMED="Настройка подтверждена!"
+        I18N_WIZARD_START="🧙 Запуск мастера настройки..."
+        I18N_WIZARD_DONE="Мастер настройки завершён!"
+    else
+        I18N_WELCOME="👋 Let's personalize your AI agent!"
+        I18N_WHATS_YOUR_NAME="What's your name?"
+        I18N_PRESS_ENTER_DEFAULT="Press Enter for default:"
+        I18N_HELLO="Hello,"
+        I18N_PERSONA_QUESTION="What personality should your agent have?"
+        I18N_PERSONA_1="Assistant - Professional, helpful, formal"
+        I18N_PERSONA_2="Partner - Collaborative, friendly, casual"
+        I18N_PERSONA_3="Coder - Technical, direct, development-focused"
+        I18N_PERSONA_4="Creative - Witty, expressive, imaginative"
+        I18N_CHOOSE="Choose 1-4 (default: 2 - Partner):"
+        I18N_SELECTED="Selected:"
+        I18N_API_TITLE="🔑 How do you want to connect to AI models?"
+        I18N_API_BYOK="Bring Your Own Key (BYOK) - Free forever"
+        I18N_API_BYOK_DESC="Use your own Anthropic/OpenAI API key. Full control over costs."
+        I18N_API_PROXY="GooseStack API - Zero friction (prepaid credits)"
+        I18N_API_PROXY_DESC="No API key needed. Buy credits, start chatting."
+        I18N_API_LOCAL="Local only - 100% free, 100% private"
+        I18N_API_LOCAL_DESC="Use only local Ollama models. No cloud, no costs."
+        I18N_CHOOSE_API="Choose 1-3 (default: 1 - BYOK):"
+        I18N_PASTE_API_KEY="Paste your Anthropic API key:"
+        I18N_GET_KEY="Get one at:"
+        I18N_PASTE_OR_SKIP="Paste your API key (or press Enter to skip for now):"
+        I18N_KEY_SAVED="API key saved and validated"
+        I18N_KEY_SKIPPED="Skipped API key — you can add it later"
+        I18N_TELEGRAM_QUESTION="Want to connect your agent to Telegram?"
+        I18N_TELEGRAM_DESC="This lets you chat with your agent from anywhere via Telegram"
+        I18N_TELEGRAM_ENABLE="Enable Telegram? (y/N):"
+        I18N_TELEGRAM_SETUP="To set up Telegram:"
+        I18N_PASTE_TOKEN="Paste your Telegram bot token:"
+        I18N_SUMMARY="📋 Configuration Summary:"
+        I18N_NAME="Name:"
+        I18N_PERSONA="Persona:"
+        I18N_CORRECT="Is this correct? (Y/n):"
+        I18N_RESTARTING="Restarting wizard..."
+        I18N_CONFIRMED="Configuration confirmed!"
+        I18N_WIZARD_START="🧙 Starting configuration wizard..."
+        I18N_WIZARD_DONE="Configuration wizard complete!"
+    fi
+}
+
+# Load I18N strings with detected language
+load_i18n
 
 # Check if we have a TTY for interactive input
 HAS_TTY="false"
@@ -121,6 +126,45 @@ wizard_read_secret() {
     else
         eval "$varname='$default'"
     fi
+}
+
+# Prompt for language selection (bilingual)
+prompt_language() {
+    # Determine default choice based on detected language
+    local default_choice
+    if [[ "${GOOSE_LANG:-en}" == "ru" ]]; then
+        default_choice="2"
+    else
+        default_choice="1"
+    fi
+    
+    echo -e "\n${BOLD}${PURPLE}🌐 Choose your language / Выберите язык:${NC}"
+    echo -e "  ${BOLD}1)${NC} ${GREEN}English${NC}"
+    echo -e "  ${BOLD}2)${NC} ${BLUE}Русский${NC}"
+    echo -e ""
+    echo -e "${YELLOW}Choose 1-2 (default: $default_choice):${NC}"
+    echo -n "> "
+    
+    local lang_choice
+    wizard_read lang_choice "$default_choice"
+    
+    case "${lang_choice:-$default_choice}" in
+        1)
+            export GOOSE_LANG="en"
+            log_info "Language set to English"
+            ;;
+        2)
+            export GOOSE_LANG="ru"
+            log_info "Язык установлен: Русский"
+            ;;
+        *)
+            export GOOSE_LANG="en"
+            log_info "Language set to English (default)"
+            ;;
+    esac
+    
+    # Reload I18N strings with the selected language
+    load_i18n
 }
 
 # Prompt for user's name
@@ -378,6 +422,7 @@ export_wizard_vars() {
 main_wizard() {
     log_info "${I18N_WIZARD_START}"
     
+    prompt_language
     prompt_user_name
     prompt_agent_persona
     prompt_api_setup
