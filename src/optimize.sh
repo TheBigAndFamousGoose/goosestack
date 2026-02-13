@@ -317,6 +317,7 @@ setup_workspace() {
             -e "s|{{GOOSE_RAM_GB:-8}}|${GOOSE_RAM_GB:-8}|g" \
             -e "s|{{GOOSE_ARCH:-arm64}}|${GOOSE_ARCH:-arm64}|g" \
             -e "s|{{GOOSE_MACOS_VER:-Unknown}}|${GOOSE_MACOS_VER:-Unknown}|g" \
+            -e "s|{{GOOSE_LANG}}|${GOOSE_LANG:-en}|g" \
             -e "s|{{GOOSE_OLLAMA_MODEL}}|${GOOSE_OLLAMA_MODEL:-qwen3:14b}|g" \
             -e "s|{{SETUP_DATE}}|${setup_date}|g" \
             -e "s|{{API_STATUS}}|${api_status}|g" \

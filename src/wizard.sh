@@ -14,6 +14,85 @@ GOOSE_PROXY_KEY=""
 GOOSE_TELEGRAM_ENABLED="false"
 GOOSE_TELEGRAM_BOT_TOKEN=""
 
+# Internationalization
+if [[ "${GOOSE_LANG:-en}" == "ru" ]]; then
+    I18N_WELCOME="👋 Давайте настроим вашего AI-агента!"
+    I18N_WHATS_YOUR_NAME="Как вас зовут?"
+    I18N_PRESS_ENTER_DEFAULT="Нажмите Enter для значения по умолчанию:"
+    I18N_HELLO="Привет,"
+    I18N_PERSONA_QUESTION="Какой характер должен быть у вашего агента?"
+    I18N_PERSONA_1="Ассистент - Профессиональный, полезный, формальный"
+    I18N_PERSONA_2="Партнёр - Дружелюбный, неформальный"
+    I18N_PERSONA_3="Кодер - Технический, прямолинейный"
+    I18N_PERSONA_4="Креативный - Остроумный, творческий"
+    I18N_CHOOSE="Выберите 1-4 (по умолчанию: 2 - Партнёр):"
+    I18N_SELECTED="Выбрано:"
+    I18N_API_TITLE="🔑 Как вы хотите подключиться к AI моделям?"
+    I18N_API_BYOK="Свой ключ (BYOK) - Бесплатно навсегда"
+    I18N_API_BYOK_DESC="Используйте свой API ключ Anthropic/OpenAI. Полный контроль."
+    I18N_API_PROXY="GooseStack API - Без настройки (предоплаченные кредиты)"
+    I18N_API_PROXY_DESC="Не нужен API ключ. Купите кредиты и начните общение."
+    I18N_API_LOCAL="Только локально - 100% бесплатно, 100% приватно"
+    I18N_API_LOCAL_DESC="Только локальные модели Ollama. Без облака, без затрат."
+    I18N_CHOOSE_API="Выберите 1-3 (по умолчанию: 1 - Свой ключ):"
+    I18N_PASTE_API_KEY="Вставьте ваш API ключ Anthropic:"
+    I18N_GET_KEY="Получить ключ:"
+    I18N_PASTE_OR_SKIP="Вставьте ключ (или нажмите Enter чтобы пропустить):"
+    I18N_KEY_SAVED="API ключ сохранён"
+    I18N_KEY_SKIPPED="Ключ пропущен — можно добавить позже"
+    I18N_TELEGRAM_QUESTION="Хотите подключить агента к Telegram?"
+    I18N_TELEGRAM_DESC="Это позволит общаться с агентом откуда угодно через Telegram"
+    I18N_TELEGRAM_ENABLE="Включить Telegram? (y/N):"
+    I18N_TELEGRAM_SETUP="Для настройки Telegram:"
+    I18N_PASTE_TOKEN="Вставьте токен бота:"
+    I18N_SUMMARY="📋 Итого:"
+    I18N_NAME="Имя:"
+    I18N_PERSONA="Характер:"
+    I18N_CORRECT="Всё верно? (Y/n):"
+    I18N_RESTARTING="Перезапуск мастера..."
+    I18N_CONFIRMED="Настройка подтверждена!"
+    I18N_WIZARD_START="🧙 Запуск мастера настройки..."
+    I18N_WIZARD_DONE="Мастер настройки завершён!"
+else
+    I18N_WELCOME="👋 Let's personalize your AI agent!"
+    I18N_WHATS_YOUR_NAME="What's your name?"
+    I18N_PRESS_ENTER_DEFAULT="Press Enter for default:"
+    I18N_HELLO="Hello,"
+    I18N_PERSONA_QUESTION="What personality should your agent have?"
+    I18N_PERSONA_1="Assistant - Professional, helpful, formal"
+    I18N_PERSONA_2="Partner - Collaborative, friendly, casual"
+    I18N_PERSONA_3="Coder - Technical, direct, development-focused"
+    I18N_PERSONA_4="Creative - Witty, expressive, imaginative"
+    I18N_CHOOSE="Choose 1-4 (default: 2 - Partner):"
+    I18N_SELECTED="Selected:"
+    I18N_API_TITLE="🔑 How do you want to connect to AI models?"
+    I18N_API_BYOK="Bring Your Own Key (BYOK) - Free forever"
+    I18N_API_BYOK_DESC="Use your own Anthropic/OpenAI API key. Full control over costs."
+    I18N_API_PROXY="GooseStack API - Zero friction (prepaid credits)"
+    I18N_API_PROXY_DESC="No API key needed. Buy credits, start chatting."
+    I18N_API_LOCAL="Local only - 100% free, 100% private"
+    I18N_API_LOCAL_DESC="Use only local Ollama models. No cloud, no costs."
+    I18N_CHOOSE_API="Choose 1-3 (default: 1 - BYOK):"
+    I18N_PASTE_API_KEY="Paste your Anthropic API key:"
+    I18N_GET_KEY="Get one at:"
+    I18N_PASTE_OR_SKIP="Paste your API key (or press Enter to skip for now):"
+    I18N_KEY_SAVED="API key saved and validated"
+    I18N_KEY_SKIPPED="Skipped API key — you can add it later"
+    I18N_TELEGRAM_QUESTION="Want to connect your agent to Telegram?"
+    I18N_TELEGRAM_DESC="This lets you chat with your agent from anywhere via Telegram"
+    I18N_TELEGRAM_ENABLE="Enable Telegram? (y/N):"
+    I18N_TELEGRAM_SETUP="To set up Telegram:"
+    I18N_PASTE_TOKEN="Paste your Telegram bot token:"
+    I18N_SUMMARY="📋 Configuration Summary:"
+    I18N_NAME="Name:"
+    I18N_PERSONA="Persona:"
+    I18N_CORRECT="Is this correct? (Y/n):"
+    I18N_RESTARTING="Restarting wizard..."
+    I18N_CONFIRMED="Configuration confirmed!"
+    I18N_WIZARD_START="🧙 Starting configuration wizard..."
+    I18N_WIZARD_DONE="Configuration wizard complete!"
+fi
+
 # Check if we have a TTY for interactive input
 HAS_TTY="false"
 if [[ -t 0 ]]; then
@@ -49,10 +128,10 @@ prompt_user_name() {
     local default_name
     default_name=$(whoami)
     
-    echo -e "\n${BOLD}${PURPLE}👋 Let's personalize your AI agent!${NC}\n"
+    echo -e "\n${BOLD}${PURPLE}${I18N_WELCOME}${NC}\n"
     
-    echo -e "${CYAN}What's your name?${NC}"
-    echo -e "${YELLOW}Press Enter for default: $default_name${NC}"
+    echo -e "${CYAN}${I18N_WHATS_YOUR_NAME}${NC}"
+    echo -e "${YELLOW}${I18N_PRESS_ENTER_DEFAULT} $default_name${NC}"
     echo -n "> "
     
     local user_input
@@ -64,18 +143,18 @@ prompt_user_name() {
         GOOSE_USER_NAME="$default_name"
     fi
     
-    log_success "Hello, $GOOSE_USER_NAME!"
+    log_success "${I18N_HELLO} $GOOSE_USER_NAME!"
 }
 
 # Prompt for agent persona
 prompt_agent_persona() {
-    echo -e "\n${CYAN}What personality should your agent have?${NC}"
-    echo -e "  ${BOLD}1)${NC} ${GREEN}Assistant${NC} - Professional, helpful, formal"
-    echo -e "  ${BOLD}2)${NC} ${BLUE}Partner${NC} - Collaborative, friendly, casual"
-    echo -e "  ${BOLD}3)${NC} ${PURPLE}Coder${NC} - Technical, direct, development-focused"
-    echo -e "  ${BOLD}4)${NC} ${YELLOW}Creative${NC} - Witty, expressive, imaginative"
+    echo -e "\n${CYAN}${I18N_PERSONA_QUESTION}${NC}"
+    echo -e "  ${BOLD}1)${NC} ${GREEN}${I18N_PERSONA_1}${NC}"
+    echo -e "  ${BOLD}2)${NC} ${BLUE}${I18N_PERSONA_2}${NC}"
+    echo -e "  ${BOLD}3)${NC} ${PURPLE}${I18N_PERSONA_3}${NC}"
+    echo -e "  ${BOLD}4)${NC} ${YELLOW}${I18N_PERSONA_4}${NC}"
     echo -e ""
-    echo -e "${YELLOW}Choose 1-4 (default: 2 - Partner):${NC}"
+    echo -e "${YELLOW}${I18N_CHOOSE}${NC}"
     echo -n "> "
     
     local persona_choice
@@ -84,41 +163,40 @@ prompt_agent_persona() {
     case "${persona_choice:-2}" in
         1)
             GOOSE_AGENT_PERSONA="assistant"
-            log_info "Selected: Professional Assistant"
+            log_info "${I18N_SELECTED} ${I18N_PERSONA_1}"
             ;;
         2)
             GOOSE_AGENT_PERSONA="partner"
-            log_info "Selected: Collaborative Partner"
+            log_info "${I18N_SELECTED} ${I18N_PERSONA_2}"
             ;;
         3)
             GOOSE_AGENT_PERSONA="coder"
-            log_info "Selected: Technical Coder"
+            log_info "${I18N_SELECTED} ${I18N_PERSONA_3}"
             ;;
         4)
             GOOSE_AGENT_PERSONA="creative"
-            log_info "Selected: Creative Companion"
+            log_info "${I18N_SELECTED} ${I18N_PERSONA_4}"
             ;;
         *)
             GOOSE_AGENT_PERSONA="partner"
-            log_info "Selected: Collaborative Partner (default)"
+            log_info "${I18N_SELECTED} ${I18N_PERSONA_2} (default)"
             ;;
     esac
 }
 
 # Prompt for API setup mode
 prompt_api_setup() {
-    echo -e "\n${BOLD}${PURPLE}🔑 How do you want to connect to AI models?${NC}\n"
-    echo -e "  ${BOLD}1)${NC} ${GREEN}Bring Your Own Key (BYOK)${NC} - Free forever"
-    echo -e "     Use your own Anthropic/OpenAI API key. Full control over costs."
+    echo -e "\n${BOLD}${PURPLE}${I18N_API_TITLE}${NC}\n"
+    echo -e "  ${BOLD}1)${NC} ${GREEN}${I18N_API_BYOK}${NC}"
+    echo -e "     ${I18N_API_BYOK_DESC}"
     echo -e ""
-    echo -e "  ${BOLD}2)${NC} ${BLUE}GooseStack API${NC} - Zero friction (prepaid credits)"
-    echo -e "     No API key needed. Buy credits, start chatting."
-    echo -e "     Optimized routing saves 5-10x vs direct API. You control spending."
+    echo -e "  ${BOLD}2)${NC} ${BLUE}${I18N_API_PROXY}${NC}"
+    echo -e "     ${I18N_API_PROXY_DESC}"
     echo -e ""
-    echo -e "  ${BOLD}3)${NC} ${YELLOW}Local only${NC} - 100% free, 100% private"
-    echo -e "     Use only local Ollama models. No cloud, no costs."
+    echo -e "  ${BOLD}3)${NC} ${YELLOW}${I18N_API_LOCAL}${NC}"
+    echo -e "     ${I18N_API_LOCAL_DESC}"
     echo -e ""
-    echo -e "${YELLOW}Choose 1-3 (default: 1 - BYOK):${NC}"
+    echo -e "${YELLOW}${I18N_CHOOSE_API}${NC}"
     echo -n "> "
     
     local api_choice
@@ -148,10 +226,10 @@ prompt_api_setup() {
 
 # Prompt for BYOK API key
 prompt_api_key_byok() {
-    echo -e "\n${CYAN}Paste your Anthropic API key:${NC}"
-    echo -e "Get one at: ${BLUE}https://console.anthropic.com/${NC}"
+    echo -e "\n${CYAN}${I18N_PASTE_API_KEY}${NC}"
+    echo -e "${I18N_GET_KEY} ${BLUE}https://console.anthropic.com/${NC}"
     echo -e ""
-    echo -e "${YELLOW}Paste your API key (or press Enter to skip for now):${NC}"
+    echo -e "${YELLOW}${I18N_PASTE_OR_SKIP}${NC}"
     echo -n "> "
     
     local api_key_input
@@ -160,13 +238,13 @@ prompt_api_key_byok() {
     if [[ -n "$api_key_input" ]]; then
         if [[ "$api_key_input" =~ ^sk-ant-[a-zA-Z0-9_-]+$ ]]; then
             GOOSE_API_KEY="$api_key_input"
-            log_success "API key saved and validated"
+            log_success "${I18N_KEY_SAVED}"
         else
             log_warning "API key format doesn't look standard, but saving anyway"
             GOOSE_API_KEY="$api_key_input"
         fi
     else
-        log_info "Skipped API key — you can add it later in ~/.openclaw/openclaw.json"
+        log_info "${I18N_KEY_SKIPPED}"
         echo -e "${YELLOW}Without an API key, your agent will use local models only until configured.${NC}"
     fi
 }
@@ -195,10 +273,10 @@ prompt_proxy_key() {
 
 # Prompt for Telegram integration
 prompt_telegram() {
-    echo -e "\n${CYAN}Want to connect your agent to Telegram?${NC}"
-    echo -e "${YELLOW}This lets you chat with your agent from anywhere via Telegram${NC}"
+    echo -e "\n${CYAN}${I18N_TELEGRAM_QUESTION}${NC}"
+    echo -e "${YELLOW}${I18N_TELEGRAM_DESC}${NC}"
     echo -e ""
-    echo -e "${YELLOW}Enable Telegram? (y/N):${NC}"
+    echo -e "${YELLOW}${I18N_TELEGRAM_ENABLE}${NC}"
     echo -n "> "
     
     local telegram_choice
@@ -207,13 +285,13 @@ prompt_telegram() {
     if [[ "$telegram_choice" =~ ^[Yy]$ ]]; then
         GOOSE_TELEGRAM_ENABLED="true"
         
-        echo -e "\n${CYAN}To set up Telegram:${NC}"
+        echo -e "\n${CYAN}${I18N_TELEGRAM_SETUP}${NC}"
         echo -e "1. Message @BotFather on Telegram"
         echo -e "2. Send: /newbot"
         echo -e "3. Choose a name and username for your bot"
         echo -e "4. Copy the bot token from BotFather"
         echo -e ""
-        echo -e "${YELLOW}Paste your Telegram bot token:${NC}"
+        echo -e "${YELLOW}${I18N_PASTE_TOKEN}${NC}"
         echo -n "> "
         
         local telegram_token
@@ -238,9 +316,9 @@ prompt_telegram() {
 
 # Show configuration summary
 show_summary() {
-    echo -e "\n${BOLD}${BLUE}📋 Configuration Summary:${NC}"
-    echo -e "  👤 Name: $GOOSE_USER_NAME"
-    echo -e "  🎭 Persona: $GOOSE_AGENT_PERSONA"
+    echo -e "\n${BOLD}${BLUE}${I18N_SUMMARY}${NC}"
+    echo -e "  👤 ${I18N_NAME} $GOOSE_USER_NAME"
+    echo -e "  🎭 ${I18N_PERSONA} $GOOSE_AGENT_PERSONA"
     
     case "$GOOSE_API_MODE" in
         byok)
@@ -268,19 +346,19 @@ show_summary() {
         echo -e "  💬 Telegram: ❌ Disabled"
     fi
     
-    echo -e "\n${YELLOW}Is this correct? (Y/n):${NC}"
+    echo -e "\n${YELLOW}${I18N_CORRECT}${NC}"
     echo -n "> "
     
     local confirm
     wizard_read confirm "y"
     
     if [[ "$confirm" =~ ^[Nn]$ ]]; then
-        log_info "Restarting wizard..."
+        log_info "${I18N_RESTARTING}"
         main_wizard
         return
     fi
     
-    log_success "Configuration confirmed!"
+    log_success "${I18N_CONFIRMED}"
 }
 
 # Export variables for template processing
@@ -298,7 +376,7 @@ export_wizard_vars() {
 
 # Main wizard function
 main_wizard() {
-    log_info "🧙‍♂️ Starting configuration wizard..."
+    log_info "${I18N_WIZARD_START}"
     
     prompt_user_name
     prompt_agent_persona
@@ -307,7 +385,7 @@ main_wizard() {
     show_summary
     export_wizard_vars
     
-    log_success "Configuration wizard complete!"
+    log_success "${I18N_WIZARD_DONE}"
 }
 
 # Run wizard

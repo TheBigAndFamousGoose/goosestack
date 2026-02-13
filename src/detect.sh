@@ -157,6 +157,20 @@ check_admin_rights() {
     fi
 }
 
+# Detect system language
+detect_language() {
+    local sys_lang
+    sys_lang=$(defaults read NSGlobalDomain AppleLanguages 2>/dev/null | head -2 | tail -1 | tr -d ' ",' || echo "en")
+    
+    if [[ "$sys_lang" == ru* ]]; then
+        export GOOSE_LANG="ru"
+        log_info "Язык системы: Русский"
+    else
+        export GOOSE_LANG="en"
+        log_info "System language: English"
+    fi
+}
+
 # Main detection function
 main_detect() {
     detect_macos_version
@@ -165,9 +179,10 @@ main_detect() {
     check_disk_space
     check_xcode_clt
     check_admin_rights
+    detect_language
     
     # Export all variables for use in other scripts
-    export GOOSE_CHIP GOOSE_RAM_GB GOOSE_MACOS_VER GOOSE_ARCH GOOSE_DISK_GB
+    export GOOSE_CHIP GOOSE_RAM_GB GOOSE_MACOS_VER GOOSE_ARCH GOOSE_DISK_GB GOOSE_LANG
     
     log_success "System detection complete"
     

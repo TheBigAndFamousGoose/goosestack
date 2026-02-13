@@ -7,6 +7,7 @@ This file is for your specific setup details - the stuff that's unique to your e
 **Hardware:** {{GOOSE_CHIP:-Unknown}} Mac with {{GOOSE_RAM_GB:-8}}GB RAM  
 **Architecture:** {{GOOSE_ARCH:-arm64}}  
 **macOS Version:** {{GOOSE_MACOS_VER:-Unknown}}  
+**Language:** {{GOOSE_LANG}}  
 **Setup Date:** {{SETUP_DATE}}
 
 ## AI Models
