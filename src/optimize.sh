@@ -119,7 +119,7 @@ TELEOF
       "maxConcurrent": ${max_concurrent},
       "subagents": {
         "maxConcurrent": ${subagent_concurrent},
-        "model": "ollama/${GOOSE_OLLAMA_MODEL:-qwen2.5:14b}",
+        "model": "ollama/${GOOSE_OLLAMA_MODEL:-qwen3:14b}",
         "thinking": "off"
       }
     }
@@ -310,14 +310,14 @@ setup_workspace() {
             -e "s|{{GOOSE_RAM_GB:-8}}|${GOOSE_RAM_GB:-8}|g" \
             -e "s|{{GOOSE_ARCH:-arm64}}|${GOOSE_ARCH:-arm64}|g" \
             -e "s|{{GOOSE_MACOS_VER:-Unknown}}|${GOOSE_MACOS_VER:-Unknown}|g" \
-            -e "s|{{GOOSE_OLLAMA_MODEL:-qwen2.5:7b}}|${GOOSE_OLLAMA_MODEL:-qwen2.5:14b}|g" \
+            -e "s|{{GOOSE_OLLAMA_MODEL:-qwen3:8b}}|${GOOSE_OLLAMA_MODEL:-qwen3:14b}|g" \
             "$template_dir/TOOLS.md" > "$workspace_dir/TOOLS.md"
         chmod 644 "$workspace_dir/TOOLS.md"
     fi
 
     if [[ ! -f "$workspace_dir/MEMORY.md" && -f "$template_dir/MEMORY.md" ]]; then
         sed -e "s|{{GOOSE_AGENT_PERSONA:-partner}}|${GOOSE_AGENT_PERSONA:-partner}|g" \
-            -e "s|{{GOOSE_OLLAMA_MODEL:-qwen2.5:7b}}|${GOOSE_OLLAMA_MODEL:-qwen2.5:14b}|g" \
+            -e "s|{{GOOSE_OLLAMA_MODEL:-qwen3:8b}}|${GOOSE_OLLAMA_MODEL:-qwen3:14b}|g" \
             -e "s|{{GOOSE_RAM_GB:-8}}|${GOOSE_RAM_GB:-8}|g" \
             "$template_dir/MEMORY.md" > "$workspace_dir/MEMORY.md"
         chmod 644 "$workspace_dir/MEMORY.md"
@@ -373,7 +373,7 @@ main_optimize() {
     log_success "System optimization complete!"
     echo -e "  ${GREEN}✅${NC} OpenClaw config generated (optimized for ${GOOSE_RAM_GB:-?}GB RAM)"
     echo -e "  ${GREEN}✅${NC} Local embeddings configured (\$0 cost)"
-    echo -e "  ${GREEN}✅${NC} Subagents: ollama/${GOOSE_OLLAMA_MODEL:-qwen2.5:14b} (local, \$0)"
+    echo -e "  ${GREEN}✅${NC} Subagents: ollama/${GOOSE_OLLAMA_MODEL:-qwen3:14b} (local, \$0)"
     echo -e "  ${GREEN}✅${NC} Thinking mode: low (best quality/cost ratio)"
     echo -e "  ${GREEN}✅${NC} Workspace files ready"
     if [[ -d "$HOME/.openclaw/dashboard" ]]; then

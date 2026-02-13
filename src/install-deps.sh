@@ -137,14 +137,14 @@ pull_optimal_model() {
     # Determine best model based on RAM
     local model_name
     if [[ $GOOSE_RAM_GB -ge 16 ]]; then
-        model_name="qwen2.5:14b"
-        log_info "RAM: ${GOOSE_RAM_GB}GB → Using qwen2.5:14b (high performance)"
+        model_name="qwen3:14b"
+        log_info "RAM: ${GOOSE_RAM_GB}GB → Using qwen3:14b (high performance)"
     elif [[ $GOOSE_RAM_GB -ge 8 ]]; then
-        model_name="qwen2.5:7b"
-        log_info "RAM: ${GOOSE_RAM_GB}GB → Using qwen2.5:7b (balanced)"
+        model_name="qwen3:8b"
+        log_info "RAM: ${GOOSE_RAM_GB}GB → Using qwen3:8b (balanced)"
     else
-        model_name="qwen2.5:3b"
-        log_warning "RAM: ${GOOSE_RAM_GB}GB → Using qwen2.5:3b (performance may be limited)"
+        model_name="qwen3:4b"
+        log_warning "RAM: ${GOOSE_RAM_GB}GB → Using qwen3:4b (performance may be limited)"
     fi
     
     # Check if model is already pulled
