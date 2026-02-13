@@ -71,8 +71,15 @@ install_homebrew() {
     else
         log_info "Installing Homebrew..."
         
+        # Pre-authenticate sudo before Homebrew install
+        # Needed because curl|sh pipes stdin, so Homebrew can't prompt for password
+        if ! sudo -n true 2>/dev/null; then
+            echo -e "${YELLOW}Homebrew needs administrator access. Please enter your password:${NC}"
+            sudo -v -S < /dev/tty
+        fi
+        
         # Download and install Homebrew
-        /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+        NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
         
         # Add Homebrew to PATH for current session
         if [[ "$GOOSE_ARCH" == "arm64" ]]; then
