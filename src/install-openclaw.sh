@@ -14,7 +14,18 @@ install_openclaw_npm() {
         log_info "OpenClaw already installed: $current_version"
         
         # Verify the install is healthy (node_modules intact)
-        if openclaw --help >/dev/null 2>&1; then
+        # --help works even with broken deps, so also check gateway can at least parse
+        local openclaw_root
+        openclaw_root="$(npm root -g)/openclaw"
+        local deps_ok=true
+        for dep in undici; do
+            if [ ! -d "$openclaw_root/node_modules/$dep" ] 2>/dev/null; then
+                deps_ok=false
+                break
+            fi
+        done
+        
+        if $deps_ok && openclaw --help >/dev/null 2>&1; then
             log_success "OpenClaw installation is healthy"
             log_info "Checking for updates..."
             npm update -g openclaw 2>/dev/null || {
