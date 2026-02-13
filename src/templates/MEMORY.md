@@ -4,7 +4,7 @@
 
 ## Setup & Configuration
 
-**Installation Date:** $(date +"%Y-%m-%d")  
+**Installation Date:** {{SETUP_DATE}}  
 **GooseStack Version:** v0.1 MVP  
 **Initial Persona:** {{GOOSE_AGENT_PERSONA:-partner}}  
 
@@ -14,15 +14,15 @@
 
 ### System Preferences
 - Chose {{GOOSE_AGENT_PERSONA:-partner}} persona for collaborative style
-- $([[ -n "${GOOSE_API_KEY:-}" ]] && echo "Configured Anthropic API for premium models" || echo "Using local models only")
-- $([[ "${GOOSE_TELEGRAM_ENABLED:-false}" == "true" ]] && echo "Telegram integration enabled" || echo "Telegram integration disabled")
+- {{API_STATUS}}
+- {{TELEGRAM_STATUS}}
 
 ## Lessons Learned
 
 <!-- Mistakes to avoid, what works well, insights gained -->
 
 ### Technical Notes
-- System runs {{GOOSE_OLLAMA_MODEL:-qwen2.5:7b}} model optimized for {{GOOSE_RAM_GB:-8}}GB RAM
+- System runs {{GOOSE_OLLAMA_MODEL}} model optimized for {{GOOSE_RAM_GB:-8}}GB RAM
 - Local embeddings configured for privacy-focused memory search
 - Auto-start configured via macOS LaunchAgent
 

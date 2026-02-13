@@ -7,13 +7,13 @@ This file is for your specific setup details - the stuff that's unique to your e
 **Hardware:** {{GOOSE_CHIP:-Unknown}} Mac with {{GOOSE_RAM_GB:-8}}GB RAM  
 **Architecture:** {{GOOSE_ARCH:-arm64}}  
 **macOS Version:** {{GOOSE_MACOS_VER:-Unknown}}  
-**Setup Date:** $(date +"%Y-%m-%d")
+**Setup Date:** {{SETUP_DATE}}
 
 ## AI Models
 
-**Primary Local Model:** {{GOOSE_OLLAMA_MODEL:-qwen2.5:7b}}  
+**Primary Local Model:** {{GOOSE_OLLAMA_MODEL}}  
 **Embedding Model:** nomic-embed-text (for memory search)  
-**API Access:** $([[ -n "${GOOSE_API_KEY:-}" ]] && echo "Anthropic Claude configured" || echo "Local models only")
+**API Access:** {{API_STATUS}}
 
 ## Services
 
