@@ -154,7 +154,7 @@ main_install_security() {
     done
 }
 
-# Only run if script is executed directly (not sourced)
-if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
-    main_install_security "$@"
-fi
+# Run security installation
+
+
+main_install_security

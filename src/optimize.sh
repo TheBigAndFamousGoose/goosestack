@@ -24,7 +24,7 @@ generate_openclaw_config() {
       "goosestack:default": {
         "provider": "openai-compatible",
         "mode": "api_key",
-        "baseUrl": "https://api.goosestack.com/v1"
+        "baseUrl": "https://goosestack.com/api/v1"
       }
     }
 AUTHEOF
@@ -203,7 +203,7 @@ CONFIGEOF
       "type": "api_key",
       "provider": "openai-compatible",
       "key": "${GOOSE_PROXY_KEY}",
-      "baseUrl": "https://api.goosestack.com/v1"
+      "baseUrl": "https://goosestack.com/api/v1"
     }
   },
   "lastGood": {

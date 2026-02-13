@@ -444,7 +444,7 @@ main_setup_launchagent() {
     log_info "🎯 Setting up OpenClaw auto-start service..."
     
     create_launch_agent
-    load_launch_agent
+    # (loading handled below in verify step)
     create_management_script
     setup_watchdog
     prevent_sleep

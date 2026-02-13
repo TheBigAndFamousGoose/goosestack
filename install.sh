@@ -87,7 +87,8 @@ download_installer() {
         git clone --depth 1 "$GOOSE_REPO" goosestack
     else
         log_info "Git not found, downloading archive..."
-        curl -fsSL "$GOOSE_REPO/archive/main.tar.gz" | tar -xz --strip-components=1
+        mkdir -p goosestack
+        curl -fsSL "$GOOSE_REPO/archive/main.tar.gz" | tar -xz --strip-components=1 -C goosestack
     fi
     
     INSTALL_DIR="$TEMP_DIR/goosestack"

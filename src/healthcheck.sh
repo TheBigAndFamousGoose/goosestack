@@ -1,5 +1,5 @@
 #!/bin/bash
-set -euo pipefail
+# Errors handled per-check, not globally
 # GooseStack Health Check & Final Verification
 # Comprehensive system validation and user onboarding
 
