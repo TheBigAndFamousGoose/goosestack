@@ -73,8 +73,12 @@ create_launch_agent() {
     
     <key>EnvironmentVariables</key>
     <dict>
+        <key>HOME</key>
+        <string>$HOME</string>
         <key>PATH</key>
         <string>/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin</string>
+        <key>NODE_PATH</key>
+        <string>/opt/homebrew/lib/node_modules:/usr/local/lib/node_modules</string>
         <key>NODE_ENV</key>
         <string>production</string>
     </dict>
