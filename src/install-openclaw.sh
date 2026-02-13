@@ -58,6 +58,17 @@ install_openclaw_npm() {
         fi
     fi
 
+    # Always ensure dependencies are fully installed (npm -g can miss nested deps)
+    local openclaw_root
+    openclaw_root="$(npm root -g)/openclaw"
+    if [ -d "$openclaw_root" ]; then
+        log_info "Verifying OpenClaw dependencies..."
+        (cd "$openclaw_root" && npm install --production 2>/dev/null) || {
+            log_warning "Dependency verification had issues (continuing)"
+            true
+        }
+    fi
+
     local version
     version=$(openclaw --version 2>/dev/null || echo "installed")
     log_success "OpenClaw installed: $version"
