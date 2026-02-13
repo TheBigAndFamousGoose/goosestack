@@ -15,28 +15,40 @@ create_launch_agent() {
     # Create LaunchAgents directory if it doesn't exist
     mkdir -p "$launch_agents_dir"
     
-    # Get the path to openclaw binary (resolve symlinks for launchd)
-    local openclaw_path
-    if command -v openclaw >/dev/null 2>&1; then
-        # Try different ways to resolve symlinks (different macOS versions have different tools)
-        if command -v greadlink >/dev/null 2>&1; then
-            # If GNU coreutils is installed
-            openclaw_path=$(greadlink -f "$(which openclaw)")
-        elif command -v realpath >/dev/null 2>&1; then
-            # If realpath is available (fallback option)
-            openclaw_path=$(realpath "$(which openclaw)")
-        elif command -v readlink >/dev/null 2>&1 && readlink -f "$(which openclaw)" >/dev/null 2>&1; then
-            # If readlink supports -f
-            openclaw_path=$(readlink -f "$(which openclaw)")
-        else
-            # Final fallback: use the symlink as-is and hope launchd can handle it
-            openclaw_path=$(which openclaw)
-            log_info "Using openclaw path as-is (symlink resolution not available): $openclaw_path"
-        fi
-    else
+    # Get the Node.js binary and OpenClaw entry point
+    # LaunchAgents need explicit paths — symlinks and PATH tricks don't work reliably
+    local node_path
+    local openclaw_entry
+    
+    if ! command -v openclaw >/dev/null 2>&1; then
         log_error "OpenClaw binary not found in PATH"
         exit 1
     fi
+    
+    # Find the actual node binary
+    node_path=$(which node)
+    
+    # Find OpenClaw's real entry point (resolve the symlink chain)
+    # On macOS: `which openclaw` → symlink → ../lib/node_modules/openclaw/openclaw.mjs
+    local openclaw_symlink
+    openclaw_symlink=$(which openclaw)
+    
+    # Resolve symlink manually (macOS readlink doesn't support -f)
+    if [ -L "$openclaw_symlink" ]; then
+        local link_target
+        link_target=$(readlink "$openclaw_symlink")
+        # If relative, resolve against the symlink's directory
+        if [[ "$link_target" != /* ]]; then
+            openclaw_entry="$(cd "$(dirname "$openclaw_symlink")" && cd "$(dirname "$link_target")" && pwd)/$(basename "$link_target")"
+        else
+            openclaw_entry="$link_target"
+        fi
+    else
+        openclaw_entry="$openclaw_symlink"
+    fi
+    
+    log_info "Node.js: $node_path"
+    log_info "OpenClaw entry: $openclaw_entry"
     
     # Create the plist file
     log_info "Creating LaunchAgent configuration..."
@@ -51,7 +63,8 @@ create_launch_agent() {
     
     <key>ProgramArguments</key>
     <array>
-        <string>$openclaw_path</string>
+        <string>$node_path</string>
+        <string>$openclaw_entry</string>
         <string>gateway</string>
         <string>start</string>
     </array>
@@ -78,7 +91,7 @@ create_launch_agent() {
         <key>PATH</key>
         <string>/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin</string>
         <key>NODE_PATH</key>
-        <string>/opt/homebrew/lib/node_modules:/usr/local/lib/node_modules</string>
+        <string>$(npm root -g):/opt/homebrew/lib/node_modules:/usr/local/lib/node_modules</string>
         <key>NODE_ENV</key>
         <string>production</string>
     </dict>
