@@ -26,6 +26,11 @@ create_launch_agent() {
     fi
     
     # Find the actual node binary
+    # Note: Node.js can be in several locations depending on installation:
+    # - /usr/local/bin/node (npm global install)
+    # - /opt/homebrew/bin/node (Homebrew on Apple Silicon)
+    # - /usr/bin/node (system install)
+    # `which node` will find the first one in PATH, which is correct
     node_path=$(which node)
     
     # Find OpenClaw's real entry point (resolve the symlink chain)
@@ -121,75 +126,143 @@ EOF
     echo -e "  📄 File: $plist_file"
 }
 
-# Load and start the LaunchAgent
+# Load and start the LaunchAgent with retry logic
 load_launch_agent() {
     log_info "Loading OpenClaw LaunchAgent..."
     
     local plist_file="$HOME/Library/LaunchAgents/ai.openclaw.gateway.plist"
+    local max_retries=3
+    local retry=0
     
-    # Unload if already loaded (to reload with new settings)
-    if launchctl list | grep -q "ai.openclaw.gateway"; then
-        log_info "Unloading existing LaunchAgent..."
-        launchctl unload "$plist_file" 2>/dev/null || true
-        sleep 2
-    fi
-    
-    # Load the LaunchAgent
-    launchctl load "$plist_file"
-    
-    if [[ $? -eq 0 ]]; then
-        log_success "LaunchAgent loaded successfully"
-    else
-        log_error "Failed to load LaunchAgent"
-        exit 1
-    fi
-    
-    # Give it a moment to start
-    sleep 3
-}
-
-# Verify the gateway is running
-verify_gateway_running() {
-    log_info "🔍 Verifying OpenClaw gateway is running..."
-    
-    local max_attempts=30
-    local attempt=0
-    
-    while [[ $attempt -lt $max_attempts ]]; do
-        # Check if the process is running via launchctl
-        if launchctl list | grep -q "ai.openclaw.gateway"; then
-            # Check if the gateway is responding (try both /status and root)
-            if curl -s -f -m 3 "http://localhost:18789/status" >/dev/null 2>&1 || \
-               curl -s -f -m 3 "http://localhost:18789" >/dev/null 2>&1; then
-                log_success "OpenClaw gateway is running and responding"
-                return 0
+    while [[ $retry -lt $max_retries ]]; do
+        if [[ $retry -gt 0 ]]; then
+            log_info "Retry attempt $retry/$max_retries..."
+            
+            # Clean bootout and reload for retry attempts
+            log_info "Performing clean bootout and reload..."
+            launchctl bootout gui/$(id -u) "$plist_file" 2>/dev/null || true
+            sleep 3
+        else
+            # First attempt - just unload if already loaded
+            if launchctl list | grep -q "ai.openclaw.gateway"; then
+                log_info "Unloading existing LaunchAgent..."
+                launchctl unload "$plist_file" 2>/dev/null || true
+                sleep 2
             fi
         fi
         
-        sleep 2
-        ((attempt++))
+        # Load the LaunchAgent
+        log_info "Loading LaunchAgent (attempt $((retry + 1))/$max_retries)..."
+        launchctl load "$plist_file"
         
-        # Show progress
-        if [[ $((attempt % 5)) -eq 0 ]]; then
-            log_info "Still waiting for gateway to start... (${attempt}/${max_attempts})"
+        if [[ $? -eq 0 ]]; then
+            log_success "LaunchAgent loaded successfully"
+            
+            # Give it a moment to start
+            sleep 5
+            
+            # Verify the gateway actually responds
+            log_info "Verifying gateway responds to HTTP requests..."
+            local verify_attempts=12  # 60 seconds total
+            local verify_count=0
+            
+            while [[ $verify_count -lt $verify_attempts ]]; do
+                if curl -s -f -m 3 "http://localhost:18789/status" >/dev/null 2>&1 || \
+                   curl -s -f -m 3 "http://localhost:18789" >/dev/null 2>&1; then
+                    log_success "Gateway is responding to HTTP requests"
+                    return 0
+                fi
+                
+                sleep 5
+                ((verify_count++))
+                
+                if [[ $((verify_count % 3)) -eq 0 ]]; then
+                    log_info "Still waiting for gateway HTTP response... (${verify_count}/$verify_attempts)"
+                fi
+            done
+            
+            # If we get here, the LaunchAgent loaded but gateway isn't responding
+            log_warning "LaunchAgent loaded but gateway not responding to HTTP requests"
+        else
+            log_error "Failed to load LaunchAgent on attempt $((retry + 1))"
+        fi
+        
+        ((retry++))
+        
+        if [[ $retry -lt $max_retries ]]; then
+            log_info "Will retry in 5 seconds..."
+            sleep 5
         fi
     done
     
-    log_error "OpenClaw gateway failed to start properly"
+    # All retries failed
+    log_error "Failed to load LaunchAgent after $max_retries attempts"
+    return 1
+}
+
+# Verify the gateway is running (simplified since retry logic moved to load_launch_agent)
+verify_gateway_running() {
+    log_info "🔍 Final verification that OpenClaw gateway is running..."
     
-    # Show some diagnostics
-    echo -e "\n${YELLOW}🔧 Diagnostics:${NC}"
-    echo -e "LaunchAgent status:"
-    launchctl list | grep -E "(PID|ai.openclaw)" || echo "  Not found in launchctl list"
-    
-    echo -e "\nRecent logs:"
-    if [[ -f "$HOME/.openclaw/logs/gateway-stderr.log" ]]; then
-        tail -10 "$HOME/.openclaw/logs/gateway-stderr.log" || echo "  No error logs found"
-    else
-        echo "  No log files found"
+    # Quick final check
+    if launchctl list | grep -q "ai.openclaw.gateway" && \
+       (curl -s -f -m 3 "http://localhost:18789/status" >/dev/null 2>&1 || \
+        curl -s -f -m 3 "http://localhost:18789" >/dev/null 2>&1); then
+        log_success "OpenClaw gateway is running and responding"
+        return 0
     fi
     
+    log_error "OpenClaw gateway failed to start properly after all attempts"
+    
+    # Show comprehensive diagnostics
+    show_gateway_diagnostics
+    
     return 1
+}
+
+# Show comprehensive diagnostics when gateway startup fails
+show_gateway_diagnostics() {
+    echo -e "\n${YELLOW}🔧 Gateway Startup Diagnostics:${NC}"
+    
+    echo -e "\n📋 LaunchAgent Status:"
+    if launchctl list | grep -q "ai.openclaw.gateway"; then
+        launchctl list | grep "ai.openclaw.gateway"
+    else
+        echo "  ❌ LaunchAgent not found in launchctl list"
+    fi
+    
+    echo -e "\n📄 Error Logs:"
+    local stderr_log="$HOME/.openclaw/logs/gateway-stderr.log"
+    local stdout_log="$HOME/.openclaw/logs/gateway-stdout.log"
+    
+    if [[ -f "$stderr_log" ]]; then
+        echo -e "  Last 10 lines of $stderr_log:"
+        tail -10 "$stderr_log" | sed 's/^/    /'
+    else
+        echo -e "  ❌ Error log not found: $stderr_log"
+    fi
+    
+    if [[ -f "$stdout_log" ]]; then
+        echo -e "\n  Last 10 lines of $stdout_log:"
+        tail -10 "$stdout_log" | sed 's/^/    /'
+    else
+        echo -e "  ❌ Output log not found: $stdout_log"
+    fi
+    
+    echo -e "\n🔧 Manual Recovery Steps:"
+    echo -e "  1. Try OpenClaw doctor command:"
+    echo -e "     ${CYAN}openclaw doctor --fix${NC}"
+    echo -e ""
+    echo -e "  2. Or manually restart the LaunchAgent:"
+    echo -e "     ${CYAN}launchctl bootout gui/\$(id -u) ~/Library/LaunchAgents/ai.openclaw.gateway.plist${NC}"
+    echo -e "     ${CYAN}launchctl load ~/Library/LaunchAgents/ai.openclaw.gateway.plist${NC}"
+    echo -e ""
+    echo -e "  3. Check logs for more details:"
+    echo -e "     ${CYAN}~/.openclaw/manage-gateway.sh logs${NC}"
+    echo -e ""
+    echo -e "  4. Verify Node.js and OpenClaw are working:"
+    echo -e "     ${CYAN}which node && node --version${NC}"
+    echo -e "     ${CYAN}which openclaw && openclaw --version${NC}"
 }
 
 # Create helpful management aliases
@@ -376,8 +449,8 @@ main_setup_launchagent() {
     setup_watchdog
     prevent_sleep
     
-    # Verify it's working
-    if verify_gateway_running; then
+    # Load and verify the LaunchAgent
+    if load_launch_agent && verify_gateway_running; then
         log_success "OpenClaw LaunchAgent setup complete!"
         
         # Summary
@@ -388,6 +461,7 @@ main_setup_launchagent() {
         echo -e "  ✅ Restarts automatically if crashed"
         echo -e "  ✅ Management script available"
         echo -e "  ✅ Sleep prevention configured"
+        echo -e "  ✅ Gateway startup verification passed"
         
         echo -e "\n${CYAN}💡 Management commands:${NC}"
         echo -e "  ~/.openclaw/manage-gateway.sh status   # Check status"
@@ -395,8 +469,9 @@ main_setup_launchagent() {
         echo -e "  ~/.openclaw/manage-gateway.sh logs     # View logs"
         
     else
-        log_warning "LaunchAgent was created but gateway is not responding"
-        log_info "You may need to start it manually or check the logs"
+        log_warning "LaunchAgent setup completed but gateway startup failed"
+        log_info "Check the diagnostics above for troubleshooting steps"
+        return 1
     fi
 }
 
