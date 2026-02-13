@@ -101,6 +101,22 @@ setup_directories() {
     log_success "Directories ready"
 }
 
+# Install goosestack CLI command
+install_goosestack_cli() {
+    log_info "Installing goosestack command..."
+    
+    local cli_src="$INSTALL_DIR/src/templates/goosestack-cli.sh"
+    local cli_dest="/usr/local/bin/goosestack"
+    
+    if [[ -f "$cli_src" ]]; then
+        sudo cp "$cli_src" "$cli_dest"
+        sudo chmod +x "$cli_dest"
+        log_success "goosestack command installed"
+    else
+        log_warning "GooseStack CLI script not found, skipping"
+    fi
+}
+
 # Main installation function
 main_install_openclaw() {
     log_info "🔧 Installing and configuring OpenClaw..."
@@ -108,11 +124,13 @@ main_install_openclaw() {
     install_openclaw_npm
     generate_gateway_token
     setup_directories
+    install_goosestack_cli
 
     log_success "OpenClaw installation complete!"
 
     echo -e "\n${BOLD}${BLUE}🎯 OpenClaw Setup:${NC}"
     echo -e "  ✅ OpenClaw binary installed"
+    echo -e "  ✅ GooseStack CLI command installed (\`goosestack\`)"
     echo -e "  ✅ Workspace: $GOOSE_WORKSPACE_DIR"
     echo -e "  ✅ Gateway token generated"
     echo -e "  ✅ Config will be generated in optimization step"
