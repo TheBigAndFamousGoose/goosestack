@@ -14,9 +14,57 @@ show_progress() {
     echo -e "${CYAN}[$current/$total] ($percent%) $task${NC}"
 }
 
+# Install Xcode Command Line Tools if needed
+install_xcode_clt() {
+    show_progress 1 5 "Checking Xcode Command Line Tools..."
+    
+    # Check if CLT are already installed
+    if xcode-select -p &>/dev/null; then
+        log_success "Xcode Command Line Tools already installed"
+        return
+    fi
+    
+    log_info "Xcode Command Line Tools not found, installing..."
+    log_info "This will open a system dialog - please click 'Install' when prompted"
+    
+    # Start the installation (this opens GUI dialog and returns immediately)
+    xcode-select --install
+    
+    # Wait for installation to complete with polling loop
+    log_info "Waiting for Xcode Command Line Tools installation... (click Install in the dialog)"
+    
+    local timeout=600  # 10 minutes in seconds
+    local elapsed=0
+    local check_interval=10
+    
+    while ! xcode-select -p &>/dev/null; do
+        if [[ $elapsed -ge $timeout ]]; then
+            log_error "Xcode Command Line Tools installation timed out. Please install manually: xcode-select --install"
+            exit 1
+        fi
+        
+        sleep $check_interval
+        elapsed=$((elapsed + check_interval))
+        
+        # Show progress every minute
+        if [[ $((elapsed % 60)) -eq 0 ]]; then
+            local minutes=$((elapsed / 60))
+            log_info "Still waiting for installation... (${minutes}m elapsed)"
+        fi
+    done
+    
+    # Verify installation completed successfully
+    if xcode-select -p &>/dev/null; then
+        log_success "Xcode Command Line Tools installed successfully"
+    else
+        log_error "Xcode Command Line Tools installation verification failed"
+        exit 1
+    fi
+}
+
 # Check if Homebrew is installed
 install_homebrew() {
-    show_progress 1 4 "Checking Homebrew..."
+    show_progress 2 5 "Checking Homebrew..."
     
     if command -v brew >/dev/null 2>&1; then
         log_success "Homebrew already installed"
@@ -54,7 +102,7 @@ install_homebrew() {
 
 # Install Node.js
 install_nodejs() {
-    show_progress 2 4 "Installing Node.js..."
+    show_progress 3 5 "Installing Node.js..."
     
     if command -v node >/dev/null 2>&1; then
         local node_version
@@ -89,7 +137,7 @@ install_nodejs() {
 
 # Install Ollama
 install_ollama() {
-    show_progress 3 4 "Installing Ollama..."
+    show_progress 4 5 "Installing Ollama..."
     
     if command -v ollama >/dev/null 2>&1; then
         log_success "Ollama already installed"
@@ -132,7 +180,7 @@ install_ollama() {
 
 # Pull optimal model based on RAM
 pull_optimal_model() {
-    show_progress 4 4 "Selecting and downloading optimal AI model..."
+    show_progress 5 5 "Selecting and downloading optimal AI model..."
     
     # Determine best model based on RAM
     local model_name
@@ -192,6 +240,7 @@ pull_optimal_model() {
 main_install_deps() {
     log_info "📦 Installing dependencies..."
     
+    install_xcode_clt
     install_homebrew
     install_nodejs
     install_ollama
