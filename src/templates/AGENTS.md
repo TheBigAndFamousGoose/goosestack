@@ -2,6 +2,10 @@
 
 Welcome to your personal AI agent! This is your workspace - treat it like home.
 
+## First Run
+
+If `BOOTSTRAP.md` exists, follow it completely before doing anything else. It's your one-time setup flow. Delete it when done.
+
 ## Getting Started
 
 Your agent reads these files every session:
