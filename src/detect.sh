@@ -137,6 +137,26 @@ check_xcode_clt() {
     log_success "Xcode Command Line Tools available"
 }
 
+# Check if user has admin rights (required for Homebrew)
+check_admin_rights() {
+    log_info "Checking user permissions..."
+    if groups $(whoami) | grep -qw admin; then
+        log_success "User has admin rights"
+    else
+        log_error "Your user account '$(whoami)' does not have administrator rights"
+        echo -e ""
+        echo -e "  Homebrew requires admin access to install. To fix this:"
+        echo -e ""
+        echo -e "  Option 1: Ask an admin to grant you admin rights:"
+        echo -e "    System Settings → Users & Groups → Click your account → Enable 'Allow user to administer this computer'"
+        echo -e ""
+        echo -e "  Option 2: Run the installer from an admin account"
+        echo -e ""
+        echo -e "  Then re-run: curl -fsSL https://goosestack.com/install.sh | sh"
+        exit 1
+    fi
+}
+
 # Main detection function
 main_detect() {
     detect_macos_version
@@ -144,6 +164,7 @@ main_detect() {
     detect_ram
     check_disk_space
     check_xcode_clt
+    check_admin_rights
     
     # Export all variables for use in other scripts
     export GOOSE_CHIP GOOSE_RAM_GB GOOSE_MACOS_VER GOOSE_ARCH GOOSE_DISK_GB
