@@ -57,6 +57,9 @@ AUTHEOF
 )
     else
         # No API key provided - create a local-only auth profile
+        if [[ "$api_mode" == "byok" ]]; then
+            log_warning "BYOK mode selected but no key provided - falling back to local-only mode"
+        fi
         auth_block=$(cat <<AUTHEOF
     "profiles": {
       "local:default": {
@@ -67,6 +70,8 @@ AUTHEOF
     }
 AUTHEOF
 )
+        # Override the API mode so the rest of the config logic works correctly
+        api_mode="local"
     fi
 
     # Build telegram channel block
@@ -97,6 +102,17 @@ TELEOF
         subagent_concurrent=4
     fi
 
+    # Determine default model based on API mode
+    local default_model
+    if [[ "$api_mode" == "local" ]]; then
+        default_model="ollama/${GOOSE_OLLAMA_MODEL:-qwen3:14b}"
+    elif [[ "$api_mode" == "proxy" ]]; then
+        default_model="openai/gpt-4o"
+    else
+        # BYOK mode with key
+        default_model="anthropic/claude-opus-4-6"
+    fi
+
     # Build the config
     cat > "$config_file" <<CONFIGEOF
 {
@@ -105,6 +121,7 @@ TELEOF
   },
   "agents": {
     "defaults": {
+      "model": "${default_model}",
       "workspace": "${config_dir}/workspace",
       "memorySearch": {
         "provider": "local",
