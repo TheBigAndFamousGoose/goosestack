@@ -65,7 +65,7 @@
           "name": "Is GooseStack free?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "GooseStack has a Free tier and a Pro tier ($10/mo). Both include the one-command installer, local dashboard, web dashboard, security suite, and access to the GooseStack API with prepaid token credits. Pro unlocks BYOK (bring your own API keys), Token Router for automatic cheapest-model routing, premium skills, and priority support."
+            "text": "Yes! The Free tier includes the installer, BYOK, and local models with no server dependency. The Pro tier ($10/mo) adds Token Router, API proxy, and dashboard access."
           }
         },
         {
@@ -81,7 +81,7 @@
           "name": "Do I need an API key?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Not on the Free tier. The GooseStack API uses prepaid credits — no API key management needed. If you upgrade to Pro ($10/mo), you can bring your own API keys (BYOK) for direct provider access."
+            "text": "BYOK is available on both Free and Pro tiers — bring your own API keys for direct access to cloud providers. Pro tier also includes the GooseStack API proxy with prepaid credits for easier key management."
           }
         },
         {
@@ -97,7 +97,7 @@
           "name": "What is the GooseStack API?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "The GooseStack API is a managed proxy service that gives you access to cloud models (Claude, GPT-4, etc.) without managing your own API keys. It uses optimized AI routing that saves 5-10x vs direct API costs. You purchase prepaid token credits and control your spending with a prepaid balance. Available on both Free and Pro tiers."
+            "text": "The GooseStack API is a managed proxy service that gives you access to cloud models (Claude, GPT-4, etc.) without managing your own API keys. It analyzes request complexity and routes to the optimal model. Simple questions use cheap models, complex analysis uses premium ones. Available on Pro tier only."
           }
         }
       ]
@@ -1096,7 +1096,7 @@
             </div>
         </div>
         <h1>Your AI agent.<br><span class="accent">One command away.</span></h1>
-        <p class="hero-sub">A one-command macOS installer that sets up a fully optimized AI agent environment. Free tier included. Ready in minutes.</p>
+        <p class="hero-sub">One-command setup for a fully optimized AI agent environment. Local-first with smart model routing. Free tier included.</p>
         <div class="install-block">
             <div class="install-command" id="install-cmd">curl -fsSL https://goosestack.com/install.sh | sh</div>
             <button class="copy-btn" id="copyBtn" onclick="copyInstall()">Copy</button>
@@ -1117,29 +1117,29 @@
         <p class="section-subtitle reveal">Everything you need for a production-grade AI agent, configured automatically for your hardware.</p>
         <div class="features-grid">
             <div class="feature-card reveal">
-                <span class="feature-icon">🔍</span>
-                <h3 class="feature-title">Smart Hardware Detection</h3>
-                <p class="feature-description">Automatically detects your Mac's chip (M1–M4 / Intel) and RAM, then optimizes models and settings for your specific hardware.</p>
+                <span class="feature-icon">📦</span>
+                <h3 class="feature-title">One-Command Install</h3>
+                <p class="feature-description">curl -fsSL https://goosestack.com/install.sh | sh — detects hardware, installs everything, configures optimally. From zero to running agent in minutes.</p>
             </div>
             <div class="feature-card reveal">
-                <span class="feature-icon">🤖</span>
-                <h3 class="feature-title">Local AI Models</h3>
-                <p class="feature-description">Installs Ollama with the optimal model for your system. Runs completely free — no API costs, no external dependencies.</p>
+                <span class="feature-icon">🗣️</span>
+                <h3 class="feature-title">Smart Agent Setup</h3>
+                <p class="feature-description">Interactive hatching flow — your agent asks questions and personalizes itself. Choose persona, preferences, and integrations in minutes.</p>
             </div>
             <div class="feature-card reveal">
                 <span class="feature-icon">🧠</span>
-                <h3 class="feature-title">Memory &amp; Search</h3>
-                <p class="feature-description">Local embeddings and conversation history that stays private. Your agent remembers context and learns your preferences over time.</p>
+                <h3 class="feature-title">Token Router (Pro)</h3>
+                <p class="feature-description">Analyzes request complexity and routes to the optimal model. Simple questions use cheap models, complex analysis uses premium ones.</p>
             </div>
             <div class="feature-card reveal">
-                <span class="feature-icon">⚡</span>
-                <h3 class="feature-title">Token Optimization</h3>
-                <p class="feature-description">Intelligent thinking modes and smart routing between local and cloud models to maximize performance while minimizing costs.</p>
+                <span class="feature-icon">🏠</span>
+                <h3 class="feature-title">Local-First</h3>
+                <p class="feature-description">Runs on your Mac. Your data stays on your machine. Local models via Ollama — no API costs, no external dependencies.</p>
             </div>
             <div class="feature-card reveal">
-                <span class="feature-icon">🛡️</span>
-                <h3 class="feature-title">Built-in Security</h3>
-                <p class="feature-description">ClawSec security suite protects your agent's core files from tampering, monitors for vulnerabilities, and runs automated audits.</p>
+                <span class="feature-icon">🌐</span>
+                <h3 class="feature-title">Multi-Language Support</h3>
+                <p class="feature-description">Installer supports English and Russian (more coming). Plus Telegram integration — chat with your agent from anywhere.</p>
             </div>
             <div class="feature-card reveal">
                 <span class="feature-icon">🚀</span>
@@ -1181,7 +1181,7 @@
     <div class="container">
         <div class="section-label reveal">Credits</div>
         <h2 class="section-title reveal">Top Up. Start Building.</h2>
-        <p class="section-subtitle reveal">The GooseStack API uses optimized AI routing that saves 5‑10× vs direct API costs. Buy prepaid token credits and start using cloud models instantly — no API key management needed.</p>
+        <p class="section-subtitle reveal">The GooseStack API provides smart routing that automatically picks the right model for each task — use expensive models only when needed. Buy prepaid token credits and start using cloud models instantly — no API key management needed.</p>
         <div style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap;" class="reveal">
             <a href="#" onclick="handleCreditBuy(1000); return false;" class="pricing-cta cta-outline credit-buy-btn" data-amount="1000" style="min-width:110px;">$10</a>
             <a href="#" onclick="handleCreditBuy(2500); return false;" class="pricing-cta cta-outline credit-buy-btn" data-amount="2500" style="min-width:110px;">$25</a>
@@ -1207,17 +1207,14 @@
                 <div class="pricing-divider"></div>
                 <ul class="pricing-features">
                     <li>One-command installer</li>
-                    <li>GooseStack API (prepaid credits)</li>
-                    <li>Local Dashboard</li>
-                    <li>Web Dashboard</li>
-                    <li>Security Suite (ClawSec)</li>
-                    <li>All local models (Ollama)</li>
-                    <li>Memory &amp; embeddings</li>
-                    <li>All persona templates</li>
-                    <li>Community support</li>
+                    <li>Local models (Ollama) — $0 forever</li>
+                    <li>BYOK (bring your own API key)</li>
+                    <li>Personalized agent setup (BOOTSTRAP.md hatching)</li>
+                    <li>Dashboard access</li>
+                    <li>No credit card needed</li>
                 </ul>
                 <div class="pricing-note">
-                    <strong>How it works:</strong> Buy prepaid token credits ($10 / $25 / $50 / $100) and use cloud models instantly — optimized routing saves 5‑10× vs direct API costs.
+                    <strong>How it works:</strong> Run local models completely free, or bring your own API keys for cloud models. No server dependency, everything runs on your Mac.
                 </div>
                 <a href="https://goosestack.com/install" class="pricing-cta cta-outline">Get Started →</a>
             </div>
@@ -1229,18 +1226,14 @@
                 <div class="pricing-price-sub">Everything in Free, plus:</div>
                 <div class="pricing-divider"></div>
                 <ul class="pricing-features">
-                    <li>One-command installer</li>
-                    <li>GooseStack API (prepaid credits)</li>
-                    <li class="plus">BYOK — bring your own API keys</li>
-                    <li class="plus">Token Router — auto-cheapest model</li>
-                    <li>Local Dashboard</li>
-                    <li>Web Dashboard</li>
-                    <li>Security Suite (ClawSec)</li>
-                    <li class="plus">Premium Skills</li>
-                    <li class="plus">Priority Support</li>
+                    <li>Everything in Free</li>
+                    <li class="plus">Token Router (smart model routing)</li>
+                    <li class="plus">GooseStack API proxy (prepaid credits, no key management)</li>
+                    <li class="plus">Priority support</li>
+                    <li class="plus">Premium skills (coming soon)</li>
                 </ul>
                 <div class="pricing-note">
-                    <strong>BYOK:</strong> Use your own Anthropic, OpenAI, or other API keys for direct access. <strong>Token Router</strong> automatically picks the cheapest model for each task.
+                    <strong>Token Router:</strong> Complexity-based model routing — save money without sacrificing quality. <strong>API Proxy:</strong> Prepaid credits with no API key management.
                 </div>
                 <a href="https://goosestack.com/pro" class="pricing-cta cta-primary">Go Pro →</a>
             </div>
@@ -1260,7 +1253,7 @@
             </div>
             <div class="faq-item">
                 <button class="faq-question">Is GooseStack free?</button>
-                <div class="faq-answer"><div class="faq-answer-inner">Yes! The Free tier includes the full installer, local and web dashboards, security suite, and access to the GooseStack API with prepaid token credits. You can run local models at zero cost. For cloud models, buy prepaid credits — our optimized routing saves 5‑10× vs direct API costs. The Pro tier ($10/mo) adds BYOK, Token Router, premium skills, and priority support.</div></div>
+                <div class="faq-answer"><div class="faq-answer-inner">Yes! The Free tier includes the installer, BYOK, and local models with no server dependency. The Pro tier ($10/mo) adds Token Router, API proxy, and dashboard access.</div></div>
             </div>
             <div class="faq-item">
                 <button class="faq-question">What AI models does it support?</button>
@@ -1268,7 +1261,7 @@
             </div>
             <div class="faq-item">
                 <button class="faq-question">Do I need an API key?</button>
-                <div class="faq-answer"><div class="faq-answer-inner">Not on the Free tier. The GooseStack API uses prepaid credits — no API key management needed. Just top up and start using cloud models. If you upgrade to Pro ($10/mo), you can bring your own API keys (BYOK) for direct provider access.</div></div>
+                <div class="faq-answer"><div class="faq-answer-inner">BYOK is available on both Free and Pro tiers — bring your own API keys for direct access to cloud providers. Pro tier also includes the GooseStack API proxy with prepaid credits for easier key management.</div></div>
             </div>
             <div class="faq-item">
                 <button class="faq-question">Is my data private?</button>
@@ -1276,7 +1269,7 @@
             </div>
             <div class="faq-item">
                 <button class="faq-question">What is the GooseStack API?</button>
-                <div class="faq-answer"><div class="faq-answer-inner">The GooseStack API is a managed proxy service that gives you access to cloud models (Claude, GPT-4, etc.) without managing your own API keys. It uses optimized AI routing that saves 5‑10× vs direct API costs. You purchase prepaid token credits ($10 / $25 / $50 / $100 top-ups) and control your spending with a prepaid balance. Available on both Free and Pro tiers.</div></div>
+                <div class="faq-answer"><div class="faq-answer-inner">The GooseStack API is a managed proxy service that gives you access to cloud models (Claude, GPT-4, etc.) without managing your own API keys. It analyzes request complexity and routes to the optimal model. Simple questions use cheap models, complex analysis uses premium ones. Available on Pro tier only.</div></div>
             </div>
         </div>
     </div>
