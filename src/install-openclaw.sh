@@ -109,6 +109,7 @@ install_goosestack_cli() {
     local cli_dest="/usr/local/bin/goosestack"
     
     if [[ -f "$cli_src" ]]; then
+        sudo mkdir -p "$(dirname "$cli_dest")"
         sudo cp "$cli_src" "$cli_dest"
         sudo chmod +x "$cli_dest"
         log_success "goosestack command installed"
