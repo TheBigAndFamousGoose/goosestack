@@ -106,13 +106,22 @@ install_goosestack_cli() {
     log_info "Installing goosestack command..."
     
     local cli_src="$INSTALL_DIR/src/templates/goosestack-cli.sh"
-    local cli_dest="/usr/local/bin/goosestack"
+    
+    # Use the correct bin directory for the architecture
+    local cli_dest
+    if [[ "${GOOSE_ARCH:-arm64}" == "arm64" ]]; then
+        cli_dest="/opt/homebrew/bin/goosestack"
+    else
+        cli_dest="/usr/local/bin/goosestack"
+    fi
     
     if [[ -f "$cli_src" ]]; then
         sudo mkdir -p "$(dirname "$cli_dest")"
-        sudo cp "$cli_src" "$cli_dest"
-        sudo chmod +x "$cli_dest"
-        log_success "goosestack command installed"
+        if sudo cp "$cli_src" "$cli_dest" && sudo chmod +x "$cli_dest"; then
+            log_success "goosestack command installed → $cli_dest"
+        else
+            log_warning "Could not install goosestack CLI shortcut (non-critical, continuing)"
+        fi
     else
         log_warning "GooseStack CLI script not found, skipping"
     fi
