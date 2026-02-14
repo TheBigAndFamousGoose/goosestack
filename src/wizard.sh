@@ -123,6 +123,12 @@ wizard_read_secret() {
     if [[ "$HAS_TTY" == "true" && -e /dev/tty ]]; then
         read -r -s "$varname" < /dev/tty || eval "$varname='$default'"
         echo ""
+        # Show masked feedback so user knows something was entered
+        local val="${!varname}"
+        if [[ -n "$val" ]]; then
+            local len=${#val}
+            echo -e "  ${GREEN}✓ Received ${len} characters${NC}"
+        fi
     else
         eval "$varname='$default'"
     fi
@@ -280,9 +286,20 @@ prompt_api_key_byok() {
     wizard_read_secret api_key_input ""
 
     if [[ -n "$api_key_input" ]]; then
+        # Detect double-paste: if key contains "sk-ant-" twice, extract just the first valid key
+        local key_count
+        key_count=$(echo "$api_key_input" | grep -o 'sk-ant-' | wc -l | tr -d ' ')
+        if [[ "$key_count" -gt 1 ]]; then
+            log_warning "Detected multiple keys pasted (you may have pasted twice)"
+            # Extract first valid key: sk-ant- followed by allowed chars
+            api_key_input=$(echo "$api_key_input" | grep -o 'sk-ant-[a-zA-Z0-9_-]*' | head -1)
+            log_info "Extracted key: ${api_key_input:0:12}..."
+        fi
+        
         if [[ "$api_key_input" =~ ^sk-ant-[a-zA-Z0-9_-]+$ ]]; then
             GOOSE_API_KEY="$api_key_input"
             log_success "${I18N_KEY_SAVED}"
+            echo -e "  ${CYAN}Key: ${api_key_input:0:12}...${api_key_input: -4}${NC}"
         else
             log_warning "API key format doesn't look standard, but saving anyway"
             GOOSE_API_KEY="$api_key_input"
@@ -307,8 +324,17 @@ prompt_proxy_key() {
     wizard_read_secret proxy_key_input ""
 
     if [[ -n "$proxy_key_input" ]]; then
+        # Detect double-paste for gsk_ keys
+        local gsk_count
+        gsk_count=$(echo "$proxy_key_input" | grep -o 'gsk_' | wc -l | tr -d ' ')
+        if [[ "$gsk_count" -gt 1 ]]; then
+            log_warning "Detected multiple keys pasted (you may have pasted twice)"
+            proxy_key_input=$(echo "$proxy_key_input" | grep -o 'gsk_[a-zA-Z0-9_-]*' | head -1)
+            log_info "Extracted key: ${proxy_key_input:0:12}..."
+        fi
         GOOSE_PROXY_KEY="$proxy_key_input"
         log_success "GooseStack API key saved"
+        echo -e "  ${CYAN}Key: ${proxy_key_input:0:12}...${NC}"
     else
         log_info "No key yet — your agent will use local models until you add credits"
         echo -e "${YELLOW}Visit https://goosestack.com/credits to buy credits and get your key.${NC}"
@@ -342,6 +368,15 @@ prompt_telegram() {
         wizard_read telegram_token ""
         
         if [[ -n "$telegram_token" ]]; then
+            # Detect double-paste for telegram tokens (format: 123456:ABC-DEF)
+            local tg_count
+            tg_count=$(echo "$telegram_token" | grep -o '[0-9]\+:[a-zA-Z0-9_-]\+' | wc -l | tr -d ' ')
+            if [[ "$tg_count" -gt 1 ]]; then
+                log_warning "Detected multiple tokens pasted (you may have pasted twice)"
+                telegram_token=$(echo "$telegram_token" | grep -o '[0-9]\+:[a-zA-Z0-9_-]\+' | head -1)
+                log_info "Extracted token: ${telegram_token:0:10}..."
+            fi
+            
             if [[ "$telegram_token" =~ ^[0-9]+:[a-zA-Z0-9_-]+$ ]]; then
                 GOOSE_TELEGRAM_BOT_TOKEN="$telegram_token"
                 log_success "Telegram bot token saved"
