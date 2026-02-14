@@ -455,6 +455,36 @@ export_wizard_vars() {
 
 # Main wizard function
 main_wizard() {
+    # On reinstall, offer to skip wizard
+    if [[ "${GOOSE_REINSTALL:-false}" == "true" ]]; then
+        echo -e "\n${BOLD}${PURPLE}🔄 Existing configuration detected${NC}"
+        echo -e "${CYAN}Your previous settings (persona, API key, Telegram) are still in place.${NC}"
+        echo -e ""
+        echo -e "${YELLOW}Do you want to reconfigure? (y/N):${NC}"
+        echo -n "> "
+        
+        local reconfig
+        wizard_read reconfig "n"
+        
+        if [[ ! "$reconfig" =~ ^[Yy]$ ]]; then
+            log_success "Keeping existing configuration"
+            
+            # Export defaults so later scripts don't fail on missing vars
+            export GOOSE_USER_NAME="${GOOSE_USER_NAME:-$(whoami)}"
+            export GOOSE_AGENT_PERSONA="${GOOSE_AGENT_PERSONA:-partner}"
+            export GOOSE_API_MODE="${GOOSE_API_MODE:-byok}"
+            export GOOSE_API_KEY="${GOOSE_API_KEY:-}"
+            export GOOSE_PROXY_KEY="${GOOSE_PROXY_KEY:-}"
+            export GOOSE_TELEGRAM_ENABLED="${GOOSE_TELEGRAM_ENABLED:-false}"
+            export GOOSE_TELEGRAM_BOT_TOKEN="${GOOSE_TELEGRAM_BOT_TOKEN:-}"
+            
+            log_success "${I18N_WIZARD_DONE}"
+            return
+        fi
+        
+        log_info "Starting reconfiguration..."
+    fi
+    
     log_info "${I18N_WIZARD_START}"
     
     prompt_language

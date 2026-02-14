@@ -443,6 +443,18 @@ EOF
 main_setup_launchagent() {
     log_info "🎯 Setting up OpenClaw auto-start service..."
     
+    # On reinstall, check if LaunchAgent already works
+    if [[ "${GOOSE_REINSTALL:-false}" == "true" ]]; then
+        if launchctl list | grep -q "ai.openclaw.gateway" && \
+           (curl -s -f -m 3 "http://localhost:18789/status" >/dev/null 2>&1 || \
+            curl -s -f -m 3 "http://localhost:18789" >/dev/null 2>&1); then
+            log_success "OpenClaw gateway already running, skipping LaunchAgent setup"
+            create_management_script
+            return 0
+        fi
+        log_info "Gateway not responding, reconfiguring LaunchAgent..."
+    fi
+    
     create_launch_agent
     # (loading handled below in verify step)
     create_management_script

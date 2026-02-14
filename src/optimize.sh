@@ -10,6 +10,27 @@ generate_openclaw_config() {
 
     local config_dir="$HOME/.openclaw"
     local config_file="$config_dir/openclaw.json"
+    
+    # On reinstall, preserve existing config
+    if [[ "${GOOSE_REINSTALL:-false}" == "true" && -f "$config_file" ]]; then
+        log_success "Preserving existing OpenClaw configuration"
+        
+        # Still ensure gateway token is available for healthcheck
+        if [[ -f "$config_dir/.gateway-token" ]]; then
+            export GOOSE_GATEWAY_TOKEN=$(cat "$config_dir/.gateway-token")
+        fi
+        
+        # Ensure all directories exist (in case any were deleted)
+        local agent_dir="$config_dir/agents/main/agent"
+        mkdir -p "$agent_dir"
+        mkdir -p "$config_dir/agents/main/sessions"
+        mkdir -p "$config_dir/credentials"
+        mkdir -p "$config_dir/logs"
+        mkdir -p "${GOOSE_WORKSPACE_DIR:-$config_dir/workspace}/memory"
+        
+        return
+    fi
+    
     local gateway_token
     gateway_token=$(openssl rand -hex 24)
 
@@ -293,33 +314,45 @@ setup_workspace() {
         exit 1
     fi
 
-    # AGENTS.md — always overwrite with our version
-    cp "$template_dir/AGENTS.md" "$workspace_dir/AGENTS.md"
-    chmod 644 "$workspace_dir/AGENTS.md"
-
-    # SOUL.md — from selected persona
-    local persona="${GOOSE_AGENT_PERSONA:-assistant}"
-    local soul_file="$template_dir/SOUL-${persona}.md"
-    if [[ -f "$soul_file" ]]; then
-        cp "$soul_file" "$workspace_dir/SOUL.md"
-        chmod 644 "$workspace_dir/SOUL.md"
-        log_success "Persona: $persona"
+    # AGENTS.md — only create if missing (user may have customized)
+    if [[ ! -f "$workspace_dir/AGENTS.md" ]]; then
+        cp "$template_dir/AGENTS.md" "$workspace_dir/AGENTS.md"
+        chmod 644 "$workspace_dir/AGENTS.md"
     else
-        cp "$template_dir/SOUL-assistant.md" "$workspace_dir/SOUL.md"
-        chmod 644 "$workspace_dir/SOUL.md"
-        log_warning "Persona '$persona' not found, using assistant"
+        log_info "AGENTS.md already exists, preserving"
     fi
 
-    # USER.md — substitute name, date, and hardware specs
-    local user_name="${GOOSE_USER_NAME:-$(whoami)}"
-    local setup_date=$(date +"%Y-%m-%d")
-    sed -e "s/{{USER_NAME}}/${user_name}/g" \
-        -e "s/{{SETUP_DATE}}/${setup_date}/g" \
-        -e "s/{{GOOSE_CHIP}}/${GOOSE_CHIP:-Unknown}/g" \
-        -e "s/{{GOOSE_RAM_GB}}/${GOOSE_RAM_GB:-8}/g" \
-        "$template_dir/USER.md.tmpl" > "$workspace_dir/USER.md"
-    chmod 644 "$workspace_dir/USER.md"
-    log_success "User: $user_name"
+    # SOUL.md — only create if missing (user/agent may have customized)
+    if [[ ! -f "$workspace_dir/SOUL.md" ]]; then
+        local persona="${GOOSE_AGENT_PERSONA:-assistant}"
+        local soul_file="$template_dir/SOUL-${persona}.md"
+        if [[ -f "$soul_file" ]]; then
+            cp "$soul_file" "$workspace_dir/SOUL.md"
+            chmod 644 "$workspace_dir/SOUL.md"
+            log_success "Persona: $persona"
+        else
+            cp "$template_dir/SOUL-assistant.md" "$workspace_dir/SOUL.md"
+            chmod 644 "$workspace_dir/SOUL.md"
+            log_warning "Persona '$persona' not found, using assistant"
+        fi
+    else
+        log_info "SOUL.md already exists, preserving"
+    fi
+
+    # USER.md — only create if missing
+    if [[ ! -f "$workspace_dir/USER.md" ]]; then
+        local user_name="${GOOSE_USER_NAME:-$(whoami)}"
+        local setup_date=$(date +"%Y-%m-%d")
+        sed -e "s/{{USER_NAME}}/${user_name}/g" \
+            -e "s/{{SETUP_DATE}}/${setup_date}/g" \
+            -e "s/{{GOOSE_CHIP}}/${GOOSE_CHIP:-Unknown}/g" \
+            -e "s/{{GOOSE_RAM_GB}}/${GOOSE_RAM_GB:-8}/g" \
+            "$template_dir/USER.md.tmpl" > "$workspace_dir/USER.md"
+        chmod 644 "$workspace_dir/USER.md"
+        log_success "User: ${user_name}"
+    else
+        log_info "USER.md already exists, preserving"
+    fi
 
     # Compute template values once for both TOOLS.md and MEMORY.md
     local setup_date=$(date +"%Y-%m-%d")

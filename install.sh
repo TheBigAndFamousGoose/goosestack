@@ -109,6 +109,15 @@ main() {
     log_info "This will install: Homebrew, Node.js, OpenClaw, and Ollama"
     log_info ""
     
+    # Detect existing installation
+    export GOOSE_REINSTALL="false"
+    if [[ -f "$HOME/.openclaw/openclaw.json" ]]; then
+        GOOSE_REINSTALL="true"
+        log_info "🔄 Existing GooseStack installation detected!"
+        log_info "Your configuration and workspace files will be preserved."
+        echo ""
+    fi
+    
     # If piped, download first
     if is_piped; then
         download_installer

@@ -111,6 +111,16 @@ install_clawsec() {
 
 # Main security installation function
 main_install_security() {
+    # On reinstall, skip security suite setup (it's already installed)
+    if [[ "${GOOSE_REINSTALL:-false}" == "true" ]]; then
+        local soul_guardian="$HOME/.openclaw/workspace/skills/soul-guardian/scripts/soul_guardian.py"
+        if [[ -f "$soul_guardian" ]]; then
+            log_success "Security suite already installed, preserving baselines"
+            return 0
+        fi
+        # If not found, fall through to install
+    fi
+    
     echo -e "\n${BOLD}${PURPLE}🛡️  GooseStack Security Suite${NC}\n"
     
     log_info "ClawSec provides advanced security monitoring for your AI agent:"

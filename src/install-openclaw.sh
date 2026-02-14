@@ -74,8 +74,20 @@ install_openclaw_npm() {
     log_success "OpenClaw installed: $version"
 }
 
-# Generate gateway token
+# Generate or reuse gateway token
 generate_gateway_token() {
+    # Reuse existing token if reinstalling
+    local existing_token_file="$HOME/.openclaw/.gateway-token"
+    if [[ "${GOOSE_REINSTALL:-false}" == "true" && -f "$existing_token_file" ]]; then
+        GOOSE_GATEWAY_TOKEN=$(cat "$existing_token_file")
+        if [[ -n "$GOOSE_GATEWAY_TOKEN" ]]; then
+            export GOOSE_GATEWAY_TOKEN
+            log_success "Reusing existing gateway token"
+            return
+        fi
+    fi
+    
+    # Generate new token
     if command -v openssl >/dev/null 2>&1; then
         GOOSE_GATEWAY_TOKEN=$(openssl rand -hex 24)
     else
