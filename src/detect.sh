@@ -99,22 +99,42 @@ detect_ram() {
     fi
 }
 
-# Check available disk space
+# Check available disk space (dynamic based on RAM → model selection)
 check_disk_space() {
     # Get available space in 1GB blocks for root volume
     GOOSE_DISK_GB=$(df -g / | tail -1 | awk '{print $4}')
     local available_gb="$GOOSE_DISK_GB"
     
-    log_info "Available disk space: ${available_gb}GB"
+    # Calculate required space based on which model will be installed
+    # Base: ~3GB (Homebrew + Node + OpenClaw + Ollama binary + workspace)
+    local base_gb=3
+    local model_gb
+    local model_name
     
-    # Check minimum space (15GB)
-    if [[ $available_gb -lt 15 ]]; then
-        log_error "At least 15GB of free disk space is required (found ${available_gb}GB)"
+    if [[ ${GOOSE_RAM_GB:-8} -ge 16 ]]; then
+        model_gb=10   # qwen3:14b ≈ 9.3GB
+        model_name="qwen3:14b"
+    elif [[ ${GOOSE_RAM_GB:-8} -ge 8 ]]; then
+        model_gb=5    # qwen3:8b ≈ 5GB
+        model_name="qwen3:8b"
+    else
+        model_gb=3    # qwen3:4b ≈ 2.5GB
+        model_name="qwen3:4b"
+    fi
+    
+    local required_gb=$(( base_gb + model_gb + 2 ))  # +2GB headroom
+    
+    log_info "Available disk space: ${available_gb}GB"
+    log_info "Required: ~${required_gb}GB (base: ${base_gb}GB + model ${model_name}: ${model_gb}GB + 2GB headroom)"
+    
+    if [[ $available_gb -lt $required_gb ]]; then
+        log_error "At least ${required_gb}GB of free disk space is required (found ${available_gb}GB)"
+        log_error "Model ${model_name} needs ~${model_gb}GB alone"
         log_error "Please free up some space before installing GooseStack"
         exit 1
     fi
     
-    log_success "Disk space requirement met"
+    log_success "Disk space requirement met (${available_gb}GB available, ${required_gb}GB needed)"
 }
 
 # Check for Xcode Command Line Tools
