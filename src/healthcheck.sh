@@ -408,13 +408,66 @@ start_gateway_now() {
     
     # Install the gateway service (registers plist properly)
     log_info "Installing gateway service..."
-    openclaw gateway install 2>/dev/null || true
+    openclaw gateway install 2>&1 | sed 's/^/  [install] /'
     
     # Start it
-    openclaw gateway start 2>/dev/null || true
+    log_info "Starting gateway service..."
+    openclaw gateway start 2>&1 | sed 's/^/  [start] /'
     
-    # Wait for startup
-    sleep 5
+    # Wait for startup and poll
+    log_info "Waiting for gateway to respond..."
+    local max_wait=20
+    local waited=0
+    while [[ $waited -lt $max_wait ]]; do
+        if curl -s -f -m 2 "http://localhost:18789/status" >/dev/null 2>&1; then
+            log_success "Gateway responding after ${waited}s"
+            return 0
+        fi
+        sleep 2
+        waited=$((waited + 2))
+        echo -e "  ⏳ Waiting... (${waited}s/${max_wait}s)"
+    done
+    
+    # Failed — dump diagnostic logs
+    log_warning "Gateway not responding after ${max_wait}s — dumping diagnostics:"
+    echo -e "\n${YELLOW}━━━ Gateway Log (last 20 lines) ━━━${NC}"
+    local log_file="$HOME/.openclaw/logs/gateway.log"
+    if [[ -f "$log_file" ]]; then
+        tail -20 "$log_file" | sed 's/^/  /'
+    else
+        echo "  (no log file at $log_file)"
+        # Try stderr log
+        local stderr_log="$HOME/.openclaw/logs/gateway-stderr.log"
+        if [[ -f "$stderr_log" ]]; then
+            echo -e "\n${YELLOW}━━━ Gateway Stderr (last 20 lines) ━━━${NC}"
+            tail -20 "$stderr_log" | sed 's/^/  /'
+        fi
+    fi
+    
+    echo -e "\n${YELLOW}━━━ LaunchAgent Status ━━━${NC}"
+    launchctl list | grep -i openclaw | sed 's/^/  /' || echo "  (not found)"
+    
+    echo -e "\n${YELLOW}━━━ Config Validation ━━━${NC}"
+    local config_file="$HOME/.openclaw/openclaw.json"
+    if [[ -f "$config_file" ]]; then
+        if python3 -m json.tool "$config_file" >/dev/null 2>&1; then
+            echo "  JSON: valid"
+        else
+            echo "  JSON: INVALID"
+            python3 -m json.tool "$config_file" 2>&1 | tail -5 | sed 's/^/  /'
+        fi
+        echo "  Config (first 30 lines):"
+        head -30 "$config_file" | sed 's/^/  /'
+    else
+        echo "  (no config file at $config_file)"
+    fi
+    
+    echo -e "\n${YELLOW}━━━ Port 18789 ━━━${NC}"
+    lsof -i :18789 2>/dev/null | sed 's/^/  /' || echo "  (nothing listening on 18789)"
+    
+    echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}\n"
+    
+    return 1
 }
 
 # Main health check function
@@ -422,7 +475,8 @@ main_healthcheck() {
     log_step "🏥 Starting gateway & running health check..."
     
     # Start gateway here — config now exists from Phase 5+6
-    start_gateway_now
+    # Non-fatal: diagnostics are dumped on failure, but installation continues
+    start_gateway_now || log_warning "Gateway startup issue — see diagnostics above"
     
     check_gateway
     check_launchagent
