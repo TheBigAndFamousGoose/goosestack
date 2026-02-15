@@ -202,9 +202,16 @@ pull_optimal_model() {
         log_warning "RAM: ${GOOSE_RAM_GB}GB → Using qwen3:4b (performance may be limited)"
     fi
     
+    # Ensure Ollama is running before checking models
+    if ! ollama list >/dev/null 2>&1; then
+        log_info "Starting Ollama service..."
+        brew services start ollama 2>/dev/null || ollama serve &>/dev/null &
+        sleep 3
+    fi
+    
     # Check if model is already pulled
-    if ollama list | grep -q "$model_name"; then
-        log_success "Model $model_name already available"
+    if ollama list 2>/dev/null | grep -q "$model_name"; then
+        log_success "Model $model_name already available (skipping download)"
     else
         log_info "Downloading $model_name (this may take several minutes)..."
         
