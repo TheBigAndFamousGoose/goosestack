@@ -468,31 +468,15 @@ main_setup_launchagent() {
     setup_watchdog
     prevent_sleep
     
-    # Load and verify the LaunchAgent
-    if load_launch_agent && verify_gateway_running; then
-        log_success "OpenClaw LaunchAgent setup complete!"
-        
-        # Summary
-        echo -e "\n${BOLD}${BLUE}🎯 Auto-Start Summary:${NC}"
-        echo -e "  ✅ LaunchAgent created and loaded"
-        echo -e "  ✅ OpenClaw gateway running on port 18789"
-        echo -e "  ✅ Auto-starts on login"
-        echo -e "  ✅ Restarts automatically if crashed"
-        echo -e "  ✅ Management script available"
-        echo -e "  ✅ Sleep prevention configured"
-        echo -e "  ✅ Gateway startup verification passed"
-        
-        echo -e "\n${CYAN}💡 Management commands:${NC}"
-        echo -e "  ~/.openclaw/manage-gateway.sh status   # Check status"
-        echo -e "  ~/.openclaw/manage-gateway.sh restart  # Restart service"
-        echo -e "  ~/.openclaw/manage-gateway.sh logs     # View logs"
-        
-    else
-        log_warning "LaunchAgent setup completed but gateway startup failed"
-        log_info "The watchdog will auto-start the gateway once config is ready"
-        log_info "Or start manually: openclaw gateway start"
-        return 0
-    fi
+    # Don't load/start gateway yet — config doesn't exist until after Phase 6
+    # Phase 8 (healthcheck) will handle gateway start + verification
+    
+    log_success "LaunchAgent setup complete (gateway will start after config is generated)"
+    
+    echo -e "\n${CYAN}💡 Management commands:${NC}"
+    echo -e "  ~/.openclaw/manage-gateway.sh status   # Check status"
+    echo -e "  ~/.openclaw/manage-gateway.sh restart  # Restart service"
+    echo -e "  ~/.openclaw/manage-gateway.sh logs     # View logs"
 }
 
 # Run LaunchAgent setup

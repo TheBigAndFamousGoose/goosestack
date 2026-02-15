@@ -397,9 +397,34 @@ show_next_steps() {
     echo -e "   💬 Issues: https://github.com/TheBigAndFamousGoose/goosestack/issues"
 }
 
+# Start gateway now that config exists (Phase 5+6 completed)
+start_gateway_now() {
+    log_info "🚀 Starting OpenClaw gateway..."
+    
+    local plist_file="$HOME/Library/LaunchAgents/ai.openclaw.gateway.plist"
+    
+    # Load LaunchAgent if not already loaded
+    if ! launchctl list | grep -q "ai.openclaw.gateway"; then
+        if [[ -f "$plist_file" ]]; then
+            launchctl load "$plist_file" 2>/dev/null || true
+        fi
+    fi
+    
+    # Also try openclaw gateway start as fallback
+    if command -v openclaw >/dev/null 2>&1; then
+        openclaw gateway start 2>/dev/null || true
+    fi
+    
+    # Brief wait for startup
+    sleep 3
+}
+
 # Main health check function
 main_healthcheck() {
-    log_step "🏥 Running comprehensive health check..."
+    log_step "🏥 Starting gateway & running health check..."
+    
+    # Start gateway here — config now exists from Phase 5+6
+    start_gateway_now
     
     check_gateway
     check_launchagent
