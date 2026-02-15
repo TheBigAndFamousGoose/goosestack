@@ -3,7 +3,8 @@
 # GooseStack Health Check & Final Verification
 # Comprehensive system validation and user onboarding
 
-# Exit on any error (but continue through health checks)
+# Health checks may fail — that's expected. Disable exit-on-error.
+set +e
 set -uo pipefail
 
 # Health check results
