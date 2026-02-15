@@ -122,14 +122,31 @@ check_disk_space() {
         model_name="qwen3:4b"
     fi
     
+    # Skip model space if already downloaded
+    if command -v ollama >/dev/null 2>&1 && ollama list 2>/dev/null | grep -q "$model_name"; then
+        log_info "Model $model_name already downloaded, skipping from disk check"
+        model_gb=0
+    fi
+    
+    # Skip base space on reinstall (most deps already present)
+    if [[ "${GOOSE_REINSTALL:-false}" == "true" ]]; then
+        base_gb=1
+    fi
+    
     local required_gb=$(( base_gb + model_gb + 2 ))  # +2GB headroom
     
     log_info "Available disk space: ${available_gb}GB"
-    log_info "Required: ~${required_gb}GB (base: ${base_gb}GB + model ${model_name}: ${model_gb}GB + 2GB headroom)"
+    if [[ $model_gb -gt 0 ]]; then
+        log_info "Required: ~${required_gb}GB (base: ${base_gb}GB + model ${model_name}: ${model_gb}GB + 2GB headroom)"
+    else
+        log_info "Required: ~${required_gb}GB (model already present)"
+    fi
     
     if [[ $available_gb -lt $required_gb ]]; then
         log_error "At least ${required_gb}GB of free disk space is required (found ${available_gb}GB)"
-        log_error "Model ${model_name} needs ~${model_gb}GB alone"
+        if [[ $model_gb -gt 0 ]]; then
+            log_error "Model ${model_name} needs ~${model_gb}GB alone"
+        fi
         log_error "Please free up some space before installing GooseStack"
         exit 1
     fi
