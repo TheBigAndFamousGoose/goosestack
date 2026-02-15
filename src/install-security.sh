@@ -17,20 +17,60 @@ check_openclaw() {
     fi
 }
 
+# Download and install a ClawSec skill from GitHub releases (no npm dependency)
+install_clawsec_skill() {
+    local skill_name="$1"
+    local version="$2"
+    local dest="$HOME/.openclaw/workspace/skills/$skill_name"
+    local base_url="https://github.com/prompt-security/clawsec/releases/download/${skill_name}-v${version}"
+    local max_retries=3
+    local retry_delay=5
+
+    mkdir -p "$dest"
+
+    local attempt=0
+    while (( attempt < max_retries )); do
+        attempt=$((attempt + 1))
+
+        # Try GitHub release tarball first
+        local tarball_url="${base_url}/${skill_name}.tar.gz"
+        if curl -fsSL --retry 2 "$tarball_url" -o "/tmp/${skill_name}.tar.gz" 2>/dev/null; then
+            if tar xzf "/tmp/${skill_name}.tar.gz" -C "$dest" --strip-components=1 2>/dev/null || \
+               tar xzf "/tmp/${skill_name}.tar.gz" -C "$dest" 2>/dev/null; then
+                rm -f "/tmp/${skill_name}.tar.gz"
+                return 0
+            fi
+        fi
+
+        # Fallback: try npx clawhub
+        if npx clawhub@latest install "$skill_name" 2>/dev/null; then
+            return 0
+        fi
+
+        if (( attempt < max_retries )); then
+            log_warning "Attempt $attempt/$max_retries failed for $skill_name, retrying in ${retry_delay}s..."
+            sleep "$retry_delay"
+            retry_delay=$((retry_delay * 2))
+        fi
+    done
+
+    return 1
+}
+
 # Install ClawSec security suite
 install_clawsec() {
     log_step "Installing ClawSec Security Suite..."
     
     # Install clawsec-suite
     log_info "Installing clawsec-suite package..."
-    if ! npx clawhub@latest install clawsec-suite; then
+    if ! install_clawsec_skill "clawsec-suite" "0.0.9"; then
         log_error "Failed to install clawsec-suite"
         return 1
     fi
     
     # Install soul-guardian
     log_info "Installing soul-guardian package..."
-    if ! npx clawhub@latest install soul-guardian; then
+    if ! install_clawsec_skill "soul-guardian" "0.0.3"; then
         log_error "Failed to install soul-guardian"
         return 1
     fi
@@ -145,8 +185,11 @@ main_install_security() {
                     echo -e "\n${GREEN}🛡️  Security suite installed successfully!${NC}"
                     return 0
                 else
-                    log_error "Security suite installation failed"
-                    return 1
+                    log_warning "Security suite installation failed — this is non-critical"
+                    log_info "Your agent works fine without it. Install later with:"
+                    log_info "  npx clawhub@latest install clawsec-suite"
+                    log_info "  npx clawhub@latest install soul-guardian"
+                    return 0
                 fi
                 ;;
             [Nn]|[Nn][Oo])
