@@ -450,33 +450,22 @@ EOF
 main_setup_launchagent() {
     log_info "🎯 Setting up OpenClaw auto-start service..."
     
-    # On reinstall, check if LaunchAgent already works
+    # On reinstall, check if gateway already works
     if [[ "${GOOSE_REINSTALL:-false}" == "true" ]]; then
-        if launchctl list | grep -q "ai.openclaw.gateway" && \
-           (curl -s -f -m 3 "http://localhost:18789/status" >/dev/null 2>&1 || \
-            curl -s -f -m 3 "http://localhost:18789" >/dev/null 2>&1); then
-            log_success "OpenClaw gateway already running, skipping LaunchAgent setup"
+        if curl -s -f -m 3 "http://localhost:18789/status" >/dev/null 2>&1; then
+            log_success "OpenClaw gateway already running, skipping setup"
             create_management_script
             return 0
         fi
-        log_info "Gateway not responding, reconfiguring LaunchAgent..."
+        log_info "Gateway not responding, reconfiguring..."
     fi
     
-    create_launch_agent
-    # (loading handled below in verify step)
+    # Don't create plist manually — openclaw gateway install handles it in Phase 8
     create_management_script
     setup_watchdog
     prevent_sleep
     
-    # Don't load/start gateway yet — config doesn't exist until after Phase 6
-    # Phase 8 (healthcheck) will handle gateway start + verification
-    
-    log_success "LaunchAgent setup complete (gateway will start after config is generated)"
-    
-    echo -e "\n${CYAN}💡 Management commands:${NC}"
-    echo -e "  ~/.openclaw/manage-gateway.sh status   # Check status"
-    echo -e "  ~/.openclaw/manage-gateway.sh restart  # Restart service"
-    echo -e "  ~/.openclaw/manage-gateway.sh logs     # View logs"
+    log_success "Auto-start setup complete (gateway will start in Phase 8)"
 }
 
 # Run LaunchAgent setup

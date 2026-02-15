@@ -401,22 +401,20 @@ show_next_steps() {
 start_gateway_now() {
     log_info "🚀 Starting OpenClaw gateway..."
     
-    local plist_file="$HOME/Library/LaunchAgents/ai.openclaw.gateway.plist"
-    
-    # Load LaunchAgent if not already loaded
-    if ! launchctl list | grep -q "ai.openclaw.gateway"; then
-        if [[ -f "$plist_file" ]]; then
-            launchctl load "$plist_file" 2>/dev/null || true
-        fi
+    if ! command -v openclaw >/dev/null 2>&1; then
+        log_error "OpenClaw binary not found"
+        return 1
     fi
     
-    # Also try openclaw gateway start as fallback
-    if command -v openclaw >/dev/null 2>&1; then
-        openclaw gateway start 2>/dev/null || true
-    fi
+    # Install the gateway service (registers plist properly)
+    log_info "Installing gateway service..."
+    openclaw gateway install 2>/dev/null || true
     
-    # Brief wait for startup
-    sleep 3
+    # Start it
+    openclaw gateway start 2>/dev/null || true
+    
+    # Wait for startup
+    sleep 5
 }
 
 # Main health check function
