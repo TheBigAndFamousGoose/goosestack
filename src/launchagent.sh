@@ -131,7 +131,7 @@ load_launch_agent() {
     log_info "Loading OpenClaw LaunchAgent..."
     
     local plist_file="$HOME/Library/LaunchAgents/ai.openclaw.gateway.plist"
-    local max_retries=3
+    local max_retries=2
     local retry=0
     
     while [[ $retry -lt $max_retries ]]; do
@@ -163,7 +163,7 @@ load_launch_agent() {
             
             # Verify the gateway actually responds
             log_info "Verifying gateway responds to HTTP requests..."
-            local verify_attempts=12  # 60 seconds total
+            local verify_attempts=6  # 30 seconds total
             local verify_count=0
             
             while [[ $verify_count -lt $verify_attempts ]]; do
@@ -183,6 +183,13 @@ load_launch_agent() {
             
             # If we get here, the LaunchAgent loaded but gateway isn't responding
             log_warning "LaunchAgent loaded but gateway not responding to HTTP requests"
+            
+            # Show quick diagnostics on each failed attempt
+            local stderr_log="$HOME/.openclaw/logs/gateway-stderr.log"
+            if [[ -f "$stderr_log" ]] && [[ -s "$stderr_log" ]]; then
+                log_info "Gateway stderr (last 5 lines):"
+                tail -5 "$stderr_log" | sed 's/^/    /'
+            fi
         else
             log_error "Failed to load LaunchAgent on attempt $((retry + 1))"
         fi
@@ -482,8 +489,9 @@ main_setup_launchagent() {
         
     else
         log_warning "LaunchAgent setup completed but gateway startup failed"
-        log_info "Check the diagnostics above for troubleshooting steps"
-        return 1
+        log_info "The watchdog will auto-start the gateway once config is ready"
+        log_info "Or start manually: openclaw gateway start"
+        return 0
     fi
 }
 
