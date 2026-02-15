@@ -1,227 +1,122 @@
-# GooseStack 🦆
+# GooseStack 🪿
 
-**One-command macOS installer for your personal AI agent environment.**
+**One-command macOS installer for your personal AI agent.**
 
 ```bash
 curl -fsSL https://goosestack.com/install.sh | sh
 ```
 
-<pre>
-     ____                      ____  _             _    
-    / ___| ___   ___  ___  ___/ ___|| |_ __ _  ___| | __
-   | |  _ / _ \ / _ \/ __|/ _ \___ \| __/ _` |/ __| |/ /
-   | |_| | (_) | (_) \__ \  __/___) | || (_| | (__|   < 
-    \____|\___/ \___/|___/\___|____/ \__\__,_|\___|_|\_\
-                                                        
-    🦆 One-Command AI Agent Setup for macOS
-</pre>
-
 ## What It Does
 
-GooseStack automatically installs and configures:
+GooseStack detects your hardware and sets up a fully configured AI agent in minutes:
 
-- ✅ **Homebrew** - macOS package manager
-- ✅ **Node.js** - JavaScript runtime  
-- ✅ **OpenClaw** - AI agent framework
-- ✅ **Ollama** - Local AI models
-- ✅ **Optimized Models** - Selected based on your RAM
-- ✅ **Auto-Start Service** - Runs on login via LaunchAgent
-- ✅ **Web Dashboard** - Chat interface at http://localhost:18789
-- ✅ **Local Memory Search** - Privacy-focused embeddings
-- ✅ **Telegram Integration** - Optional bot connection
-
-## Features
-
-### 🎯 **Intelligent Setup**
-- Detects your Mac's chip (M1/M2/M3/M4/Intel) and RAM
-- Installs optimal AI model for your hardware
-- Applies performance optimizations automatically
-
-### 🧠 **Smart AI Agent** 
-- Reads workspace files to understand you and your preferences
-- Maintains conversation history and long-term memory
-- Proactive heartbeat system for periodic check-ins
-- Local embeddings for privacy-focused memory search
-
-### ⚡ **Ready to Use**
-- Web dashboard opens automatically after install
-- Pre-configured with sensible defaults
-- Management scripts for easy service control
-- Comprehensive health checks
-
-### 🔒 **Privacy First**
-- All AI processing runs locally by default
-- Optional API key for premium models
-- Memory and embeddings stored on your machine
-- No data sent to external services without your consent
+- 🧠 **AI Agent** — [OpenClaw](https://openclaw.ai)-powered, with memory, search, and personality
+- 🏠 **Local Models** — Ollama with hardware-optimized model selection
+- 🌐 **Web Dashboard** — Chat interface at `localhost:18789`
+- 📱 **Telegram** — Optional bot integration
+- 🔒 **Privacy First** — Everything runs on your Mac, your data stays local
+- ⚡ **Auto-Start** — LaunchAgent runs on login, watchdog keeps it alive
+- 🔍 **Local Memory** — Privacy-focused embeddings, zero API cost
 
 ## Requirements
 
-- **macOS 13.0+** (Ventura or newer)
-- **8GB+ RAM** (16GB+ recommended for best performance)
-- **15GB free disk space** (for models and dependencies)
-- **Internet connection** (for initial download)
+- **macOS 13+** (Ventura or newer)
+- **8GB+ RAM** (16GB+ recommended)
+- **15GB free disk space**
+- Apple Silicon (M1/M2/M3/M4) or Intel
 
 ## Quick Start
 
-1. **Install GooseStack:**
-   ```bash
-   curl -fsSL https://goosestack.com/install.sh | sh
-   ```
+```bash
+# 1. Install
+curl -fsSL https://goosestack.com/install.sh | sh
 
-2. **Chat with your agent:**
-   - Dashboard opens automatically at http://localhost:18789
-   - Or visit it manually in your browser
+# 2. Chat — dashboard opens automatically
+open http://localhost:18789
+```
 
-3. **Try these commands:**
-   - "What can you help me with?"
-   - "Show me my workspace files"
-   - "What's my system information?"
+The interactive wizard will ask you to:
+- Name your agent and pick a personality
+- Optionally add an API key (BYOK) or use local models
+- Optionally connect Telegram
 
-## Configuration
+## GooseStack API (Optional)
 
-### Personalities
+Use cloud models through the GooseStack proxy — no key management needed:
 
-Choose your agent's personality during setup:
+| | Free | Pro ($10/mo) |
+|---|---|---|
+| Installer + local models | ✅ | ✅ |
+| BYOK (bring your own keys) | ✅ | ✅ |
+| GooseStack API (prepaid credits) | ✅ | ✅ |
+| Token Router (smart model routing) | — | ✅ |
+| Multi-provider proxy (Anthropic, OpenAI, Gemini) | — | ✅ |
+| Priority support | — | ✅ |
 
-- **👔 Assistant** - Professional, formal, task-focused
-- **🤝 Partner** - Collaborative, casual, team-oriented  
-- **⚡ Coder** - Technical, direct, development-focused
-- **🎨 Creative** - Witty, expressive, imaginative
+**Token Router** analyzes request complexity and routes to the optimal model automatically. Simple tasks use cheap models, complex tasks use premium ones. You only pay for what you need.
 
-### API Setup — Choose Your Tier
+→ [goosestack.com](https://goosestack.com) for pricing and dashboard
 
-GooseStack has two tiers:
+## Personalities
 
-**🟢 Free** — Everything you need to get started
-- One-command installer, dashboards, security suite
-- GooseStack API with prepaid token credits ($10/$25/$50/$100 top-ups)
-- Optimized AI routing that saves 5-10x vs direct API costs
-- Local models (Ollama) at zero cost
+Choose during setup:
 
-**🔵 Pro ($10/mo)** — Full power, maximum flexibility
-- Everything in Free, plus:
-- BYOK — bring your own API keys (Anthropic, OpenAI, etc.)
-- Token Router — automatically picks the cheapest model per task
-- Premium Skills
-- Priority Support
-- Go Pro at: https://goosestack.com/pro
-
-### Telegram Integration
-
-Enable during setup or add later:
-1. Message @BotFather on Telegram
-2. Send: `/newbot`
-3. Copy your bot token
-4. Add to `~/.openclaw/openclaw.json`
+- **👔 Assistant** — Professional, task-focused
+- **🤝 Partner** — Collaborative, casual
+- **⚡ Coder** — Technical, direct
+- **🎨 Creative** — Witty, expressive
 
 ## Management
 
-### Service Control
 ```bash
-# Check status
+# Status & health check
 ~/.openclaw/manage-gateway.sh status
 
-# Restart service  
+# Restart / stop
 ~/.openclaw/manage-gateway.sh restart
+~/.openclaw/manage-gateway.sh stop
 
-# View logs
+# Logs
 ~/.openclaw/manage-gateway.sh logs
 
-# Stop service
-~/.openclaw/manage-gateway.sh stop
+# Uninstall
+goosestack uninstall
 ```
 
-### File Locations
-- **Config:** `~/.openclaw/openclaw.json`
-- **Workspace:** `~/.openclaw/workspace/`
-- **Logs:** `~/.openclaw/logs/`
-- **LaunchAgent:** `~/Library/LaunchAgents/ai.openclaw.gateway.plist`
+## File Locations
 
-### Customization
-Edit these files to customize your agent:
-
-- **`SOUL.md`** - Agent personality and behavior
-- **`USER.md`** - Your info and preferences  
-- **`TOOLS.md`** - Your specific setup details
-- **`HEARTBEAT.md`** - Periodic tasks and reminders
+| File | Purpose |
+|---|---|
+| `~/.openclaw/openclaw.json` | Agent config |
+| `~/.openclaw/workspace/SOUL.md` | Personality |
+| `~/.openclaw/workspace/USER.md` | Your preferences |
+| `~/.openclaw/workspace/MEMORY.md` | Agent's long-term memory |
+| `~/.openclaw/logs/` | Gateway logs |
 
 ## Troubleshooting
 
-### Installation Issues
-
-**"Command not found" errors:**
-```bash
-# Reload your shell profile
-source ~/.zprofile
-```
-
-**Permission denied:**
-```bash
-# Don't use sudo! Install as regular user
-./install.sh
-```
-
-**Ollama won't start:**
-```bash
-# Check Homebrew services
-brew services list | grep ollama
-brew services restart ollama
-```
-
-### Service Issues  
-
 **Gateway not responding:**
 ```bash
-# Check status and restart
-~/.openclaw/manage-gateway.sh status
 ~/.openclaw/manage-gateway.sh restart
-```
-
-**Dashboard won't load:**
-```bash
-# Verify ports are free
-lsof -i :18789
 ```
 
 **Model errors:**
 ```bash
-# Verify model is available
 ollama list
 ollama run qwen2.5:7b "test"
 ```
 
-### Getting Help
-
-- **📖 Documentation:** Full guides at [goosestack.com/docs](https://goosestack.com/docs)
-- **🐛 Bug Reports:** [GitHub Issues](https://github.com/TheBigAndFamousGoose/goosestack/issues)
-- **💬 Community:** [Discord Server](https://discord.gg/openclaw)
-- **✉️  Email:** support@goosestack.com
-
-## Development
-
-### Local Development
+**Shell not finding commands:**
 ```bash
-git clone https://github.com/TheBigAndFamousGoose/goosestack.git
-cd goosestack
-./install.sh
+source ~/.zprofile
 ```
 
-### Testing
-```bash
-# Syntax check
-bash -n install.sh
-
-# Dry run (check but don't install)
-GOOSE_DRY_RUN=1 ./install.sh
-```
+**More help:** [goosestack.com/docs](https://goosestack.com/docs) · [GitHub Issues](https://github.com/TheBigAndFamousGoose/goosestack/issues)
 
 ## License
 
-MIT License - see [LICENSE](LICENSE) for details.
+MIT — see [LICENSE](LICENSE)
 
 ---
 
-**Built by two geese 🪿🪿**
-
-*Transform your Mac into an AI-powered productivity machine in just one command.*
+**Built with 🪿 by GooseStack**
