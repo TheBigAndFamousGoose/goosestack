@@ -314,15 +314,17 @@ test_memory_search() {
 # Get dashboard URL and token
 get_dashboard_info() {
     local gateway_token="$GOOSE_GATEWAY_TOKEN"
-    local dashboard_url="http://localhost:18789"
     local gateway_url="http://localhost:18789"
+    local dashboard_url="http://localhost:18789"
+    if [[ -n "$gateway_token" ]]; then
+        dashboard_url="http://localhost:18789?token=${gateway_token}"
+    fi
     
     echo -e "\n${BOLD}${GREEN}🎉 Your AI Agent is Ready!${NC}\n"
     
     echo -e "${BOLD}${BLUE}📊 Access Information:${NC}"
     echo -e "  🌐 Web Dashboard: ${CYAN}$dashboard_url${NC}"
     echo -e "  🔗 Gateway API: ${CYAN}$gateway_url${NC}"
-    echo -e "  🔑 Gateway Token: ${YELLOW}$gateway_token${NC}"
     
     if [[ "${GOOSE_TELEGRAM_ENABLED:-false}" == "true" ]]; then
         echo -e "  💬 Telegram: Configured ✅"
@@ -502,7 +504,11 @@ main_healthcheck() {
         echo -e "${YELLOW}You can re-run this check with: ~/.openclaw/manage-gateway.sh status${NC}"
     fi
     
-    echo -e "\n${BOLD}${CYAN}📊 Dashboard available at: http://localhost:18789${NC}"
+    if [[ -n "$GOOSE_GATEWAY_TOKEN" ]]; then
+        echo -e "\n${BOLD}${CYAN}📊 Dashboard available at: http://localhost:18789?token=${GOOSE_GATEWAY_TOKEN}${NC}"
+    else
+        echo -e "\n${BOLD}${CYAN}📊 Dashboard available at: http://localhost:18789${NC}"
+    fi
     
     log_success "Health check complete!"
 }
