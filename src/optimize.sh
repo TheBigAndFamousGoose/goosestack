@@ -130,9 +130,11 @@ TELEOF
     elif [[ "$api_mode" == "proxy" ]]; then
         default_model="openai/gpt-4o"
     else
-        # BYOK mode with key
         default_model="anthropic/claude-opus-4-6"
     fi
+
+    # Determine subagent model
+    local subagent_model="ollama/${GOOSE_OLLAMA_MODEL:-qwen3:14b}"
 
     # Build the config
     cat > "$config_file" <<CONFIGEOF
@@ -142,7 +144,7 @@ TELEOF
   },
   "agents": {
     "defaults": {
-      "model": "${default_model}",
+      "model": { "primary": "${default_model}" },
       "workspace": "${config_dir}/workspace",
       "memorySearch": {
         "provider": "local",
