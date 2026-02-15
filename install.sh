@@ -4,6 +4,22 @@ set -euo pipefail
 # GooseStack Installer v0.1
 # One-command setup for OpenClaw AI agent environment
 
+# Check for uninstall command
+if [[ "${1:-}" == "uninstall" ]]; then
+    # Get the directory where this script is located
+    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    UNINSTALL_SCRIPT="${SCRIPT_DIR}/src/uninstall.sh"
+    
+    if [[ -f "$UNINSTALL_SCRIPT" ]]; then
+        # Pass all arguments except the first one (uninstall) to the uninstall script
+        shift
+        exec "$UNINSTALL_SCRIPT" "$@"
+    else
+        echo "Error: Uninstall script not found at $UNINSTALL_SCRIPT"
+        exit 1
+    fi
+fi
+
 # Colors
 readonly RED='\033[0;31m'
 readonly GREEN='\033[0;32m'
