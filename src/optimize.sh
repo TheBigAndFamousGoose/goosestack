@@ -130,7 +130,7 @@ TELEOF
     elif [[ "$api_mode" == "proxy" ]]; then
         default_model="openai/gpt-4o"
     else
-        default_model="anthropic/claude-opus-4-6"
+        default_model="anthropic/claude-sonnet-4-20250514"
     fi
 
     # Determine subagent model
