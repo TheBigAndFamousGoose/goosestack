@@ -28,6 +28,19 @@ case "${1:-}" in
         echo "Updating GooseStack..."
         cd /tmp && curl -fsSL https://goosestack.com/install.sh -o goosestack-update.sh && sh goosestack-update.sh
         ;;
+    uninstall)
+        shift
+        # Try local uninstall script first, then download
+        if [[ -f "$HOME/.openclaw/goosestack/src/uninstall.sh" ]]; then
+            exec bash "$HOME/.openclaw/goosestack/src/uninstall.sh" "$@"
+        elif [[ -f "/tmp/goosestack/src/uninstall.sh" ]]; then
+            exec bash "/tmp/goosestack/src/uninstall.sh" "$@"
+        else
+            echo "Downloading uninstall script..."
+            cd /tmp && git clone --depth 1 https://github.com/TheBigAndFamousGoose/goosestack.git goosestack-tmp 2>/dev/null
+            exec bash /tmp/goosestack-tmp/src/uninstall.sh "$@"
+        fi
+        ;;
     help|--help|-h)
         echo "GooseStack — Your AI Agent Environment"
         echo ""
@@ -42,6 +55,7 @@ case "${1:-}" in
         echo "  restart     Restart the gateway"
         echo "  doctor      Run diagnostics"
         echo "  update      Update GooseStack"
+        echo "  uninstall   Remove GooseStack"
         echo "  help        Show this help"
         ;;
     *)
