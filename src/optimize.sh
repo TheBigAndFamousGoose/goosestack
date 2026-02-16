@@ -427,11 +427,19 @@ setup_workspace() {
         chmod 644 "$workspace_dir/IDENTITY.md"
     fi
 
-    # BOOTSTRAP.md — first-run onboarding flow (only if workspace is fresh)
+    # BOOTSTRAP.md — first-run onboarding flow
+    # Recreate if missing AND no hatching evidence in memory files
     if [[ ! -f "$workspace_dir/BOOTSTRAP.md" && -f "$template_dir/BOOTSTRAP.md" ]]; then
-        cp "$template_dir/BOOTSTRAP.md" "$workspace_dir/BOOTSTRAP.md"
-        chmod 644 "$workspace_dir/BOOTSTRAP.md"
-        log_success "First-run onboarding flow ready"
+        local hatched=false
+        # Check if agent ever completed hatching (logged in any memory file)
+        if grep -rq "First boot\|Hatching Day\|hatching\|Agent.*[Hh]atch" "$workspace_dir/memory/" 2>/dev/null; then
+            hatched=true
+        fi
+        if [[ "$hatched" == "false" ]]; then
+            cp "$template_dir/BOOTSTRAP.md" "$workspace_dir/BOOTSTRAP.md"
+            chmod 644 "$workspace_dir/BOOTSTRAP.md"
+            log_success "First-run onboarding flow ready"
+        fi
     fi
 
     log_success "Workspace ready at $workspace_dir"
