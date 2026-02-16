@@ -74,8 +74,9 @@ check_ollama() {
             add_health_result "pass" "Ollama service running"
             
             # Check if the configured model is available
-            if ollama list | grep -q "$GOOSE_OLLAMA_MODEL"; then
-                add_health_result "pass" "AI model ($GOOSE_OLLAMA_MODEL) available"
+            local check_model="${GOOSE_OLLAMA_MODEL:-qwen3:14b}"
+            if ollama list 2>/dev/null | grep -qi "$check_model"; then
+                add_health_result "pass" "AI model ($check_model) available"
                 
                 # Quick model test
                 if echo "test" | timeout 10s ollama run "$GOOSE_OLLAMA_MODEL" >/dev/null 2>&1; then
@@ -84,7 +85,7 @@ check_ollama() {
                     add_health_result "warn" "AI model test timed out or failed"
                 fi
             else
-                add_health_result "fail" "AI model ($GOOSE_OLLAMA_MODEL) not found"
+                add_health_result "fail" "AI model ($check_model) not found — check: ollama list"
             fi
         else
             add_health_result "fail" "Ollama service not responding" true
