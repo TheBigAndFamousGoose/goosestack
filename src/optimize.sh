@@ -125,7 +125,7 @@ TELEOF
     if [[ "$api_mode" == "local" ]]; then
         default_model="ollama/${GOOSE_OLLAMA_MODEL:-qwen3:14b}"
     elif [[ "$api_mode" == "proxy" ]]; then
-        default_model="goosestack/gpt-4o"
+        default_model="goosestack/claude-sonnet-4"
     else
         default_model="anthropic/claude-sonnet-4-20250514"
     fi
@@ -144,9 +144,10 @@ TELEOF
         "baseUrl": "https://goosestack.com/api/v1",
         "api": "openai-completions",
         "models": [
+          { "id": "claude-sonnet-4", "name": "Claude Sonnet 4", "reasoning": true },
+          { "id": "claude-opus-4", "name": "Claude Opus 4", "reasoning": true },
           { "id": "gpt-4o", "name": "GPT-4o" },
-          { "id": "gpt-4o-mini", "name": "GPT-4o Mini" },
-          { "id": "claude-sonnet-4", "name": "Claude Sonnet 4" }
+          { "id": "gpt-4o-mini", "name": "GPT-4o Mini" }
         ]
       }
     }
