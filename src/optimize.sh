@@ -39,12 +39,11 @@ generate_openclaw_config() {
     local api_mode="${GOOSE_API_MODE:-byok}"
     
     if [[ "$api_mode" == "proxy" && -n "${GOOSE_PROXY_KEY:-}" ]]; then
-        # GooseStack Proxy API — routes through our proxy with prepaid credits
-        # Note: baseUrl goes in models.providers, NOT in auth.profiles (OpenClaw schema)
+        # GooseStack Proxy API — custom provider with baseUrl in models.providers
         auth_block=$(cat <<AUTHEOF
     "profiles": {
       "goosestack:default": {
-        "provider": "openai-compatible",
+        "provider": "goosestack",
         "mode": "api_key"
       }
     }
@@ -126,7 +125,7 @@ TELEOF
     if [[ "$api_mode" == "local" ]]; then
         default_model="ollama/${GOOSE_OLLAMA_MODEL:-qwen3:14b}"
     elif [[ "$api_mode" == "proxy" ]]; then
-        default_model="openai/gpt-4o"
+        default_model="goosestack/gpt-4o"
     else
         default_model="anthropic/claude-sonnet-4-20250514"
     fi
@@ -139,12 +138,15 @@ TELEOF
     if [[ "$api_mode" == "proxy" ]]; then
         models_block=$(cat <<MODELSEOF
   "models": {
+    "mode": "merge",
     "providers": {
-      "openai-compatible": {
+      "goosestack": {
         "baseUrl": "https://goosestack.com/api/v1",
+        "api": "openai-completions",
         "models": [
           { "id": "gpt-4o", "name": "GPT-4o" },
-          { "id": "gpt-4o-mini", "name": "GPT-4o Mini" }
+          { "id": "gpt-4o-mini", "name": "GPT-4o Mini" },
+          { "id": "claude-sonnet-4", "name": "Claude Sonnet 4" }
         ]
       }
     }
@@ -244,13 +246,12 @@ CONFIGEOF
   "profiles": {
     "goosestack:default": {
       "type": "api_key",
-      "provider": "openai-compatible",
-      "key": "${GOOSE_PROXY_KEY}",
-      "baseUrl": "https://goosestack.com/api/v1"
+      "provider": "goosestack",
+      "key": "${GOOSE_PROXY_KEY}"
     }
   },
   "lastGood": {
-    "openai-compatible": "goosestack:default"
+    "goosestack": "goosestack:default"
   }
 }
 AUTHFILEEOF
