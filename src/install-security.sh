@@ -61,16 +61,20 @@ install_clawsec_skill() {
 install_clawsec() {
     log_step "Installing ClawSec Security Suite..."
     
-    # Install clawsec-suite
+    # Try clawhub first (most reliable), fall back to GitHub releases
     log_info "Installing clawsec-suite package..."
-    if ! install_clawsec_skill "clawsec-suite" "0.0.9"; then
+    if command -v npx &>/dev/null && npx clawhub@latest install clawsec-suite --force 2>/dev/null; then
+        log_success "clawsec-suite installed via clawhub"
+    elif ! install_clawsec_skill "clawsec-suite" "0.0.9"; then
         log_error "Failed to install clawsec-suite"
         return 1
     fi
     
     # Install soul-guardian
     log_info "Installing soul-guardian package..."
-    if ! install_clawsec_skill "soul-guardian" "0.0.3"; then
+    if command -v npx &>/dev/null && npx clawhub@latest install soul-guardian --force 2>/dev/null; then
+        log_success "soul-guardian installed via clawhub"
+    elif ! install_clawsec_skill "soul-guardian" "0.0.3"; then
         log_error "Failed to install soul-guardian"
         return 1
     fi
