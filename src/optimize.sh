@@ -11,8 +11,8 @@ generate_openclaw_config() {
     local config_dir="$HOME/.openclaw"
     local config_file="$config_dir/openclaw.json"
     
-    # On reinstall, preserve existing config
-    if [[ "${GOOSE_REINSTALL:-false}" == "true" && -f "$config_file" ]]; then
+    # On reinstall, preserve existing config UNLESS user chose to reconfigure
+    if [[ "${GOOSE_REINSTALL:-false}" == "true" && -f "$config_file" && -z "${GOOSE_API_MODE:-}" ]]; then
         log_success "Preserving existing OpenClaw configuration"
         
         # Still ensure gateway token is available for healthcheck
@@ -316,6 +316,12 @@ setup_workspace() {
         exit 1
     fi
 
+    # Determine if we should overwrite persona files (user chose to reconfigure)
+    local overwrite_persona="false"
+    if [[ -n "${GOOSE_AGENT_PERSONA:-}" && "${GOOSE_REINSTALL:-false}" == "true" ]]; then
+        overwrite_persona="true"
+    fi
+
     # AGENTS.md — only create if missing (user may have customized)
     if [[ ! -f "$workspace_dir/AGENTS.md" ]]; then
         cp "$template_dir/AGENTS.md" "$workspace_dir/AGENTS.md"
@@ -324,8 +330,8 @@ setup_workspace() {
         log_info "AGENTS.md already exists, preserving"
     fi
 
-    # SOUL.md — only create if missing (user/agent may have customized)
-    if [[ ! -f "$workspace_dir/SOUL.md" ]]; then
+    # SOUL.md — overwrite if reconfiguring persona, otherwise only create if missing
+    if [[ "$overwrite_persona" == "true" || ! -f "$workspace_dir/SOUL.md" ]]; then
         local persona="${GOOSE_AGENT_PERSONA:-assistant}"
         local soul_file="$template_dir/SOUL-${persona}.md"
         if [[ -f "$soul_file" ]]; then
@@ -341,8 +347,8 @@ setup_workspace() {
         log_info "SOUL.md already exists, preserving"
     fi
 
-    # USER.md — only create if missing
-    if [[ ! -f "$workspace_dir/USER.md" ]]; then
+    # USER.md — overwrite if reconfiguring, otherwise only create if missing
+    if [[ "$overwrite_persona" == "true" || ! -f "$workspace_dir/USER.md" ]]; then
         local user_name="${GOOSE_USER_NAME:-$(whoami)}"
         local setup_date=$(date +"%Y-%m-%d")
         sed -e "s/{{USER_NAME}}/${user_name}/g" \
