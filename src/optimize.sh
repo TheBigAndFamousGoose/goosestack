@@ -40,12 +40,12 @@ generate_openclaw_config() {
     
     if [[ "$api_mode" == "proxy" && -n "${GOOSE_PROXY_KEY:-}" ]]; then
         # GooseStack Proxy API — routes through our proxy with prepaid credits
+        # Note: baseUrl goes in models.providers, NOT in auth.profiles (OpenClaw schema)
         auth_block=$(cat <<AUTHEOF
     "profiles": {
       "goosestack:default": {
         "provider": "openai-compatible",
-        "mode": "api_key",
-        "baseUrl": "https://goosestack.com/api/v1"
+        "mode": "api_key"
       }
     }
 AUTHEOF
@@ -58,8 +58,7 @@ AUTHEOF
     "profiles": {
       "local:default": {
         "provider": "ollama",
-        "mode": "endpoint",
-        "baseUrl": "http://localhost:11434"
+        "mode": "api_key"
       }
     }
 AUTHEOF
@@ -85,8 +84,7 @@ AUTHEOF
     "profiles": {
       "local:default": {
         "provider": "ollama",
-        "mode": "endpoint",
-        "baseUrl": "http://localhost:11434"
+        "mode": "api_key"
       }
     }
 AUTHEOF
@@ -136,12 +134,34 @@ TELEOF
     # Determine subagent model
     local subagent_model="ollama/${GOOSE_OLLAMA_MODEL:-qwen3:14b}"
 
+    # Build models.providers block based on API mode
+    local models_block=""
+    if [[ "$api_mode" == "proxy" ]]; then
+        models_block=$(cat <<MODELSEOF
+  "models": {
+    "providers": {
+      "openai-compatible": {
+        "baseUrl": "https://goosestack.com/api/v1",
+        "models": [
+          { "id": "gpt-4o", "name": "GPT-4o" },
+          { "id": "gpt-4o-mini", "name": "GPT-4o Mini" }
+        ]
+      }
+    }
+  },
+MODELSEOF
+)
+    elif [[ "$api_mode" == "local" ]]; then
+        models_block=""
+    fi
+
     # Build the config
     cat > "$config_file" <<CONFIGEOF
 {
   "auth": {
     ${auth_block}
   },
+  ${models_block}
   "agents": {
     "defaults": {
       "model": { "primary": "${default_model}" },
