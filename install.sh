@@ -190,6 +190,14 @@ main() {
     # shellcheck source=src/healthcheck.sh
     source "$INSTALL_DIR/src/healthcheck.sh"
     
+    # Persist GooseStack scripts for offline updates
+    log_info "📦 Persisting GooseStack scripts..."
+    local persist_dir="$HOME/.openclaw/goosestack"
+    rm -rf "$persist_dir"
+    cp -r "$INSTALL_DIR" "$persist_dir"
+    chmod -R 755 "$persist_dir/src"
+    log_success "Scripts saved to ~/.openclaw/goosestack/"
+    
     echo -e "\n${BOLD}${GREEN}🎉 GooseStack installation complete!${NC}\n"
     
     log_info "Your AI agent is running and ready to help."

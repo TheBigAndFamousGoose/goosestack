@@ -25,8 +25,23 @@ case "${1:-}" in
         exec openclaw doctor "$@"
         ;;
     update)
-        echo "Updating GooseStack..."
-        cd /tmp && curl -fsSL https://goosestack.com/install.sh -o goosestack-update.sh && sh goosestack-update.sh
+        shift
+        if [[ -f "$HOME/.openclaw/goosestack/src/update.sh" ]]; then
+            exec bash "$HOME/.openclaw/goosestack/src/update.sh" "$@"
+        else
+            # Bootstrap: download and run
+            cd /tmp && curl -fsSL https://raw.githubusercontent.com/TheBigAndFamousGoose/goosestack/main/src/update.sh -o goosestack-update.sh && bash goosestack-update.sh "$@"
+        fi
+        ;;
+    export)
+        shift
+        exec bash "$(dirname "$(readlink -f "$0")")/../src/migrate.sh" export "$@" 2>/dev/null || \
+        bash "$HOME/.openclaw/goosestack/src/migrate.sh" export "$@"
+        ;;
+    import)
+        shift
+        exec bash "$(dirname "$(readlink -f "$0")")/../src/migrate.sh" import "$@" 2>/dev/null || \
+        bash "$HOME/.openclaw/goosestack/src/migrate.sh" import "$@"
         ;;
     uninstall)
         shift
@@ -55,6 +70,8 @@ case "${1:-}" in
         echo "  restart     Restart the gateway"
         echo "  doctor      Run diagnostics"
         echo "  update      Update GooseStack"
+        echo "  export      Export configuration and workspace"
+        echo "  import      Import configuration and workspace"
         echo "  uninstall   Remove GooseStack"
         echo "  help        Show this help"
         ;;
