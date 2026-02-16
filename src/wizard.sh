@@ -386,13 +386,13 @@ prompt_proxy_key() {
             continue
         fi
         
-        # Check if signup was successful
-        local success
-        success=$(echo "$signup_response" | python3 -c "import sys,json; data=json.load(sys.stdin); print('true' if data.get('success', False) else 'false')" 2>/dev/null || echo "false")
+        # Check if signup was successful (API returns {"message":"Verification code sent..."} on success)
+        local has_message
+        has_message=$(echo "$signup_response" | python3 -c "import sys,json; data=json.load(sys.stdin); print('true' if 'message' in data and 'error' not in data else 'false')" 2>/dev/null || echo "false")
         
-        if [[ "$success" != "true" ]]; then
+        if [[ "$has_message" != "true" ]]; then
             local error_msg
-            error_msg=$(echo "$signup_response" | python3 -c "import sys,json; data=json.load(sys.stdin); print(data.get('error', 'Unknown error'))" 2>/dev/null || echo "API request failed")
+            error_msg=$(echo "$signup_response" | python3 -c "import sys,json; data=json.load(sys.stdin); print(data.get('error', {}).get('message', 'Unknown error') if isinstance(data.get('error'), dict) else data.get('error', 'Unknown error'))" 2>/dev/null || echo "API request failed")
             log_error "${I18N_EMAIL_FAILED} ($error_msg)"
             if [[ $attempt -eq $max_attempts ]]; then
                 prompt_proxy_key_fallback
@@ -451,7 +451,7 @@ prompt_proxy_key() {
             
             # Extract API key
             local api_key
-            api_key=$(echo "$verify_response" | python3 -c "import sys,json; data=json.load(sys.stdin); print(data.get('key', ''))" 2>/dev/null || echo "")
+            api_key=$(echo "$verify_response" | python3 -c "import sys,json; data=json.load(sys.stdin); print(data.get('api_key', data.get('key', '')))" 2>/dev/null || echo "")
             
             if [[ -n "$api_key" && "$api_key" =~ ^gsk_ ]]; then
                 GOOSE_PROXY_KEY="$api_key"
