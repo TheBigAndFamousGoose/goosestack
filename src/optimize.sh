@@ -423,6 +423,15 @@ setup_dashboard() {
         cp -r "$dashboard_src/"* "$dashboard_dest/"
         [[ -f "$dashboard_dest/server.sh" ]] && chmod +x "$dashboard_dest/server.sh"
         log_success "Dashboard files copied to ~/.openclaw/dashboard/"
+        
+        # Write dashboard config with pre-loaded API key for proxy mode
+        if [[ "${GOOSE_API_MODE:-}" == "proxy" && -n "${GOOSE_PROXY_KEY:-}" ]]; then
+            cat > "$dashboard_dest/config.json" <<EOF
+{"apiKey":"${GOOSE_PROXY_KEY}","apiBase":"https://goosestack.com/api"}
+EOF
+            chmod 600 "$dashboard_dest/config.json"
+            log_success "Dashboard pre-configured with GooseStack API key"
+        fi
     else
         log_info "Dashboard files not bundled — use web dashboard at https://goosestack.com"
     fi

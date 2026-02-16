@@ -505,9 +505,9 @@ main_healthcheck() {
     fi
     
     if [[ -n "$GOOSE_GATEWAY_TOKEN" ]]; then
-        echo -e "\n${BOLD}${CYAN}📊 Dashboard available at: http://localhost:18789?token=${GOOSE_GATEWAY_TOKEN}${NC}"
+        echo -e "\n${BOLD}${CYAN}📊 Dashboard: http://localhost:18789?token=${GOOSE_GATEWAY_TOKEN} (or https://goosestack.com/dashboard)${NC}"
     else
-        echo -e "\n${BOLD}${CYAN}📊 Dashboard available at: http://localhost:18789${NC}"
+        echo -e "\n${BOLD}${CYAN}📊 Dashboard: http://localhost:18789/dashboard (or https://goosestack.com/dashboard)${NC}"
     fi
     
     log_success "Health check complete!"

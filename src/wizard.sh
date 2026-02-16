@@ -54,6 +54,17 @@ load_i18n() {
         I18N_CONFIRMED="Настройка подтверждена!"
         I18N_WIZARD_START="🧙 Запуск мастера настройки..."
         I18N_WIZARD_DONE="Мастер настройки завершён!"
+        I18N_PROXY_SETUP="GooseStack API Настройка"
+        I18N_ENTER_EMAIL="📧 Введите ваш email для создания аккаунта:"
+        I18N_SENDING_CODE="Отправка кода подтверждения..."
+        I18N_CODE_SENT="✓ Код подтверждения отправлен на"
+        I18N_ENTER_CODE="📬 Введите 6-значный код из email:"
+        I18N_ACCOUNT_CREATED="✓ Аккаунт создан! Ваш API ключ:"
+        I18N_KEY_SAVED_AUTO="Ваш ключ сохранён автоматически."
+        I18N_EMAIL_FAILED="❌ Ошибка отправки кода. Проверьте email и попробуйте снова."
+        I18N_CODE_FAILED="❌ Неверный код. Попробуйте снова."
+        I18N_FALLBACK_MANUAL="Попробовать ввести ключ вручную? (y/N):"
+        I18N_RETRY_SIGNUP="Попробовать снова? (Y/n):"
     else
         I18N_WELCOME="👋 Let's personalize your AI agent!"
         I18N_WHATS_YOUR_NAME="What's your name?"
@@ -92,6 +103,17 @@ load_i18n() {
         I18N_CONFIRMED="Configuration confirmed!"
         I18N_WIZARD_START="🧙 Starting configuration wizard..."
         I18N_WIZARD_DONE="Configuration wizard complete!"
+        I18N_PROXY_SETUP="GooseStack API Setup"
+        I18N_ENTER_EMAIL="📧 Enter your email to create an account:"
+        I18N_SENDING_CODE="Sending verification code..."
+        I18N_CODE_SENT="✓ Verification code sent to"
+        I18N_ENTER_CODE="📬 Enter the 6-digit code from your email:"
+        I18N_ACCOUNT_CREATED="✓ Account created! Your API key:"
+        I18N_KEY_SAVED_AUTO="Your key has been saved automatically."
+        I18N_EMAIL_FAILED="❌ Failed to send verification code. Please check your email and try again."
+        I18N_CODE_FAILED="❌ Invalid verification code. Please try again."
+        I18N_FALLBACK_MANUAL="Try entering an API key manually instead? (y/N):"
+        I18N_RETRY_SIGNUP="Try again? (Y/n):"
     fi
 }
 
@@ -310,14 +332,175 @@ prompt_api_key_byok() {
     fi
 }
 
-# Prompt for GooseStack Proxy key
+# Prompt for GooseStack Proxy key - with auto signup
 prompt_proxy_key() {
-    echo -e "\n${CYAN}GooseStack API Setup${NC}"
+    local max_attempts=3
+    local attempt=1
+    
+    while [[ $attempt -le $max_attempts ]]; do
+        echo -e "\n${CYAN}${I18N_PROXY_SETUP}${NC}"
+        echo -e ""
+        echo -e "${I18N_ENTER_EMAIL}"
+        echo -n "> "
+        
+        local email
+        wizard_read email ""
+        
+        if [[ -z "$email" ]]; then
+            log_info "No email provided - skipping auto signup"
+            prompt_proxy_key_manual
+            return
+        fi
+        
+        # Validate email format
+        if [[ ! "$email" =~ ^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$ ]]; then
+            log_warning "Invalid email format. Please try again."
+            ((attempt++))
+            continue
+        fi
+        
+        echo -e "${YELLOW}${I18N_SENDING_CODE}${NC}"
+        
+        # Create account and send verification code
+        local signup_response
+        signup_response=$(curl -s -X POST https://goosestack.com/api/v1/keys \
+            -H "Content-Type: application/json" \
+            -d "{\"email\":\"$email\",\"name\":\"goosestack-install\"}" 2>/dev/null)
+        
+        # Test JSON validity
+        if ! echo "$signup_response" | python3 -m json.tool >/dev/null 2>&1; then
+            log_error "${I18N_EMAIL_FAILED}"
+            if [[ $attempt -eq $max_attempts ]]; then
+                prompt_proxy_key_fallback
+                return
+            fi
+            echo -e "${YELLOW}${I18N_RETRY_SIGNUP}${NC}"
+            echo -n "> "
+            local retry
+            wizard_read retry "y"
+            if [[ "$retry" =~ ^[Nn]$ ]]; then
+                prompt_proxy_key_fallback
+                return
+            fi
+            ((attempt++))
+            continue
+        fi
+        
+        # Check if signup was successful
+        local success
+        success=$(echo "$signup_response" | python3 -c "import sys,json; data=json.load(sys.stdin); print('true' if data.get('success', False) else 'false')" 2>/dev/null || echo "false")
+        
+        if [[ "$success" != "true" ]]; then
+            local error_msg
+            error_msg=$(echo "$signup_response" | python3 -c "import sys,json; data=json.load(sys.stdin); print(data.get('error', 'Unknown error'))" 2>/dev/null || echo "API request failed")
+            log_error "${I18N_EMAIL_FAILED} ($error_msg)"
+            if [[ $attempt -eq $max_attempts ]]; then
+                prompt_proxy_key_fallback
+                return
+            fi
+            echo -e "${YELLOW}${I18N_RETRY_SIGNUP}${NC}"
+            echo -n "> "
+            local retry
+            wizard_read retry "y"
+            if [[ "$retry" =~ ^[Nn]$ ]]; then
+                prompt_proxy_key_fallback
+                return
+            fi
+            ((attempt++))
+            continue
+        fi
+        
+        log_success "${I18N_CODE_SENT} $email"
+        
+        # Prompt for verification code
+        local code_attempts=3
+        local code_attempt=1
+        
+        while [[ $code_attempt -le $code_attempts ]]; do
+            echo -e "\n${I18N_ENTER_CODE}"
+            echo -n "> "
+            
+            local verification_code
+            wizard_read verification_code ""
+            
+            if [[ -z "$verification_code" ]]; then
+                log_warning "No verification code entered"
+                ((code_attempt++))
+                continue
+            fi
+            
+            # Validate code format (6 digits)
+            if [[ ! "$verification_code" =~ ^[0-9]{6}$ ]]; then
+                log_warning "Verification code should be 6 digits"
+                ((code_attempt++))
+                continue
+            fi
+            
+            # Verify code and get API key
+            local verify_response
+            verify_response=$(curl -s -X POST https://goosestack.com/api/v1/keys/verify \
+                -H "Content-Type: application/json" \
+                -d "{\"email\":\"$email\",\"code\":\"$verification_code\"}" 2>/dev/null)
+            
+            # Test JSON validity
+            if ! echo "$verify_response" | python3 -m json.tool >/dev/null 2>&1; then
+                log_error "${I18N_CODE_FAILED}"
+                ((code_attempt++))
+                continue
+            fi
+            
+            # Extract API key
+            local api_key
+            api_key=$(echo "$verify_response" | python3 -c "import sys,json; data=json.load(sys.stdin); print(data.get('key', ''))" 2>/dev/null || echo "")
+            
+            if [[ -n "$api_key" && "$api_key" =~ ^gsk_ ]]; then
+                GOOSE_PROXY_KEY="$api_key"
+                echo -e "\n${GREEN}${I18N_ACCOUNT_CREATED}${NC}"
+                echo -e "  ${CYAN}$api_key${NC}"
+                echo -e "\n${GREEN}${I18N_KEY_SAVED_AUTO}${NC}"
+                return
+            else
+                local error_msg
+                error_msg=$(echo "$verify_response" | python3 -c "import sys,json; data=json.load(sys.stdin); print(data.get('error', 'Invalid verification code'))" 2>/dev/null || echo "Invalid verification code")
+                log_error "${I18N_CODE_FAILED} ($error_msg)"
+                ((code_attempt++))
+            fi
+        done
+        
+        # All code attempts failed
+        log_error "Failed to verify code after $code_attempts attempts"
+        prompt_proxy_key_fallback
+        return
+    done
+    
+    # All signup attempts failed
+    prompt_proxy_key_fallback
+}
+
+# Fallback to manual key entry
+prompt_proxy_key_fallback() {
+    echo -e "\n${YELLOW}${I18N_FALLBACK_MANUAL}${NC}"
+    echo -n "> "
+    
+    local manual_choice
+    wizard_read manual_choice "n"
+    
+    if [[ "$manual_choice" =~ ^[Yy]$ ]]; then
+        prompt_proxy_key_manual
+    else
+        log_info "Skipping API key setup - your agent will use local models until configured"
+        echo -e "${YELLOW}Visit https://goosestack.com/credits to buy credits and get your key later.${NC}"
+    fi
+}
+
+# Manual proxy key entry (original functionality)
+prompt_proxy_key_manual() {
+    echo -e "\n${CYAN}GooseStack API Manual Setup${NC}"
     echo -e ""
     echo -e "To use the GooseStack API, you need prepaid credits."
     echo -e "Buy credits at: ${BLUE}https://goosestack.com/credits${NC}"
     echo -e ""
-    echo -e "${YELLOW}Paste your GooseStack API key (or press Enter to set up later):${NC}"
+    echo -e "${YELLOW}Paste your GooseStack API key (or press Enter to skip):${NC}"
     echo -n "> "
     
     local proxy_key_input
@@ -336,7 +519,7 @@ prompt_proxy_key() {
         log_success "GooseStack API key saved"
         echo -e "  ${CYAN}Key: ${proxy_key_input:0:12}...${NC}"
     else
-        log_info "No key yet — your agent will use local models until you add credits"
+        log_info "No key provided — your agent will use local models until you add credits"
         echo -e "${YELLOW}Visit https://goosestack.com/credits to buy credits and get your key.${NC}"
     fi
 }
