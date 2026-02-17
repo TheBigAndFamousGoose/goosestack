@@ -335,6 +335,7 @@ prompt_api_setup() {
         1)
             GOOSE_API_MODE="byok"
             prompt_api_key_byok
+            prompt_brave_key
             ;;
         2)
             GOOSE_API_MODE="proxy"
@@ -351,6 +352,23 @@ prompt_api_setup() {
             prompt_api_key_byok
             ;;
     esac
+}
+
+# Prompt for Brave Search API key (BYOK only — proxy gets ours)
+prompt_brave_key() {
+    echo -e "\n${CYAN}🔍 Want web search? Paste your Brave Search API key (free tier available):${NC}"
+    echo -e "${YELLOW}Get one at: ${BLUE}https://brave.com/search/api/${NC}"
+    echo -e "${YELLOW}Press Enter to skip (you can add it later)${NC}"
+    echo -n "> "
+
+    local brave_input
+    wizard_read brave_input ""
+    if [[ -n "$brave_input" ]]; then
+        GOOSE_BRAVE_KEY="$brave_input"
+        log_success "Brave Search key saved"
+    else
+        log_info "Skipped Brave Search — agent won't have web search"
+    fi
 }
 
 # Prompt for BYOK API key
@@ -688,6 +706,7 @@ export_wizard_vars() {
     export GOOSE_AGENT_PERSONA
     export GOOSE_COMM_STYLE
     export GOOSE_CUSTOM_PERSONALITY
+    export GOOSE_BRAVE_KEY
     export GOOSE_API_MODE
     export GOOSE_API_KEY
     export GOOSE_PROXY_KEY

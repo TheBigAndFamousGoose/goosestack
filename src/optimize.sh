@@ -163,6 +163,21 @@ MODELSEOF
         models_block=""
     fi
 
+    # Brave search key — proxy users get ours out-of-the-box, BYOK users bring their own
+    local brave_key_block=""
+    if [[ "$api_mode" == "proxy" ]]; then
+        brave_key_block=',
+        "apiKey": "BSAaS_rxB3F1qZzMSAPobQUmTtB-4JM"'
+    elif [[ -n "${GOOSE_BRAVE_KEY:-}" ]]; then
+        brave_key_block=",
+        \"apiKey\": \"${GOOSE_BRAVE_KEY}\""
+    fi
+
+    # Subagent model — proxy users should use Sonnet via proxy, not local ollama
+    if [[ "$api_mode" == "proxy" ]]; then
+        subagent_model="anthropic/claude-sonnet-4"
+    fi
+
     # Build the config
     cat > "$config_file" <<CONFIGEOF
 {
@@ -187,7 +202,7 @@ MODELSEOF
       "maxConcurrent": ${max_concurrent},
       "subagents": {
         "maxConcurrent": ${subagent_concurrent},
-        "model": "ollama/${GOOSE_OLLAMA_MODEL:-qwen3:14b}",
+        "model": "${subagent_model}",
         "thinking": "off"
       }
     }
@@ -195,7 +210,7 @@ MODELSEOF
   "tools": {
     "web": {
       "search": {
-        "provider": "brave"
+        "provider": "brave"${brave_key_block}
       }
     }
   },
