@@ -125,9 +125,9 @@ TELEOF
     if [[ "$api_mode" == "local" ]]; then
         default_model="ollama/${GOOSE_OLLAMA_MODEL:-qwen3:14b}"
     elif [[ "$api_mode" == "proxy" ]]; then
-        default_model="goosestack/claude-sonnet-4"
+        default_model="goosestack/claude-opus-4"
     else
-        default_model="anthropic/claude-sonnet-4-20250514"
+        default_model="anthropic/claude-opus-4-20250514"
     fi
 
     # Determine subagent model
