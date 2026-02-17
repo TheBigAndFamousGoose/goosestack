@@ -414,9 +414,15 @@ start_gateway_now() {
     log_info "Installing gateway service..."
     openclaw gateway install 2>&1 | sed 's/^/  [install] /'
     
-    # Start it
-    log_info "Starting gateway service..."
-    openclaw gateway start 2>&1 | sed 's/^/  [start] /'
+    # On reinstall, restart to clear stale sessions; otherwise just start
+    if [[ "${GOOSE_REINSTALL:-false}" == "true" ]]; then
+        log_info "Restarting gateway (fresh sessions after reinstall)..."
+        openclaw gateway restart 2>&1 | sed 's/^/  [restart] /' || \
+        openclaw gateway start 2>&1 | sed 's/^/  [start] /'
+    else
+        log_info "Starting gateway service..."
+        openclaw gateway start 2>&1 | sed 's/^/  [start] /'
+    fi
     
     # Wait for startup and poll
     log_info "Waiting for gateway to respond..."
