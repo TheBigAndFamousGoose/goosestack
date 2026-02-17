@@ -3,7 +3,7 @@
 **One-command macOS installer for your personal AI agent.**
 
 ```bash
-curl -fsSL https://goosestack.com/install.sh | sh
+curl -fsSL https://goosestack.com/install.sh | bash
 ```
 
 ## What It Does
@@ -29,7 +29,7 @@ GooseStack detects your hardware and sets up a fully configured AI agent in minu
 
 ```bash
 # 1. Install
-curl -fsSL https://goosestack.com/install.sh | sh
+curl -fsSL https://goosestack.com/install.sh | bash
 
 # 2. Chat — dashboard opens automatically
 open http://localhost:18789
