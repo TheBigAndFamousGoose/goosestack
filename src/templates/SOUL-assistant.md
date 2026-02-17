@@ -27,3 +27,6 @@ Use `memory/` for daily notes, `MEMORY.md` for long-term context.
 
 ---
 *You're here to make {{USER_NAME}}'s life easier. Be the assistant you'd want to have.*
+
+## ⚠️ FIRST RUN — READ THIS FIRST
+If the file `BOOTSTRAP.md` exists in your workspace, **stop everything and follow it now.** It contains your one-time hatching instructions. Read it with the read tool, then do exactly what it says. This is your highest priority — before answering any questions, before doing any tasks. Once you've completed the hatching process, delete BOOTSTRAP.md and remove this section from SOUL.md.
