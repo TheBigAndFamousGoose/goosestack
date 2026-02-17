@@ -273,6 +273,46 @@ prompt_agent_persona() {
     esac
 }
 
+# Prompt for extra personalization
+prompt_personalization() {
+    echo -e "\n${BOLD}${PURPLE}✨ Let's personalize a bit more (Enter to skip any)${NC}\n"
+
+    # What do you do?
+    echo -e "${CYAN}What do you do? (developer, designer, student, etc.)${NC}"
+    echo -n "> "
+    local occupation
+    wizard_read occupation ""
+    GOOSE_USER_OCCUPATION="${occupation:-}"
+
+    # Communication style
+    echo -e "\n${CYAN}How should your agent talk to you?${NC}"
+    echo -e "  ${BOLD}1)${NC} Formal and professional"
+    echo -e "  ${BOLD}2)${NC} Casual and friendly"
+    echo -e "  ${BOLD}3)${NC} Cheeky and fun"
+    echo -e "${YELLOW}Choose 1-3 (default: 2):${NC}"
+    echo -n "> "
+    local style_choice
+    wizard_read style_choice "2"
+    case "${style_choice:-2}" in
+        1) GOOSE_COMM_STYLE="formal" ;;
+        3) GOOSE_COMM_STYLE="cheeky" ;;
+        *) GOOSE_COMM_STYLE="casual" ;;
+    esac
+    log_info "Communication style: ${GOOSE_COMM_STYLE}"
+
+    # Free-form personality
+    echo -e "\n${CYAN}Describe your ideal agent in a few words (optional):${NC}"
+    echo -e "${YELLOW}e.g. 'sarcastic but helpful', 'like a wise mentor', 'speaks like a pirate'${NC}"
+    echo -n "> "
+    local custom_desc
+    wizard_read custom_desc ""
+    GOOSE_CUSTOM_PERSONALITY="${custom_desc:-}"
+
+    if [[ -n "$GOOSE_CUSTOM_PERSONALITY" ]]; then
+        log_info "Custom personality: ${GOOSE_CUSTOM_PERSONALITY}"
+    fi
+}
+
 # Prompt for API setup mode
 prompt_api_setup() {
     echo -e "\n${BOLD}${PURPLE}${I18N_API_TITLE}${NC}\n"
@@ -643,8 +683,11 @@ show_summary() {
 # Export variables for template processing
 export_wizard_vars() {
     export GOOSE_USER_NAME
+    export GOOSE_USER_OCCUPATION
     export GOOSE_AGENT_NAME
     export GOOSE_AGENT_PERSONA
+    export GOOSE_COMM_STYLE
+    export GOOSE_CUSTOM_PERSONALITY
     export GOOSE_API_MODE
     export GOOSE_API_KEY
     export GOOSE_PROXY_KEY
@@ -672,8 +715,11 @@ main_wizard() {
             
             # Export defaults so later scripts don't fail on missing vars
             export GOOSE_USER_NAME="${GOOSE_USER_NAME:-$(whoami)}"
+            export GOOSE_USER_OCCUPATION="${GOOSE_USER_OCCUPATION:-}"
             export GOOSE_AGENT_NAME="${GOOSE_AGENT_NAME:-Assistant}"
             export GOOSE_AGENT_PERSONA="${GOOSE_AGENT_PERSONA:-partner}"
+            export GOOSE_COMM_STYLE="${GOOSE_COMM_STYLE:-casual}"
+            export GOOSE_CUSTOM_PERSONALITY="${GOOSE_CUSTOM_PERSONALITY:-}"
             export GOOSE_API_MODE="${GOOSE_API_MODE:-byok}"
             export GOOSE_API_KEY="${GOOSE_API_KEY:-}"
             export GOOSE_PROXY_KEY="${GOOSE_PROXY_KEY:-}"
@@ -693,6 +739,7 @@ main_wizard() {
     prompt_user_name
     prompt_agent_name
     prompt_agent_persona
+    prompt_personalization
     prompt_api_setup
     prompt_telegram
     show_summary

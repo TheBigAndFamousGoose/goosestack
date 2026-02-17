@@ -375,19 +375,34 @@ setup_workspace() {
         local soul_file="$template_dir/SOUL-${persona}.md"
         local agent_name="${GOOSE_AGENT_NAME:-Assistant}"
         local user_name="${GOOSE_USER_NAME:-$(whoami)}"
-        if [[ -f "$soul_file" ]]; then
-            sed -e "s/{{AGENT_NAME}}/${agent_name}/g" \
-                -e "s/{{USER_NAME}}/${user_name}/g" \
-                "$soul_file" > "$workspace_dir/SOUL.md"
-            chmod 644 "$workspace_dir/SOUL.md"
-            log_success "Persona: $persona (${agent_name})"
-        else
-            sed -e "s/{{AGENT_NAME}}/${agent_name}/g" \
-                -e "s/{{USER_NAME}}/${user_name}/g" \
-                "$template_dir/SOUL-assistant.md" > "$workspace_dir/SOUL.md"
-            chmod 644 "$workspace_dir/SOUL.md"
+        local src_file="$soul_file"
+        if [[ ! -f "$src_file" ]]; then
+            src_file="$template_dir/SOUL-assistant.md"
             log_warning "Persona '$persona' not found, using assistant"
         fi
+
+        sed -e "s/{{AGENT_NAME}}/${agent_name}/g" \
+            -e "s/{{USER_NAME}}/${user_name}/g" \
+            "$src_file" > "$workspace_dir/SOUL.md"
+
+        # Append communication style
+        local comm_style="${GOOSE_COMM_STYLE:-casual}"
+        if [[ "$comm_style" == "formal" ]]; then
+            echo -e "\n## Tone\nKeep it professional and polished. No slang, no emojis unless the situation calls for it." >> "$workspace_dir/SOUL.md"
+        elif [[ "$comm_style" == "cheeky" ]]; then
+            echo -e "\n## Tone\nBe witty, playful, and a little irreverent. Life's too short for boring conversations. Use humor freely — puns welcome." >> "$workspace_dir/SOUL.md"
+        else
+            echo -e "\n## Tone\nKeep it natural and conversational — like texting a smart friend. Relaxed but not sloppy." >> "$workspace_dir/SOUL.md"
+        fi
+
+        # Append custom personality if provided
+        local custom_personality="${GOOSE_CUSTOM_PERSONALITY:-}"
+        if [[ -n "$custom_personality" ]]; then
+            echo -e "\n## Custom Touch\n${custom_personality}" >> "$workspace_dir/SOUL.md"
+        fi
+
+        chmod 644 "$workspace_dir/SOUL.md"
+        log_success "Persona: $persona (${agent_name}, ${comm_style})"
     else
         log_info "SOUL.md already exists, preserving"
     fi
@@ -396,8 +411,10 @@ setup_workspace() {
     if [[ "$overwrite_persona" == "true" || ! -f "$workspace_dir/USER.md" ]]; then
         local user_name="${GOOSE_USER_NAME:-$(whoami)}"
         local setup_date=$(date +"%Y-%m-%d")
+        local user_occupation="${GOOSE_USER_OCCUPATION:-Not specified}"
         sed -e "s/{{USER_NAME}}/${user_name}/g" \
             -e "s/{{SETUP_DATE}}/${setup_date}/g" \
+            -e "s/{{USER_OCCUPATION}}/${user_occupation}/g" \
             -e "s/{{GOOSE_CHIP}}/${GOOSE_CHIP:-Unknown}/g" \
             -e "s/{{GOOSE_RAM_GB}}/${GOOSE_RAM_GB:-8}/g" \
             "$template_dir/USER.md.tmpl" > "$workspace_dir/USER.md"
