@@ -43,6 +43,24 @@ case "${1:-}" in
         exec bash "$(dirname "$(readlink -f "$0")")/../src/migrate.sh" import "$@" 2>/dev/null || \
         bash "$HOME/.openclaw/goosestack/src/migrate.sh" import "$@"
         ;;
+    reinstall)
+        shift
+        echo "🔄 Reinstalling GooseStack..."
+        echo "This will uninstall and then run a fresh install."
+        read -rp "Continue? [Y/n] " confirm
+        if [[ "${confirm:-Y}" =~ ^[Nn] ]]; then
+            echo "Cancelled."
+            exit 0
+        fi
+        # Uninstall first
+        if [[ -f "$HOME/.openclaw/goosestack/src/uninstall.sh" ]]; then
+            bash "$HOME/.openclaw/goosestack/src/uninstall.sh" --yes
+        elif [[ -f "/tmp/goosestack/src/uninstall.sh" ]]; then
+            bash "/tmp/goosestack/src/uninstall.sh" --yes
+        fi
+        # Fresh install
+        exec bash -c 'curl -fsSL https://goosestack.com/install.sh | sh'
+        ;;
     uninstall)
         shift
         # Try local uninstall script first, then download
@@ -72,6 +90,7 @@ case "${1:-}" in
         echo "  update      Update GooseStack"
         echo "  export      Export configuration and workspace"
         echo "  import      Import configuration and workspace"
+        echo "  reinstall   Uninstall and reinstall fresh"
         echo "  uninstall   Remove GooseStack"
         echo "  help        Show this help"
         ;;
