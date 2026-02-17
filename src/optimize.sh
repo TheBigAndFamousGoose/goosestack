@@ -39,11 +39,13 @@ generate_openclaw_config() {
     local api_mode="${GOOSE_API_MODE:-byok}"
     
     if [[ "$api_mode" == "proxy" && -n "${GOOSE_PROXY_KEY:-}" ]]; then
-        # GooseStack Proxy API — custom provider with baseUrl in models.providers
+        # GooseStack Proxy API — register as anthropic provider so OpenClaw injects
+        # workspace files (AGENTS.md, SOUL.md, etc.) into the system prompt.
+        # Our proxy at goosestack.com/api speaks native Anthropic format on /v1/messages.
         auth_block=$(cat <<AUTHEOF
     "profiles": {
-      "goosestack:default": {
-        "provider": "goosestack",
+      "anthropic:default": {
+        "provider": "anthropic",
         "mode": "api_key"
       }
     }
@@ -125,7 +127,7 @@ TELEOF
     if [[ "$api_mode" == "local" ]]; then
         default_model="ollama/${GOOSE_OLLAMA_MODEL:-qwen3:14b}"
     elif [[ "$api_mode" == "proxy" ]]; then
-        default_model="goosestack/claude-opus-4"
+        default_model="anthropic/claude-opus-4"
     else
         default_model="anthropic/claude-opus-4-20250514"
     fi
@@ -136,18 +138,19 @@ TELEOF
     # Build models.providers block based on API mode
     local models_block=""
     if [[ "$api_mode" == "proxy" ]]; then
+        # Register as anthropic provider with GooseStack proxy baseUrl.
+        # OpenClaw treats this as native Anthropic → injects workspace files into system prompt.
+        # Token routing happens server-side on our proxy (routes between Opus/Sonnet/Haiku/Gemini).
         models_block=$(cat <<MODELSEOF
   "models": {
     "mode": "merge",
     "providers": {
-      "goosestack": {
-        "baseUrl": "https://goosestack.com/api/v1",
-        "api": "openai-completions",
+      "anthropic": {
+        "baseUrl": "https://goosestack.com/api",
         "models": [
-          { "id": "claude-sonnet-4", "name": "Claude Sonnet 4", "reasoning": true },
           { "id": "claude-opus-4", "name": "Claude Opus 4", "reasoning": true },
-          { "id": "gpt-4o", "name": "GPT-4o" },
-          { "id": "gpt-4o-mini", "name": "GPT-4o Mini" }
+          { "id": "claude-sonnet-4", "name": "Claude Sonnet 4", "reasoning": true },
+          { "id": "claude-3-5-haiku-20241022", "name": "Claude Haiku", "reasoning": false }
         ]
       }
     }
@@ -241,18 +244,20 @@ CONFIGEOF
     chmod 600 "$config_file"
     
     if [[ "$api_mode" == "proxy" && -n "${GOOSE_PROXY_KEY:-}" ]]; then
+        # Store GooseStack proxy key as anthropic key — our proxy accepts it
+        # via x-api-key header just like Anthropic does
         cat > "$agent_dir/auth-profiles.json" <<AUTHFILEEOF
 {
   "version": 1,
   "profiles": {
-    "goosestack:default": {
+    "anthropic:default": {
       "type": "api_key",
-      "provider": "goosestack",
+      "provider": "anthropic",
       "key": "${GOOSE_PROXY_KEY}"
     }
   },
   "lastGood": {
-    "goosestack": "goosestack:default"
+    "anthropic": "anthropic:default"
   }
 }
 AUTHFILEEOF
