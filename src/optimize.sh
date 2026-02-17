@@ -371,12 +371,18 @@ setup_workspace() {
     if [[ "$overwrite_persona" == "true" || ! -f "$workspace_dir/SOUL.md" ]]; then
         local persona="${GOOSE_AGENT_PERSONA:-assistant}"
         local soul_file="$template_dir/SOUL-${persona}.md"
+        local agent_name="${GOOSE_AGENT_NAME:-Assistant}"
+        local user_name="${GOOSE_USER_NAME:-$(whoami)}"
         if [[ -f "$soul_file" ]]; then
-            cp "$soul_file" "$workspace_dir/SOUL.md"
+            sed -e "s/{{AGENT_NAME}}/${agent_name}/g" \
+                -e "s/{{USER_NAME}}/${user_name}/g" \
+                "$soul_file" > "$workspace_dir/SOUL.md"
             chmod 644 "$workspace_dir/SOUL.md"
-            log_success "Persona: $persona"
+            log_success "Persona: $persona (${agent_name})"
         else
-            cp "$template_dir/SOUL-assistant.md" "$workspace_dir/SOUL.md"
+            sed -e "s/{{AGENT_NAME}}/${agent_name}/g" \
+                -e "s/{{USER_NAME}}/${user_name}/g" \
+                "$template_dir/SOUL-assistant.md" > "$workspace_dir/SOUL.md"
             chmod 644 "$workspace_dir/SOUL.md"
             log_warning "Persona '$persona' not found, using assistant"
         fi

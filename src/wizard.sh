@@ -7,6 +7,7 @@ set -euo pipefail
 
 # Wizard state variables
 GOOSE_USER_NAME=""
+GOOSE_AGENT_NAME=""
 GOOSE_AGENT_PERSONA=""
 GOOSE_API_MODE=""  # "byok" or "proxy" or "local"
 GOOSE_API_KEY=""
@@ -21,6 +22,8 @@ load_i18n() {
         I18N_WHATS_YOUR_NAME="Как вас зовут?"
         I18N_PRESS_ENTER_DEFAULT="Нажмите Enter для значения по умолчанию:"
         I18N_HELLO="Привет,"
+        I18N_AGENT_NAME_QUESTION="Дайте вашему агенту имя:"
+        I18N_AGENT_NAME_DEFAULT="Нажмите Enter для имени по умолчанию: Ассистент"
         I18N_PERSONA_QUESTION="Какой характер должен быть у вашего агента?"
         I18N_PERSONA_1="Ассистент - Профессиональный, полезный, формальный"
         I18N_PERSONA_2="Партнёр - Дружелюбный, неформальный"
@@ -70,6 +73,8 @@ load_i18n() {
         I18N_WHATS_YOUR_NAME="What's your name?"
         I18N_PRESS_ENTER_DEFAULT="Press Enter for default:"
         I18N_HELLO="Hello,"
+        I18N_AGENT_NAME_QUESTION="Give your agent a name:"
+        I18N_AGENT_NAME_DEFAULT="Press Enter for default: Assistant"
         I18N_PERSONA_QUESTION="What personality should your agent have?"
         I18N_PERSONA_1="Assistant - Professional, helpful, formal"
         I18N_PERSONA_2="Partner - Collaborative, friendly, casual"
@@ -216,6 +221,18 @@ prompt_user_name() {
     fi
     
     log_success "${I18N_HELLO} $GOOSE_USER_NAME!"
+}
+
+# Prompt for agent name
+prompt_agent_name() {
+    echo -e "\n${CYAN}${I18N_AGENT_NAME_QUESTION}${NC}"
+    echo -e "${DIM}${I18N_AGENT_NAME_DEFAULT}${NC}"
+    echo -n "> "
+
+    local name_input
+    wizard_read name_input "Assistant"
+    GOOSE_AGENT_NAME="${name_input:-Assistant}"
+    log_info "Agent name: ${GOOSE_AGENT_NAME}"
 }
 
 # Prompt for agent persona
@@ -626,6 +643,7 @@ show_summary() {
 # Export variables for template processing
 export_wizard_vars() {
     export GOOSE_USER_NAME
+    export GOOSE_AGENT_NAME
     export GOOSE_AGENT_PERSONA
     export GOOSE_API_MODE
     export GOOSE_API_KEY
@@ -654,6 +672,7 @@ main_wizard() {
             
             # Export defaults so later scripts don't fail on missing vars
             export GOOSE_USER_NAME="${GOOSE_USER_NAME:-$(whoami)}"
+            export GOOSE_AGENT_NAME="${GOOSE_AGENT_NAME:-Assistant}"
             export GOOSE_AGENT_PERSONA="${GOOSE_AGENT_PERSONA:-partner}"
             export GOOSE_API_MODE="${GOOSE_API_MODE:-byok}"
             export GOOSE_API_KEY="${GOOSE_API_KEY:-}"
@@ -672,6 +691,7 @@ main_wizard() {
     
     prompt_language
     prompt_user_name
+    prompt_agent_name
     prompt_agent_persona
     prompt_api_setup
     prompt_telegram
