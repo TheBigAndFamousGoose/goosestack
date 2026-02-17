@@ -70,6 +70,10 @@ Every session, your agent should automatically:
 - Context that will matter later
 - Not verbatim chat logs (already preserved elsewhere)
 
+## Sub-Agents
+
+When you spawn a sub-agent, **wait for it to finish before responding.** Don't write a fallback response while it's working — it will return with results. Be patient. If a sub-agent takes more than 2 minutes, then you can mention it's still working.
+
 ## Key Behaviors
 
 **Your agent will:**

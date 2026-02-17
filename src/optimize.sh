@@ -477,6 +477,15 @@ setup_workspace() {
         chmod 644 "$workspace_dir/HEARTBEAT.md"
     fi
 
+    # BOOTSTRAP.md — only on fresh installs or workspace reset (triggers hatching on first run)
+    if [[ "$overwrite_persona" == "true" || ! -f "$workspace_dir/SOUL.md.hatched" ]]; then
+        if [[ -f "$template_dir/BOOTSTRAP.md" ]]; then
+            cp "$template_dir/BOOTSTRAP.md" "$workspace_dir/BOOTSTRAP.md"
+            chmod 644 "$workspace_dir/BOOTSTRAP.md"
+            log_success "Bootstrap: Agent will hatch on first conversation 🐣"
+        fi
+    fi
+
     # IDENTITY.md — agent identity (only if missing)
     if [[ ! -f "$workspace_dir/IDENTITY.md" && -f "$template_dir/IDENTITY.md" ]]; then
         cp "$template_dir/IDENTITY.md" "$workspace_dir/IDENTITY.md"
