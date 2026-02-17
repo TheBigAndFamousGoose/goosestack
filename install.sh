@@ -89,7 +89,7 @@ EOF
 
 # Check if running via pipe (curl | sh)
 is_piped() {
-    [[ ! -t 0 ]]
+    [[ ! -t 0 ]] || [[ "${BASH_SOURCE[0]}" == /dev/fd/* ]]
 }
 
 # Download source files

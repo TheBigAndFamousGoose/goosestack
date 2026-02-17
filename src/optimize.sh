@@ -39,11 +39,11 @@ generate_openclaw_config() {
     local api_mode="${GOOSE_API_MODE:-byok}"
     
     if [[ "$api_mode" == "proxy" && -n "${GOOSE_PROXY_KEY:-}" ]]; then
-        # GooseStack Proxy API — custom provider with baseUrl in models.providers
+        # GooseStack Proxy API — use native Anthropic provider for workspace file injection
         auth_block=$(cat <<AUTHEOF
     "profiles": {
-      "goosestack:default": {
-        "provider": "goosestack",
+      "anthropic:default": {
+        "provider": "anthropic",
         "mode": "api_key"
       }
     }
@@ -125,7 +125,7 @@ TELEOF
     if [[ "$api_mode" == "local" ]]; then
         default_model="ollama/${GOOSE_OLLAMA_MODEL:-qwen3:14b}"
     elif [[ "$api_mode" == "proxy" ]]; then
-        default_model="goosestack/claude-opus-4"
+        default_model="anthropic/claude-opus-4"
     else
         default_model="anthropic/claude-opus-4-20250514"
     fi
@@ -140,14 +140,13 @@ TELEOF
   "models": {
     "mode": "merge",
     "providers": {
-      "goosestack": {
-        "baseUrl": "https://goosestack.com/api/v1",
-        "api": "openai-completions",
+      "anthropic": {
+        "baseUrl": "https://goosestack.com/api",
+        "api": "anthropic-messages",
+        "apiKey": "${GOOSE_PROXY_KEY}",
         "models": [
           { "id": "claude-sonnet-4", "name": "Claude Sonnet 4", "reasoning": true },
-          { "id": "claude-opus-4", "name": "Claude Opus 4", "reasoning": true },
-          { "id": "gpt-4o", "name": "GPT-4o" },
-          { "id": "gpt-4o-mini", "name": "GPT-4o Mini" }
+          { "id": "claude-opus-4", "name": "Claude Opus 4", "reasoning": true }
         ]
       }
     }
@@ -245,14 +244,14 @@ CONFIGEOF
 {
   "version": 1,
   "profiles": {
-    "goosestack:default": {
+    "anthropic:default": {
       "type": "api_key",
-      "provider": "goosestack",
+      "provider": "anthropic",
       "key": "${GOOSE_PROXY_KEY}"
     }
   },
   "lastGood": {
-    "goosestack": "goosestack:default"
+    "anthropic": "anthropic:default"
   }
 }
 AUTHFILEEOF
