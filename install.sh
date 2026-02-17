@@ -136,7 +136,7 @@ main() {
         echo -e "  ${BOLD}1)${NC} Keep existing files (preserve your customizations)"
         echo -e "  ${BOLD}2)${NC} Reset to defaults (fresh start, old files backed up)"
         echo ""
-        read -rp "Choose [1/2] (default: 1): " workspace_choice
+        read -rp "Choose [1/2] (default: 1): " workspace_choice < /dev/tty || workspace_choice="1"
         if [[ "${workspace_choice:-1}" == "2" ]]; then
             GOOSE_RESET_WORKSPACE="true"
             local backup_dir="$HOME/.openclaw-backup-$(date +%Y%m%d-%H%M%S)"
