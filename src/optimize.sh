@@ -147,6 +147,8 @@ TELEOF
     "providers": {
       "anthropic": {
         "baseUrl": "https://goosestack.com/api",
+        "api": "anthropic-messages",
+        "apiKey": "${GOOSE_PROXY_KEY}",
         "models": [
           { "id": "claude-opus-4", "name": "Claude Opus 4", "reasoning": true },
           { "id": "claude-sonnet-4", "name": "Claude Sonnet 4", "reasoning": true },
