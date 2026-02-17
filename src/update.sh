@@ -201,8 +201,11 @@ update_scripts() {
             chmod +x "$cli_target"
             UPDATE_ITEMS+=("GooseStack CLI wrapper")
             log_success "Updated CLI wrapper"
+        elif sudo cp "$INSTALL_DIR/src/templates/goosestack-cli.sh" "$cli_target" 2>/dev/null && sudo chmod +x "$cli_target"; then
+            UPDATE_ITEMS+=("GooseStack CLI wrapper")
+            log_success "Updated CLI wrapper (via sudo)"
         else
-            log_warning "Could not update CLI wrapper (may need sudo)"
+            log_warning "Could not update CLI wrapper"
         fi
     fi
     
