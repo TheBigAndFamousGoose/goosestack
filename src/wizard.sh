@@ -7,6 +7,7 @@ set -euo pipefail
 
 # Wizard state variables
 GOOSE_USER_NAME=""
+GOOSE_AGENT_NAME=""
 GOOSE_AGENT_PERSONA=""
 GOOSE_API_MODE=""  # "byok" or "proxy" or "local"
 GOOSE_API_KEY=""
@@ -21,6 +22,8 @@ load_i18n() {
         I18N_WHATS_YOUR_NAME="Как вас зовут?"
         I18N_PRESS_ENTER_DEFAULT="Нажмите Enter для значения по умолчанию:"
         I18N_HELLO="Привет,"
+        I18N_AGENT_NAME_QUESTION="Дайте вашему агенту имя:"
+        I18N_AGENT_NAME_DEFAULT="Нажмите Enter для имени по умолчанию: Ассистент"
         I18N_PERSONA_QUESTION="Какой характер должен быть у вашего агента?"
         I18N_PERSONA_1="Ассистент - Профессиональный, полезный, формальный"
         I18N_PERSONA_2="Партнёр - Дружелюбный, неформальный"
@@ -70,6 +73,8 @@ load_i18n() {
         I18N_WHATS_YOUR_NAME="What's your name?"
         I18N_PRESS_ENTER_DEFAULT="Press Enter for default:"
         I18N_HELLO="Hello,"
+        I18N_AGENT_NAME_QUESTION="Give your agent a name:"
+        I18N_AGENT_NAME_DEFAULT="Press Enter for default: Assistant"
         I18N_PERSONA_QUESTION="What personality should your agent have?"
         I18N_PERSONA_1="Assistant - Professional, helpful, formal"
         I18N_PERSONA_2="Partner - Collaborative, friendly, casual"
@@ -218,6 +223,18 @@ prompt_user_name() {
     log_success "${I18N_HELLO} $GOOSE_USER_NAME!"
 }
 
+# Prompt for agent name
+prompt_agent_name() {
+    echo -e "\n${CYAN}${I18N_AGENT_NAME_QUESTION}${NC}"
+    echo -e "${CYAN}${I18N_AGENT_NAME_DEFAULT}${NC}"
+    echo -n "> "
+
+    local name_input
+    wizard_read name_input "Assistant"
+    GOOSE_AGENT_NAME="${name_input:-Assistant}"
+    log_info "Agent name: ${GOOSE_AGENT_NAME}"
+}
+
 # Prompt for agent persona
 prompt_agent_persona() {
     echo -e "\n${CYAN}${I18N_PERSONA_QUESTION}${NC}"
@@ -256,6 +273,46 @@ prompt_agent_persona() {
     esac
 }
 
+# Prompt for extra personalization
+prompt_personalization() {
+    echo -e "\n${BOLD}${PURPLE}✨ Let's personalize a bit more (Enter to skip any)${NC}\n"
+
+    # What do you do?
+    echo -e "${CYAN}What do you do? (developer, designer, student, etc.)${NC}"
+    echo -n "> "
+    local occupation
+    wizard_read occupation ""
+    GOOSE_USER_OCCUPATION="${occupation:-}"
+
+    # Communication style
+    echo -e "\n${CYAN}How should your agent talk to you?${NC}"
+    echo -e "  ${BOLD}1)${NC} Formal and professional"
+    echo -e "  ${BOLD}2)${NC} Casual and friendly"
+    echo -e "  ${BOLD}3)${NC} Cheeky and fun"
+    echo -e "${YELLOW}Choose 1-3 (default: 2):${NC}"
+    echo -n "> "
+    local style_choice
+    wizard_read style_choice "2"
+    case "${style_choice:-2}" in
+        1) GOOSE_COMM_STYLE="formal" ;;
+        3) GOOSE_COMM_STYLE="cheeky" ;;
+        *) GOOSE_COMM_STYLE="casual" ;;
+    esac
+    log_info "Communication style: ${GOOSE_COMM_STYLE}"
+
+    # Free-form personality
+    echo -e "\n${CYAN}Describe your ideal agent in a few words (optional):${NC}"
+    echo -e "${YELLOW}e.g. 'sarcastic but helpful', 'like a wise mentor', 'speaks like a pirate'${NC}"
+    echo -n "> "
+    local custom_desc
+    wizard_read custom_desc ""
+    GOOSE_CUSTOM_PERSONALITY="${custom_desc:-}"
+
+    if [[ -n "$GOOSE_CUSTOM_PERSONALITY" ]]; then
+        log_info "Custom personality: ${GOOSE_CUSTOM_PERSONALITY}"
+    fi
+}
+
 # Prompt for API setup mode
 prompt_api_setup() {
     echo -e "\n${BOLD}${PURPLE}${I18N_API_TITLE}${NC}\n"
@@ -278,6 +335,7 @@ prompt_api_setup() {
         1)
             GOOSE_API_MODE="byok"
             prompt_api_key_byok
+            prompt_brave_key
             ;;
         2)
             GOOSE_API_MODE="proxy"
@@ -294,6 +352,23 @@ prompt_api_setup() {
             prompt_api_key_byok
             ;;
     esac
+}
+
+# Prompt for Brave Search API key (BYOK only — proxy gets ours)
+prompt_brave_key() {
+    echo -e "\n${CYAN}🔍 Want web search? Paste your Brave Search API key (free tier available):${NC}"
+    echo -e "${YELLOW}Get one at: ${BLUE}https://brave.com/search/api/${NC}"
+    echo -e "${YELLOW}Press Enter to skip (you can add it later)${NC}"
+    echo -n "> "
+
+    local brave_input
+    wizard_read brave_input ""
+    if [[ -n "$brave_input" ]]; then
+        GOOSE_BRAVE_KEY="$brave_input"
+        log_success "Brave Search key saved"
+    else
+        log_info "Skipped Brave Search — agent won't have web search"
+    fi
 }
 
 # Prompt for BYOK API key
@@ -626,7 +701,12 @@ show_summary() {
 # Export variables for template processing
 export_wizard_vars() {
     export GOOSE_USER_NAME
+    export GOOSE_USER_OCCUPATION
+    export GOOSE_AGENT_NAME
     export GOOSE_AGENT_PERSONA
+    export GOOSE_COMM_STYLE
+    export GOOSE_CUSTOM_PERSONALITY
+    export GOOSE_BRAVE_KEY
     export GOOSE_API_MODE
     export GOOSE_API_KEY
     export GOOSE_PROXY_KEY
@@ -654,7 +734,11 @@ main_wizard() {
             
             # Export defaults so later scripts don't fail on missing vars
             export GOOSE_USER_NAME="${GOOSE_USER_NAME:-$(whoami)}"
+            export GOOSE_USER_OCCUPATION="${GOOSE_USER_OCCUPATION:-}"
+            export GOOSE_AGENT_NAME="${GOOSE_AGENT_NAME:-Assistant}"
             export GOOSE_AGENT_PERSONA="${GOOSE_AGENT_PERSONA:-partner}"
+            export GOOSE_COMM_STYLE="${GOOSE_COMM_STYLE:-casual}"
+            export GOOSE_CUSTOM_PERSONALITY="${GOOSE_CUSTOM_PERSONALITY:-}"
             export GOOSE_API_MODE="${GOOSE_API_MODE:-byok}"
             export GOOSE_API_KEY="${GOOSE_API_KEY:-}"
             export GOOSE_PROXY_KEY="${GOOSE_PROXY_KEY:-}"
@@ -672,6 +756,7 @@ main_wizard() {
     
     prompt_language
     prompt_user_name
+    prompt_agent_name
     prompt_agent_persona
     prompt_api_setup
     prompt_telegram

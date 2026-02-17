@@ -34,6 +34,7 @@ readonly NC='\033[0m' # No Color
 INSTALL_DIR=""
 TEMP_DIR=""
 GOOSE_REPO="https://github.com/TheBigAndFamousGoose/goosestack"
+GOOSE_BRANCH="${GOOSE_BRANCH:-main}"
 
 # Cleanup function
 cleanup() {
@@ -103,11 +104,11 @@ download_installer() {
     cd "$TEMP_DIR"
     
     if command -v git >/dev/null 2>&1; then
-        git clone --depth 1 "$GOOSE_REPO" goosestack
+        git clone --depth 1 --branch "$GOOSE_BRANCH" "$GOOSE_REPO" goosestack
     else
         log_info "Git not found, downloading archive..."
         mkdir -p goosestack
-        curl -fsSL "$GOOSE_REPO/archive/main.tar.gz" | tar -xz --strip-components=1 -C goosestack
+        curl -fsSL "$GOOSE_REPO/archive/${GOOSE_BRANCH}.tar.gz" | tar -xz --strip-components=1 -C goosestack
     fi
     
     INSTALL_DIR="$TEMP_DIR/goosestack"

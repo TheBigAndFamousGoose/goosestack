@@ -39,7 +39,9 @@ generate_openclaw_config() {
     local api_mode="${GOOSE_API_MODE:-byok}"
     
     if [[ "$api_mode" == "proxy" && -n "${GOOSE_PROXY_KEY:-}" ]]; then
-        # GooseStack Proxy API — use native Anthropic provider for workspace file injection
+        # GooseStack Proxy API — register as anthropic provider so OpenClaw injects
+        # workspace files (AGENTS.md, SOUL.md, etc.) into the system prompt.
+        # Our proxy at goosestack.com/api speaks native Anthropic format on /v1/messages.
         auth_block=$(cat <<AUTHEOF
     "profiles": {
       "anthropic:default": {
@@ -136,6 +138,9 @@ TELEOF
     # Build models.providers block based on API mode
     local models_block=""
     if [[ "$api_mode" == "proxy" ]]; then
+        # Register as anthropic provider with GooseStack proxy baseUrl.
+        # OpenClaw treats this as native Anthropic → injects workspace files into system prompt.
+        # Token routing happens server-side on our proxy (routes between Opus/Sonnet/Haiku/Gemini).
         models_block=$(cat <<MODELSEOF
   "models": {
     "mode": "merge",
@@ -145,8 +150,9 @@ TELEOF
         "api": "anthropic-messages",
         "apiKey": "${GOOSE_PROXY_KEY}",
         "models": [
+          { "id": "claude-opus-4", "name": "Claude Opus 4", "reasoning": true },
           { "id": "claude-sonnet-4", "name": "Claude Sonnet 4", "reasoning": true },
-          { "id": "claude-opus-4", "name": "Claude Opus 4", "reasoning": true }
+          { "id": "claude-3-5-haiku-20241022", "name": "Claude Haiku", "reasoning": false }
         ]
       }
     }
@@ -155,6 +161,21 @@ MODELSEOF
 )
     elif [[ "$api_mode" == "local" ]]; then
         models_block=""
+    fi
+
+    # Brave search key — proxy users get ours out-of-the-box, BYOK users bring their own
+    local brave_key_block=""
+    if [[ "$api_mode" == "proxy" ]]; then
+        brave_key_block=',
+        "apiKey": "BSAaS_rxB3F1qZzMSAPobQUmTtB-4JM"'
+    elif [[ -n "${GOOSE_BRAVE_KEY:-}" ]]; then
+        brave_key_block=",
+        \"apiKey\": \"${GOOSE_BRAVE_KEY}\""
+    fi
+
+    # Subagent model — proxy users should use Sonnet via proxy, not local ollama
+    if [[ "$api_mode" == "proxy" ]]; then
+        subagent_model="anthropic/claude-sonnet-4"
     fi
 
     # Build the config
@@ -181,7 +202,7 @@ MODELSEOF
       "maxConcurrent": ${max_concurrent},
       "subagents": {
         "maxConcurrent": ${subagent_concurrent},
-        "model": "ollama/${GOOSE_OLLAMA_MODEL:-qwen3:14b}",
+        "model": "${subagent_model}",
         "thinking": "off"
       }
     }
@@ -189,7 +210,7 @@ MODELSEOF
   "tools": {
     "web": {
       "search": {
-        "provider": "brave"
+        "provider": "brave"${brave_key_block}
       }
     }
   },
@@ -240,6 +261,8 @@ CONFIGEOF
     chmod 600 "$config_file"
     
     if [[ "$api_mode" == "proxy" && -n "${GOOSE_PROXY_KEY:-}" ]]; then
+        # Store GooseStack proxy key as anthropic key — our proxy accepts it
+        # via x-api-key header just like Anthropic does
         cat > "$agent_dir/auth-profiles.json" <<AUTHFILEEOF
 {
   "version": 1,
@@ -365,15 +388,20 @@ setup_workspace() {
     if [[ "$overwrite_persona" == "true" || ! -f "$workspace_dir/SOUL.md" ]]; then
         local persona="${GOOSE_AGENT_PERSONA:-assistant}"
         local soul_file="$template_dir/SOUL-${persona}.md"
-        if [[ -f "$soul_file" ]]; then
-            cp "$soul_file" "$workspace_dir/SOUL.md"
-            chmod 644 "$workspace_dir/SOUL.md"
-            log_success "Persona: $persona"
-        else
-            cp "$template_dir/SOUL-assistant.md" "$workspace_dir/SOUL.md"
-            chmod 644 "$workspace_dir/SOUL.md"
+        local agent_name="${GOOSE_AGENT_NAME:-Assistant}"
+        local user_name="${GOOSE_USER_NAME:-$(whoami)}"
+        local src_file="$soul_file"
+        if [[ ! -f "$src_file" ]]; then
+            src_file="$template_dir/SOUL-assistant.md"
             log_warning "Persona '$persona' not found, using assistant"
         fi
+
+        sed -e "s/{{AGENT_NAME}}/${agent_name}/g" \
+            -e "s/{{USER_NAME}}/${user_name}/g" \
+            "$src_file" > "$workspace_dir/SOUL.md"
+
+        chmod 644 "$workspace_dir/SOUL.md"
+        log_success "Persona: $persona (${agent_name})"
     else
         log_info "SOUL.md already exists, preserving"
     fi
@@ -382,8 +410,10 @@ setup_workspace() {
     if [[ "$overwrite_persona" == "true" || ! -f "$workspace_dir/USER.md" ]]; then
         local user_name="${GOOSE_USER_NAME:-$(whoami)}"
         local setup_date=$(date +"%Y-%m-%d")
+        local user_occupation="${GOOSE_USER_OCCUPATION:-Not specified}"
         sed -e "s/{{USER_NAME}}/${user_name}/g" \
             -e "s/{{SETUP_DATE}}/${setup_date}/g" \
+            -e "s/{{USER_OCCUPATION}}/${user_occupation}/g" \
             -e "s/{{GOOSE_CHIP}}/${GOOSE_CHIP:-Unknown}/g" \
             -e "s/{{GOOSE_RAM_GB}}/${GOOSE_RAM_GB:-8}/g" \
             "$template_dir/USER.md.tmpl" > "$workspace_dir/USER.md"
@@ -429,6 +459,15 @@ setup_workspace() {
     if [[ ! -f "$workspace_dir/HEARTBEAT.md" && -f "$template_dir/HEARTBEAT.md" ]]; then
         cp "$template_dir/HEARTBEAT.md" "$workspace_dir/HEARTBEAT.md"
         chmod 644 "$workspace_dir/HEARTBEAT.md"
+    fi
+
+    # BOOTSTRAP.md — only on fresh installs or workspace reset (triggers hatching on first run)
+    if [[ "$overwrite_persona" == "true" || ! -f "$workspace_dir/SOUL.md.hatched" ]]; then
+        if [[ -f "$template_dir/BOOTSTRAP.md" ]]; then
+            cp "$template_dir/BOOTSTRAP.md" "$workspace_dir/BOOTSTRAP.md"
+            chmod 644 "$workspace_dir/BOOTSTRAP.md"
+            log_success "Bootstrap: Agent will hatch on first conversation 🐣"
+        fi
     fi
 
     # IDENTITY.md — agent identity (only if missing)
