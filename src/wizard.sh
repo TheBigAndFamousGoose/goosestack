@@ -758,7 +758,6 @@ main_wizard() {
     prompt_user_name
     prompt_agent_name
     prompt_agent_persona
-    prompt_personalization
     prompt_api_setup
     prompt_telegram
     show_summary

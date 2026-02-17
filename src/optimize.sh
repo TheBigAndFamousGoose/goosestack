@@ -400,24 +400,8 @@ setup_workspace() {
             -e "s/{{USER_NAME}}/${user_name}/g" \
             "$src_file" > "$workspace_dir/SOUL.md"
 
-        # Append communication style
-        local comm_style="${GOOSE_COMM_STYLE:-casual}"
-        if [[ "$comm_style" == "formal" ]]; then
-            echo -e "\n## Tone\nKeep it professional and polished. No slang, no emojis unless the situation calls for it." >> "$workspace_dir/SOUL.md"
-        elif [[ "$comm_style" == "cheeky" ]]; then
-            echo -e "\n## Tone\nBe witty, playful, and a little irreverent. Life's too short for boring conversations. Use humor freely — puns welcome." >> "$workspace_dir/SOUL.md"
-        else
-            echo -e "\n## Tone\nKeep it natural and conversational — like texting a smart friend. Relaxed but not sloppy." >> "$workspace_dir/SOUL.md"
-        fi
-
-        # Append custom personality if provided
-        local custom_personality="${GOOSE_CUSTOM_PERSONALITY:-}"
-        if [[ -n "$custom_personality" ]]; then
-            echo -e "\n## Custom Touch\n${custom_personality}" >> "$workspace_dir/SOUL.md"
-        fi
-
         chmod 644 "$workspace_dir/SOUL.md"
-        log_success "Persona: $persona (${agent_name}, ${comm_style})"
+        log_success "Persona: $persona (${agent_name})"
     else
         log_info "SOUL.md already exists, preserving"
     fi
