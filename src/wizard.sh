@@ -226,7 +226,7 @@ prompt_user_name() {
 # Prompt for agent name
 prompt_agent_name() {
     echo -e "\n${CYAN}${I18N_AGENT_NAME_QUESTION}${NC}"
-    echo -e "${DIM}${I18N_AGENT_NAME_DEFAULT}${NC}"
+    echo -e "${CYAN}${I18N_AGENT_NAME_DEFAULT}${NC}"
     echo -n "> "
 
     local name_input
