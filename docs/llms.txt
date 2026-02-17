@@ -1,6 +1,6 @@
 # GooseStack
 
-> One-command macOS AI agent installer. Run `curl -fsSL https://goosestack.com/install.sh | sh` to set up a complete AI development environment: Homebrew, Node.js, OpenClaw, Ollama, and an optimal local LLM — all auto-configured for your hardware.
+> One-command macOS AI agent installer. Run `curl -fsSL https://goosestack.com/install.sh | bash` to set up a complete AI development environment: Homebrew, Node.js, OpenClaw, Ollama, and an optimal local LLM — all auto-configured for your hardware.
 
 ## What It Does
 - Detects your Mac's chip (M1–M4, Intel) and RAM
@@ -29,6 +29,6 @@
 ## Links
 - Website: https://goosestack.com
 - GitHub: https://github.com/TheBigAndFamousGoose/goosestack
-- Install: `curl -fsSL https://goosestack.com/install.sh | sh`
+- Install: `curl -fsSL https://goosestack.com/install.sh | bash`
 - Buy Credits: https://goosestack.com/credits
 - Go Pro: https://goosestack.com/pro
