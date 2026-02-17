@@ -127,10 +127,25 @@ main() {
     
     # Detect existing installation
     export GOOSE_REINSTALL="false"
+    export GOOSE_RESET_WORKSPACE="false"
     if [[ -f "$HOME/.openclaw/openclaw.json" ]]; then
         GOOSE_REINSTALL="true"
         log_info "🔄 Existing GooseStack installation detected!"
-        log_info "Your configuration and workspace files will be preserved."
+        echo ""
+        echo -e "${YELLOW}What would you like to do with your workspace files?${NC}"
+        echo -e "  ${BOLD}1)${NC} Keep existing files (preserve your customizations)"
+        echo -e "  ${BOLD}2)${NC} Reset to defaults (fresh start, old files backed up)"
+        echo ""
+        read -rp "Choose [1/2] (default: 1): " workspace_choice
+        if [[ "${workspace_choice:-1}" == "2" ]]; then
+            GOOSE_RESET_WORKSPACE="true"
+            local backup_dir="$HOME/.openclaw-backup-$(date +%Y%m%d-%H%M%S)"
+            log_info "Backing up workspace to $backup_dir"
+            cp -r "$HOME/.openclaw/workspace" "$backup_dir" 2>/dev/null || true
+            log_success "Workspace backed up. Fresh files will be created."
+        else
+            log_info "Keeping existing workspace files."
+        fi
         echo ""
     fi
     

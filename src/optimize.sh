@@ -338,9 +338,19 @@ setup_workspace() {
         exit 1
     fi
 
-    # Determine if we should overwrite persona files (user chose to reconfigure)
+    # Determine if we should overwrite workspace files
     local overwrite_persona="false"
+    local reset_workspace="${GOOSE_RESET_WORKSPACE:-false}"
     if [[ -n "${GOOSE_AGENT_PERSONA:-}" && "${GOOSE_REINSTALL:-false}" == "true" ]]; then
+        overwrite_persona="true"
+    fi
+
+    # If user chose "reset to defaults", wipe workspace files first
+    if [[ "$reset_workspace" == "true" ]]; then
+        log_info "Resetting workspace files to defaults..."
+        rm -f "$workspace_dir/AGENTS.md" "$workspace_dir/SOUL.md" "$workspace_dir/USER.md"
+        rm -f "$workspace_dir/TOOLS.md" "$workspace_dir/IDENTITY.md" "$workspace_dir/MEMORY.md"
+        rm -f "$workspace_dir/BOOTSTRAP.md" "$workspace_dir/HEARTBEAT.md"
         overwrite_persona="true"
     fi
 
