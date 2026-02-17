@@ -89,7 +89,10 @@ EOF
 
 # Check if running via pipe (curl | sh)
 is_piped() {
-    [[ ! -t 0 ]]
+    # Detect if running outside the full repo (piped, process substitution, or downloaded standalone)
+    local script_dir
+    script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd)"
+    [[ ! -d "$script_dir/src" ]]
 }
 
 # Download source files
