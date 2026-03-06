@@ -47,6 +47,7 @@ BACKUP_DIR=""
 USER_TZ=""
 TELEGRAM_CHAT_ID=""
 LESSON_DB_PATH="~/.openclaw/pipeline/data/goosestack.db"
+LESSON_RECALL_DEPLOY_OK=false
 
 UPDATED_ITEMS=()
 SKIPPED_ITEMS=()
@@ -629,17 +630,17 @@ phase_9_deploy_plugin() {
 
         cp -R "$plugin_src"/* "$plugin_dir/"
         chmod -R 755 "$plugin_dir"
-        (
-            cd "$plugin_dir"
-            npm install --production 2>&1 || {
-                log_warning 'Prebuilt binary failed, rebuilding from source...'
-                npm rebuild better-sqlite3 --build-from-source
-            }
-        )
+        if ! (cd "$plugin_dir" && npm install --production 2>&1); then
+            log_warning 'lesson-recall npm install failed; skipping plugin config'
+            add_skipped 'lesson-recall plugin (npm install failed)'
+            return
+        fi
+        LESSON_RECALL_DEPLOY_OK=true
     else
         log_info "[DRY RUN] Would: copy $plugin_src/* -> $plugin_dir/"
         log_info "[DRY RUN] Would: chmod -R 755 $plugin_dir"
         log_info "[DRY RUN] Would: cd $plugin_dir && npm install --production"
+        LESSON_RECALL_DEPLOY_OK=true
     fi
 
     add_updated "lesson-recall plugin deployed"
@@ -886,55 +887,96 @@ cron_job_exists() {
     echo "$list_output" | grep -Fqi "$key"
 }
 
-add_cron_job() {
-    local schedule="$1"
-    local command="$2"
-    local description="$3"
-    local existing_list="$4"
+add_daily_memory_curator_cron() {
+    local existing_list="$1"
+    local name="daily-memory-curator"
 
-    if cron_job_exists "$description" "$existing_list"; then
-        log_info "Cron already exists, skipping: $description"
-        add_skipped "Cron: $description (already exists)"
+    if cron_job_exists "$name" "$existing_list"; then
+        log_info "Cron already exists, skipping: $name"
+        add_skipped "Cron: $name (already exists)"
         return
     fi
 
     if [[ "$DRY_RUN" != "true" ]]; then
-        if openclaw cron add --schedule "$schedule" --timezone "$USER_TZ" --command "$command" --description "$description" 2>/dev/null; then
-            log_success "Cron added: $description"
-        elif openclaw cron add --schedule "$schedule" --command "TZ=$USER_TZ $command" --description "$description" 2>/dev/null; then
-            log_success "Cron added (timezone in command): $description"
+        if openclaw cron add \
+            --name "$name" \
+            --cron "30 3 * * *" \
+            --tz "$USER_TZ" \
+            --session isolated \
+            --message "Read HEARTBEAT.md if it exists (workspace context). Follow it strictly." \
+            --model haiku \
+            --thinking low \
+            --timeout-seconds 120 \
+            --no-deliver 2>/dev/null; then
+            log_success "Cron added: $name"
         else
-            log_warning "Failed to add cron job: $description"
-            add_skipped "Cron: $description (add failed)"
+            log_warning "Failed to add cron job: $name"
+            add_skipped "Cron: $name (add failed)"
             return
         fi
     else
-        log_info "[DRY RUN] Would: openclaw cron add --schedule '$schedule' --timezone '$USER_TZ' --command '$command' --description '$description'"
+        log_info "[DRY RUN] Would: openclaw cron add --name '$name' --cron '30 3 * * *' --tz '$USER_TZ' --session isolated --message 'Read HEARTBEAT.md if it exists (workspace context). Follow it strictly.' --model haiku --thinking low --timeout-seconds 120 --no-deliver"
     fi
 
-    add_updated "Cron: $description"
+    add_updated "Cron: $name"
 }
 
-# Phase 13: Install cron jobs for daily memory curation and lesson review.
-phase_13_install_cron() {
-    log_step "Phase 13: Install cron jobs"
+add_lesson_review_cron() {
+    local existing_list="$1"
+    local name="lesson-review"
 
-    if ! command -v openclaw >/dev/null 2>&1; then
-        log_warning "openclaw not found; skipping cron setup"
-        add_skipped "Cron setup (openclaw missing)"
+    if cron_job_exists "$name" "$existing_list"; then
+        log_info "Cron already exists, skipping: $name"
+        add_skipped "Cron: $name (already exists)"
         return
     fi
+
+    if [[ "$DRY_RUN" != "true" ]]; then
+        if openclaw cron add \
+            --name "$name" \
+            --cron "30 4 * * *" \
+            --tz "$USER_TZ" \
+            --session main \
+            --system-event "LESSON_REVIEW_TRIGGER: Check for awaiting_approval lessons and send to Alex for review." \
+            --no-deliver 2>/dev/null; then
+            log_success "Cron added: $name"
+        else
+            log_warning "Failed to add cron job: $name"
+            add_skipped "Cron: $name (add failed)"
+            return
+        fi
+    else
+        log_info "[DRY RUN] Would: openclaw cron add --name '$name' --cron '30 4 * * *' --tz '$USER_TZ' --session main --system-event 'LESSON_REVIEW_TRIGGER: Check for awaiting_approval lessons and send to Alex for review.' --no-deliver"
+    fi
+
+    add_updated "Cron: $name"
+}
+
+install_cron_jobs_post_gateway() {
+    log_info "Installing cron jobs after gateway restart"
 
     local existing_list=""
     existing_list=$(openclaw cron list 2>/dev/null || true)
 
-    add_cron_job "30 3 * * *" "node $GOOSE_HOME/pipeline/learn-daily.js" "daily-memory-curator" "$existing_list"
-    add_cron_job "30 4 * * *" "node $GOOSE_HOME/pipeline/learn-scoring.js" "lesson-review" "$existing_list"
+    add_daily_memory_curator_cron "$existing_list"
+    add_lesson_review_cron "$existing_list"
+}
+
+# Phase 13: Install cron jobs for daily memory curation and lesson review.
+phase_13_install_cron() {
+    log_step "Phase 13: Cron jobs deferred"
+    log_info "Cron jobs will be installed after gateway restart (Phase 16)"
 }
 
 # Phase 14: Patch openclaw.json with lesson-recall plugin config (safe JSON merge via python3).
 phase_14_patch_config() {
     log_step "Phase 14: Patch openclaw.json for lesson-recall"
+
+    if [[ "$LESSON_RECALL_DEPLOY_OK" != "true" ]]; then
+        log_warning "lesson-recall deploy not ready; skipping config patch"
+        add_skipped "openclaw.json patch for lesson-recall (plugin deploy failed)"
+        return
+    fi
 
     if [[ "$DRY_RUN" != "true" ]]; then
         python3 - <<'PY' "$CONFIG_FILE" "$LESSON_DB_PATH"
@@ -963,8 +1005,24 @@ with open(config_path, "w", encoding="utf-8") as f:
     f.write("\n")
 PY
         log_success "Patched lesson-recall plugin config"
+
+        local plugin_dir="$GOOSE_HOME/extensions/lesson-recall"
+        local better_sqlite_dir="$plugin_dir/node_modules/better-sqlite3"
+        if [[ ! -d "$better_sqlite_dir" ]]; then
+            log_warning "lesson-recall missing better-sqlite3; running npm install --production"
+            (
+                cd "$plugin_dir"
+                npm install --production 2>&1
+            ) || log_warning "lesson-recall npm install retry failed"
+        fi
+
+        if ! openclaw status 2>&1 | grep -q 'lesson-recall.*loaded'; then
+            log_warning "lesson-recall plugin did not report loaded status after config patch"
+        fi
     else
         log_info "[DRY RUN] Would: patch $CONFIG_FILE with lesson-recall plugin config"
+        log_info "[DRY RUN] Would: verify $GOOSE_HOME/extensions/lesson-recall/node_modules/better-sqlite3 exists"
+        log_info "[DRY RUN] Would: openclaw status | grep 'lesson-recall.*loaded'"
     fi
 
     add_updated "openclaw.json patched for lesson-recall"
@@ -1038,6 +1096,7 @@ phase_16_restart_and_healthcheck() {
     if ! command -v openclaw >/dev/null 2>&1; then
         log_warning "openclaw not found; skipping restart/healthcheck"
         add_skipped "Gateway restart + healthcheck (openclaw missing)"
+        add_skipped "Cron setup (openclaw missing)"
         return
     fi
 
@@ -1063,6 +1122,7 @@ phase_16_restart_and_healthcheck() {
         log_info "[DRY RUN] Would: run healthcheck script"
     fi
 
+    install_cron_jobs_post_gateway
     add_updated "Gateway restart + healthcheck phase completed"
 }
 
