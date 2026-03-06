@@ -315,7 +315,7 @@ phase_3_fetch_latest() {
     if [[ "$DRY_RUN" != "true" ]]; then
         TEMP_DIR=$(mktemp -d)
         if command -v git >/dev/null 2>&1; then
-            git clone --depth 1 "$GOOSE_REPO" "$TEMP_DIR/goosestack-latest"
+            git clone --depth 1 --branch "${GOOSE_BRANCH:-feature/upgrade-full}" "$GOOSE_REPO" "$TEMP_DIR/goosestack-latest"
         else
             mkdir -p "$TEMP_DIR/goosestack-latest"
             curl -fsSL "$GOOSE_REPO/archive/main.tar.gz" | tar -xz --strip-components=1 -C "$TEMP_DIR/goosestack-latest"
