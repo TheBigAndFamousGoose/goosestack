@@ -1,0 +1,18 @@
+{
+  "id": "lesson-recall",
+  "name": "Lesson Recall",
+  "description": "Injects relevant lessons from the learning pipeline into agent context at message time",
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "enabled": { "type": "boolean", "default": true },
+      "dbPath": { "type": "string", "default": "~/Projects/content-pipeline/data/goosestack.db" },
+      "ollamaUrl": { "type": "string", "default": "http://localhost:11434" },
+      "embeddingModel": { "type": "string", "default": "nomic-embed-text" },
+      "topK": { "type": "number", "default": 5, "minimum": 1, "maximum": 20 },
+      "minSimilarity": { "type": "number", "default": 0.45, "minimum": 0.0, "maximum": 1.0 },
+      "maxChars": { "type": "number", "default": 2000 }
+    }
+  }
+}

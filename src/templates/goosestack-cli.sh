@@ -33,6 +33,15 @@ case "${1:-}" in
             cd /tmp && curl -fsSL https://raw.githubusercontent.com/TheBigAndFamousGoose/goosestack/main/src/update.sh -o goosestack-update.sh && bash goosestack-update.sh "$@"
         fi
         ;;
+    upgrade)
+        shift
+        if [[ -f "$HOME/.openclaw/goosestack/src/upgrade-full.sh" ]]; then
+            exec bash "$HOME/.openclaw/goosestack/src/upgrade-full.sh" --full "$@"
+        else
+            # Bootstrap: download and run
+            cd /tmp && curl -fsSL https://raw.githubusercontent.com/TheBigAndFamousGoose/goosestack/main/src/upgrade-full.sh -o goosestack-upgrade-full.sh && bash goosestack-upgrade-full.sh --full "$@"
+        fi
+        ;;
     export)
         shift
         exec bash "$(dirname "$(readlink -f "$0")")/../src/migrate.sh" export "$@" 2>/dev/null || \
@@ -88,6 +97,7 @@ case "${1:-}" in
         echo "  restart     Restart the gateway"
         echo "  doctor      Run diagnostics"
         echo "  update      Update GooseStack"
+        echo "  upgrade     Run full GooseStack upgrade workflow"
         echo "  export      Export configuration and workspace"
         echo "  import      Import configuration and workspace"
         echo "  reinstall   Uninstall and reinstall fresh"
