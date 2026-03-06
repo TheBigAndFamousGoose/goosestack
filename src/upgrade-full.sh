@@ -429,11 +429,11 @@ phase_7_cli_refresh() {
     local arch
     arch=$(uname -m)
 
-    local cli_target
+    local cli_dest
     if [[ "$arch" == "arm64" ]]; then
-        cli_target="/opt/homebrew/bin/goosestack"
+        cli_dest="/opt/homebrew/bin/goosestack"
     else
-        cli_target="/usr/local/bin/goosestack"
+        cli_dest="/usr/local/bin/goosestack"
     fi
 
     local cli_src="$INSTALL_SRC_DIR/templates/goosestack-cli.sh"
@@ -444,17 +444,27 @@ phase_7_cli_refresh() {
     fi
 
     if [[ "$DRY_RUN" != "true" ]]; then
-        if cp "$cli_src" "$cli_target" 2>/dev/null; then
-            chmod +x "$cli_target"
-            log_success "CLI refreshed at $cli_target"
-            add_updated "CLI refreshed"
+        if cp "$cli_src" "$cli_dest" 2>/dev/null; then
+            if chmod +x "$cli_dest" 2>/dev/null || sudo chmod +x "$cli_dest"; then
+                log_success "CLI refreshed at $cli_dest"
+                add_updated "CLI refreshed"
+            else
+                log_warning "Failed to set executable bit on $cli_dest; skipping"
+                add_skipped "CLI refresh (chmod failed)"
+            fi
         else
-            log_warning "No permission to write $cli_target; skipping"
-            add_skipped "CLI refresh (permission denied)"
+            log_warning "Copy to $cli_dest failed without sudo; retrying with sudo"
+            if sudo cp "$cli_src" "$cli_dest" && (chmod +x "$cli_dest" 2>/dev/null || sudo chmod +x "$cli_dest"); then
+                log_success "CLI refreshed at $cli_dest"
+                add_updated "CLI refreshed"
+            else
+                log_warning "No permission to write $cli_dest; skipping"
+                add_skipped "CLI refresh (permission denied)"
+            fi
         fi
     else
-        log_info "[DRY RUN] Would: cp $cli_src $cli_target"
-        log_info "[DRY RUN] Would: chmod +x $cli_target"
+        log_info "[DRY RUN] Would: cp $cli_src $cli_dest"
+        log_info "[DRY RUN] Would: chmod +x $cli_dest"
         add_updated "CLI refresh planned"
     fi
 }
@@ -484,6 +494,12 @@ phase_8_deploy_learning_pipeline() {
     local data_dir="$pipeline_dir/data"
     local pipeline_src="$INSTALL_SRC_DIR/pipeline"
 
+    if [[ ! -d "$pipeline_src" ]]; then
+        log_warning "Pipeline source directory missing (expected: $pipeline_src); skipping phase"
+        add_skipped "Learning pipeline deploy (source missing)"
+        return
+    fi
+
     if [[ "$DRY_RUN" != "true" ]]; then
         mkdir -p "$pipeline_dir" "$data_dir"
     else
@@ -492,6 +508,7 @@ phase_8_deploy_learning_pipeline() {
 
     local files=("learn-daily.js" "learn-scoring.js" "learn-extract-all.js" "package.json")
     local f
+    local missing_required=false
     for f in "${files[@]}"; do
         local src="$pipeline_src/$f"
         local dst="$pipeline_dir/$f"
@@ -513,11 +530,16 @@ phase_8_deploy_learning_pipeline() {
                 log_warning "Missing $src, creating fallback $dst"
                 write_default_learning_script "$dst" "$f"
             else
-                log_warning "Missing required file: $src"
+                log_warning "Missing required pipeline file (expected: $src); skipping phase"
                 add_skipped "Learning pipeline file missing: $f"
+                missing_required=true
             fi
         fi
     done
+
+    if [[ "$missing_required" == "true" ]]; then
+        return
+    fi
 
     local seed_files=("seed-schema.sql" "seed-lessons.sql")
     for f in "${seed_files[@]}"; do
@@ -567,39 +589,35 @@ phase_9_deploy_plugin() {
     local plugin_dir="$GOOSE_HOME/extensions/lesson-recall"
     local plugin_src="$INSTALL_SRC_DIR/extensions/lesson-recall"
 
+    if [[ ! -d "$plugin_src" ]]; then
+        log_warning "Plugin source directory missing (expected: $plugin_src); skipping phase"
+        add_skipped "lesson-recall plugin deploy (source missing)"
+        return
+    fi
+
     if [[ "$DRY_RUN" != "true" ]]; then
         mkdir -p "$plugin_dir"
     else
         log_info "[DRY RUN] Would: mkdir -p $plugin_dir"
     fi
 
-    if [[ -d "$plugin_src" ]]; then
-        if [[ "$DRY_RUN" != "true" ]]; then
-            cp -R "$plugin_src"/* "$plugin_dir/"
-            chmod -R 755 "$plugin_dir"
-            (
-                cd "$plugin_dir"
-                npm install --production
-            )
-        else
-            log_info "[DRY RUN] Would: copy $plugin_src/* -> $plugin_dir/"
-            log_info "[DRY RUN] Would: chmod -R 755 $plugin_dir"
-            log_info "[DRY RUN] Would: cd $plugin_dir && npm install --production"
+    if [[ "$DRY_RUN" != "true" ]]; then
+        if ! compgen -G "$plugin_src/*" >/dev/null; then
+            log_warning "Plugin source has no files (expected content under: $plugin_src); skipping phase"
+            add_skipped "lesson-recall plugin deploy (source empty)"
+            return
         fi
+
+        cp -R "$plugin_src"/* "$plugin_dir/"
+        chmod -R 755 "$plugin_dir"
+        (
+            cd "$plugin_dir"
+            npm install --production
+        )
     else
-        if [[ "$DRY_RUN" != "true" ]]; then
-            cat > "$plugin_dir/README.md" <<'EOF_PLUGIN'
-# lesson-recall
-Managed by GooseStack full upgrade.
-EOF_PLUGIN
-            cat > "$plugin_dir/index.js" <<'EOF_PLUGIN_JS'
-#!/usr/bin/env node
-console.log("lesson-recall plugin placeholder loaded");
-EOF_PLUGIN_JS
-            chmod +x "$plugin_dir/index.js"
-        else
-            log_info "[DRY RUN] Would: create placeholder lesson-recall plugin files"
-        fi
+        log_info "[DRY RUN] Would: copy $plugin_src/* -> $plugin_dir/"
+        log_info "[DRY RUN] Would: chmod -R 755 $plugin_dir"
+        log_info "[DRY RUN] Would: cd $plugin_dir && npm install --production"
     fi
 
     add_updated "lesson-recall plugin deployed"
@@ -625,12 +643,18 @@ phase_10_deploy_dashboard() {
     fi
 
     if [[ ! -d "$dashboard_src" ]]; then
-        log_warning "Dashboard source missing: $dashboard_src"
+        log_warning "Dashboard source directory missing (expected: $dashboard_src); skipping phase"
         add_skipped "Dashboard deploy (source missing)"
         return
     fi
 
     if [[ "$DRY_RUN" != "true" ]]; then
+        if ! compgen -G "$dashboard_src/*" >/dev/null; then
+            log_warning "Dashboard source has no files (expected content under: $dashboard_src); skipping phase"
+            add_skipped "Dashboard deploy (source empty)"
+            return
+        fi
+
         mkdir -p "$dashboard_dir" "$launch_dir"
         cp -R "$dashboard_src"/* "$dashboard_dir/"
         chmod -R 755 "$dashboard_dir"
