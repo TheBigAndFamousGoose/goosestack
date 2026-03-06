@@ -1,6 +1,4 @@
-# Private — revenue engine & local dashboard
 api/
-dashboard/
 *.db
 *.env
 .env*

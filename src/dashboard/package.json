@@ -1,0 +1,13 @@
+{
+  "name": "goosestack-dashboard",
+  "version": "1.0.0",
+  "description": "GooseStack Content Pipeline Dashboard",
+  "main": "server.js",
+  "dependencies": {
+    "better-sqlite3": "^12.6.2",
+    "express": "^4.21.0",
+    "multer": "^1.4.5-lts.1",
+    "sqlite-vec": "^0.1.7-alpha.2",
+    "uuid": "^10.0.0"
+  }
+}
