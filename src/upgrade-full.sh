@@ -580,7 +580,10 @@ phase_8_deploy_learning_pipeline() {
     if [[ "$DRY_RUN" != "true" ]]; then
         (
             cd "$pipeline_dir"
-            npm install --production
+            npm install --production 2>&1 || {
+                log_warning 'Prebuilt binary failed, rebuilding from source...'
+                npm rebuild better-sqlite3 --build-from-source
+            }
         )
         if [[ -f "$seed_schema_path" && -f "$seed_lessons_path" ]]; then
             sqlite3 "$data_dir/goosestack.db" < "$seed_schema_path"
@@ -628,7 +631,10 @@ phase_9_deploy_plugin() {
         chmod -R 755 "$plugin_dir"
         (
             cd "$plugin_dir"
-            npm install --production
+            npm install --production 2>&1 || {
+                log_warning 'Prebuilt binary failed, rebuilding from source...'
+                npm rebuild better-sqlite3 --build-from-source
+            }
         )
     else
         log_info "[DRY RUN] Would: copy $plugin_src/* -> $plugin_dir/"
@@ -676,7 +682,10 @@ phase_10_deploy_dashboard() {
         chmod -R 755 "$dashboard_dir"
         (
             cd "$dashboard_dir"
-            npm install --production
+            npm install --production 2>&1 || {
+                log_warning 'Prebuilt binary failed, rebuilding from source...'
+                npm rebuild better-sqlite3 --build-from-source
+            }
         )
 
         if [[ -f "$dashboard_tmpl" ]]; then

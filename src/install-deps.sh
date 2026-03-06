@@ -110,25 +110,42 @@ install_homebrew() {
 # Install Node.js
 install_nodejs() {
     show_progress 3 5 "Installing Node.js..."
-    
+
     if command -v node >/dev/null 2>&1; then
         local node_version
         node_version=$(node --version)
         log_info "Node.js already installed: $node_version"
-        
-        # Check if version is recent enough (v18+)
+
         local major_version
         major_version=$(echo "$node_version" | sed 's/v\([0-9]*\).*/\1/')
-        if [[ $major_version -lt 18 ]]; then
-            log_warning "Node.js version $node_version is old, upgrading..."
-            brew upgrade node
-        else
+        if [[ $major_version -eq 22 ]]; then
             log_success "Node.js version is compatible"
             return
         fi
+    fi
+
+    if brew list node@22 >/dev/null 2>&1; then
+        log_info "Node.js 22 LTS already installed via Homebrew"
     else
-        log_info "Installing Node.js via Homebrew..."
-        brew install node
+        log_info "Installing Node.js 22 LTS via Homebrew..."
+        brew install node@22
+    fi
+
+    if [[ "$GOOSE_ARCH" == "arm64" ]]; then
+        export PATH="/opt/homebrew/opt/node@22/bin:$PATH"
+    else
+        export PATH="/usr/local/opt/node@22/bin:$PATH"
+    fi
+
+    if command -v node >/dev/null 2>&1; then
+        local node_version_after_path
+        node_version_after_path=$(node --version)
+        local major_after_path
+        major_after_path=$(echo "$node_version_after_path" | sed 's/v\([0-9]*\).*/\1/')
+        if [[ $major_after_path -eq 22 ]]; then
+            log_success "Node.js version is compatible"
+            return
+        fi
     fi
     
     # Verify installation
