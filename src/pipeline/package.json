@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "GooseStack Learning Pipeline",
   "dependencies": {
-    "better-sqlite3": "^12.6.2",
+    "better-sqlite3": "11.7.0",
     "sqlite-vec": "^0.1.7-alpha.2",
     "uuid": "^10.0.0"
   }

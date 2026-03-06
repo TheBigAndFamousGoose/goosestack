@@ -912,11 +912,11 @@ phase_14_patch_config() {
     log_step "Phase 14: Patch openclaw.json for lesson-recall"
 
     if [[ "$DRY_RUN" != "true" ]]; then
-        python3 - <<'PY' "$CONFIG_FILE" "$LESSON_DB_PATH" "$TELEGRAM_CHAT_ID" "$USER_TZ"
+        python3 - <<'PY' "$CONFIG_FILE" "$LESSON_DB_PATH"
 import json
 import sys
 
-config_path, db_path, chat_id, user_tz = sys.argv[1:5]
+config_path, db_path = sys.argv[1:3]
 with open(config_path, "r", encoding="utf-8") as f:
     data = json.load(f)
 
@@ -927,14 +927,11 @@ lesson["enabled"] = True
 cfg = lesson.setdefault("config", {})
 cfg["enabled"] = True
 cfg["dbPath"] = db_path
-cfg["timezone"] = user_tz
 cfg.setdefault("ollamaUrl", "http://localhost:11434")
 cfg.setdefault("embeddingModel", "nomic-embed-text")
 cfg.setdefault("topK", 5)
 cfg.setdefault("minSimilarity", 0.45)
 cfg.setdefault("maxChars", 2000)
-if chat_id:
-    cfg["telegramChatId"] = chat_id
 
 with open(config_path, "w", encoding="utf-8") as f:
     json.dump(data, f, indent=2)
