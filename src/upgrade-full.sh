@@ -24,6 +24,7 @@ TELEGRAM_BOT_TOKEN=""
 
 TEMP_DIR=""
 INSTALL_DIR=""
+INSTALL_SRC_DIR=""
 SCRIPT_DIR=""
 GOOSE_REPO="https://github.com/TheBigAndFamousGoose/goosestack"
 
@@ -86,7 +87,7 @@ Required:
 
 Options:
   --dry-run                 Show what would change without changing anything
-  --inject-keys             Enable API key injection (phase 14)
+  --inject-keys             Enable API key injection (phase 15)
   --anthropic-key <value>   Anthropic API key to inject
   --openai-key <value>      OpenAI API key to inject
   --google-key <value>      Google API key to inject
@@ -245,7 +246,7 @@ phase_1_preflight() {
         exit 1
     fi
 
-    local required_cmds=(node npm brew)
+    local required_cmds=(node npm brew sqlite3)
     local cmd
     for cmd in "${required_cmds[@]}"; do
         if ! command -v "$cmd" >/dev/null 2>&1; then
@@ -305,7 +306,9 @@ phase_3_fetch_latest() {
         INSTALL_DIR="$SCRIPT_DIR"
     fi
 
-    if [[ ! -d "$INSTALL_DIR/src" ]]; then
+    INSTALL_SRC_DIR="$INSTALL_DIR/src"
+
+    if [[ ! -d "$INSTALL_SRC_DIR" ]]; then
         log_error "Fetched GooseStack is missing src/"
         exit 1
     fi
@@ -413,7 +416,7 @@ phase_7_cli_refresh() {
         cli_target="/usr/local/bin/goosestack"
     fi
 
-    local cli_src="$INSTALL_DIR/src/templates/goosestack-cli.sh"
+    local cli_src="$INSTALL_SRC_DIR/templates/goosestack-cli.sh"
     if [[ ! -f "$cli_src" ]]; then
         log_warning "CLI template not found: $cli_src"
         add_skipped "CLI refresh (template missing)"
@@ -459,6 +462,7 @@ phase_8_deploy_learning_pipeline() {
 
     local pipeline_dir="$GOOSE_HOME/pipeline"
     local data_dir="$pipeline_dir/data"
+    local pipeline_src="$INSTALL_SRC_DIR/pipeline"
 
     if [[ "$DRY_RUN" != "true" ]]; then
         mkdir -p "$pipeline_dir" "$data_dir"
@@ -466,36 +470,71 @@ phase_8_deploy_learning_pipeline() {
         log_info "[DRY RUN] Would: mkdir -p $pipeline_dir $data_dir"
     fi
 
-    local files=("learn-daily.js" "learn-scoring.js" "learn-extract-all.js")
+    local files=("learn-daily.js" "learn-scoring.js" "learn-extract-all.js" "package.json")
     local f
     for f in "${files[@]}"; do
-        local src="$INSTALL_DIR/src/pipeline/$f"
+        local src="$pipeline_src/$f"
         local dst="$pipeline_dir/$f"
 
         if [[ -f "$src" ]]; then
             if [[ "$DRY_RUN" != "true" ]]; then
                 cp "$src" "$dst"
-                chmod +x "$dst"
+                if [[ "$f" == *.js ]]; then
+                    chmod +x "$dst"
+                fi
             else
                 log_info "[DRY RUN] Would: copy $src -> $dst"
-                log_info "[DRY RUN] Would: chmod +x $dst"
+                if [[ "$f" == *.js ]]; then
+                    log_info "[DRY RUN] Would: chmod +x $dst"
+                fi
             fi
         else
-            log_warning "Missing $src, creating fallback $dst"
-            write_default_learning_script "$dst" "$f"
+            if [[ "$f" == *.js ]]; then
+                log_warning "Missing $src, creating fallback $dst"
+                write_default_learning_script "$dst" "$f"
+            else
+                log_warning "Missing required file: $src"
+                add_skipped "Learning pipeline file missing: $f"
+            fi
         fi
     done
 
-    local schema_src="$INSTALL_DIR/src/templates/seed-schema.sql"
-    local schema_dst="$data_dir/seed-schema.sql"
-    if [[ -f "$schema_src" ]]; then
+    local seed_files=("seed-schema.sql" "seed-lessons.sql")
+    for f in "${seed_files[@]}"; do
+        local seed_src="$INSTALL_SRC_DIR/templates/$f"
+        local seed_dst="$data_dir/$f"
+        if [[ ! -f "$seed_src" ]]; then
+            log_warning "Missing seed template: $seed_src"
+            add_skipped "Seed copy ($f missing)"
+            continue
+        fi
+
         if [[ "$DRY_RUN" != "true" ]]; then
-            cp "$schema_src" "$schema_dst"
+            cp "$seed_src" "$seed_dst"
         else
-            log_info "[DRY RUN] Would: copy $schema_src -> $schema_dst"
+            log_info "[DRY RUN] Would: copy $seed_src -> $seed_dst"
+        fi
+    done
+
+    local seed_schema_path="$data_dir/seed-schema.sql"
+    local seed_lessons_path="$data_dir/seed-lessons.sql"
+
+    if [[ "$DRY_RUN" != "true" ]]; then
+        (
+            cd "$pipeline_dir"
+            npm install --production
+        )
+        if [[ -f "$seed_schema_path" && -f "$seed_lessons_path" ]]; then
+            sqlite3 "$data_dir/goosestack.db" < "$seed_schema_path"
+            sqlite3 "$data_dir/goosestack.db" < "$seed_lessons_path"
+        else
+            log_warning "Skipping DB initialization because seed SQL files are missing"
+            add_skipped "Pipeline DB initialization (seed files missing)"
         fi
     else
-        add_skipped "Seed schema copy (template missing)"
+        log_info "[DRY RUN] Would: cd $pipeline_dir && npm install --production"
+        log_info "[DRY RUN] Would: sqlite3 $data_dir/goosestack.db < $seed_schema_path"
+        log_info "[DRY RUN] Would: sqlite3 $data_dir/goosestack.db < $seed_lessons_path"
     fi
 
     add_updated "Learning pipeline deployed"
@@ -506,7 +545,7 @@ phase_9_deploy_plugin() {
     log_step "Phase 9: Deploy lesson-recall plugin"
 
     local plugin_dir="$GOOSE_HOME/extensions/lesson-recall"
-    local plugin_src="$INSTALL_DIR/src/extensions/lesson-recall"
+    local plugin_src="$INSTALL_SRC_DIR/extensions/lesson-recall"
 
     if [[ "$DRY_RUN" != "true" ]]; then
         mkdir -p "$plugin_dir"
@@ -518,9 +557,14 @@ phase_9_deploy_plugin() {
         if [[ "$DRY_RUN" != "true" ]]; then
             cp -R "$plugin_src"/* "$plugin_dir/"
             chmod -R 755 "$plugin_dir"
+            (
+                cd "$plugin_dir"
+                npm install --production
+            )
         else
             log_info "[DRY RUN] Would: copy $plugin_src/* -> $plugin_dir/"
             log_info "[DRY RUN] Would: chmod -R 755 $plugin_dir"
+            log_info "[DRY RUN] Would: cd $plugin_dir && npm install --production"
         fi
     else
         if [[ "$DRY_RUN" != "true" ]]; then
@@ -541,11 +585,74 @@ EOF_PLUGIN_JS
     add_updated "lesson-recall plugin deployed"
 }
 
-# Phase 10: Merge workspace (append-only for selected files + overwrite templates).
-phase_10_workspace_merge() {
-    log_step "Phase 10: Workspace merge"
+# Phase 10: Deploy dashboard and install dependencies.
+phase_10_deploy_dashboard() {
+    log_step "Phase 10: Deploy dashboard"
 
-    local helper="$INSTALL_DIR/src/upgrade-workspace.sh"
+    local dashboard_dir="$GOOSE_HOME/dashboard"
+    local dashboard_src="$INSTALL_SRC_DIR/dashboard"
+    local launch_dir="$HOME/Library/LaunchAgents"
+    local dashboard_tmpl="$INSTALL_SRC_DIR/templates/ai.openclaw.dashboard.plist.tmpl"
+    local dashboard_out="$launch_dir/ai.openclaw.dashboard.plist"
+    local node_path
+    node_path=$(command -v node)
+    local npm_root
+    npm_root=$(npm root -g)
+    local openclaw_entry=""
+
+    if command -v openclaw >/dev/null 2>&1; then
+        openclaw_entry=$(resolve_openclaw_entry)
+    fi
+
+    if [[ ! -d "$dashboard_src" ]]; then
+        log_warning "Dashboard source missing: $dashboard_src"
+        add_skipped "Dashboard deploy (source missing)"
+        return
+    fi
+
+    if [[ "$DRY_RUN" != "true" ]]; then
+        mkdir -p "$dashboard_dir" "$launch_dir"
+        cp -R "$dashboard_src"/* "$dashboard_dir/"
+        chmod -R 755 "$dashboard_dir"
+        (
+            cd "$dashboard_dir"
+            npm install --production
+        )
+
+        if [[ -f "$dashboard_tmpl" ]]; then
+            render_plist_template "$dashboard_tmpl" "$dashboard_out" "$GOOSE_HOME" "$node_path" "$npm_root" "$openclaw_entry"
+            if plutil -lint "$dashboard_out" >/dev/null 2>&1; then
+                log_success "Validated $(basename "$dashboard_out")"
+            else
+                log_error "Invalid plist generated: $dashboard_out"
+                exit 1
+            fi
+        else
+            log_warning "Dashboard plist template missing: $dashboard_tmpl"
+            add_skipped "Dashboard LaunchAgent (template missing)"
+        fi
+    else
+        log_info "[DRY RUN] Would: mkdir -p $dashboard_dir $launch_dir"
+        log_info "[DRY RUN] Would: copy $dashboard_src/* -> $dashboard_dir/"
+        log_info "[DRY RUN] Would: chmod -R 755 $dashboard_dir"
+        log_info "[DRY RUN] Would: cd $dashboard_dir && npm install --production"
+        if [[ -f "$dashboard_tmpl" ]]; then
+            log_info "[DRY RUN] Would: render $dashboard_tmpl -> $dashboard_out"
+            log_info "[DRY RUN] Would: plutil -lint $dashboard_out"
+        else
+            log_warning "Dashboard plist template missing: $dashboard_tmpl"
+            add_skipped "Dashboard LaunchAgent (template missing)"
+        fi
+    fi
+
+    add_updated "Dashboard deployed"
+}
+
+# Phase 11: Merge workspace (append-only for selected files + overwrite templates).
+phase_11_workspace_merge() {
+    log_step "Phase 11: Workspace merge"
+
+    local helper="$INSTALL_SRC_DIR/upgrade-workspace.sh"
     if [[ ! -f "$helper" ]]; then
         helper="$SCRIPT_DIR/src/upgrade-workspace.sh"
     fi
@@ -565,16 +672,16 @@ phase_10_workspace_merge() {
         log_info "[DRY RUN] Would: mkdir -p $WORKSPACE_DIR"
     fi
 
-    local soul_template="$INSTALL_DIR/src/templates/SOUL.md"
+    local soul_template="$INSTALL_SRC_DIR/templates/SOUL.md"
     if [[ ! -f "$soul_template" ]]; then
-        soul_template="$INSTALL_DIR/src/templates/SOUL-partner.md"
+        soul_template="$INSTALL_SRC_DIR/templates/SOUL-partner.md"
     fi
 
     local append_sources=(
         "$soul_template"
-        "$INSTALL_DIR/src/templates/MEMORY.md"
-        "$INSTALL_DIR/src/templates/USER.md.tmpl"
-        "$INSTALL_DIR/src/templates/IDENTITY.md"
+        "$INSTALL_SRC_DIR/templates/MEMORY.md"
+        "$INSTALL_SRC_DIR/templates/USER.md.tmpl"
+        "$INSTALL_SRC_DIR/templates/IDENTITY.md"
     )
     local append_targets=(
         "$WORKSPACE_DIR/SOUL.md"
@@ -609,7 +716,7 @@ phase_10_workspace_merge() {
     local overwrite_files=("AGENTS.md" "HEARTBEAT.md" "TOOLS.md")
     local name
     for name in "${overwrite_files[@]}"; do
-        local from="$INSTALL_DIR/src/templates/$name"
+        local from="$INSTALL_SRC_DIR/templates/$name"
         local to="$WORKSPACE_DIR/$name"
         if [[ ! -f "$from" ]]; then
             log_warning "Template missing for overwrite: $from"
@@ -648,9 +755,9 @@ render_plist_template() {
         "$tmpl" > "$out"
 }
 
-# Phase 11: Rebuild LaunchAgent plists from .tmpl files and validate.
-phase_11_rebuild_launchagents() {
-    log_step "Phase 11: Rebuild LaunchAgents"
+# Phase 12: Rebuild LaunchAgent plists from .tmpl files and validate.
+phase_12_rebuild_launchagents() {
+    log_step "Phase 12: Rebuild LaunchAgents"
 
     local launch_dir="$HOME/Library/LaunchAgents"
     local node_path
@@ -673,11 +780,12 @@ phase_11_rebuild_launchagents() {
         "ai.openclaw.gateway.plist.tmpl"
         "ai.openclaw.watchdog.plist.tmpl"
         "ai.openclaw.learn-daily.plist.tmpl"
+        "ai.openclaw.dashboard.plist.tmpl"
     )
 
     local t
     for t in "${templates[@]}"; do
-        local tmpl_path="$INSTALL_DIR/src/templates/$t"
+        local tmpl_path="$INSTALL_SRC_DIR/templates/$t"
         local out_path="$launch_dir/${t%.tmpl}"
 
         if [[ ! -f "$tmpl_path" ]]; then
@@ -738,9 +846,9 @@ add_cron_job() {
     add_updated "Cron: $description"
 }
 
-# Phase 12: Install cron jobs for daily memory curation and lesson review.
-phase_12_install_cron() {
-    log_step "Phase 12: Install cron jobs"
+# Phase 13: Install cron jobs for daily memory curation and lesson review.
+phase_13_install_cron() {
+    log_step "Phase 13: Install cron jobs"
 
     if ! command -v openclaw >/dev/null 2>&1; then
         log_warning "openclaw not found; skipping cron setup"
@@ -755,9 +863,9 @@ phase_12_install_cron() {
     add_cron_job "30 4 * * *" "node $GOOSE_HOME/pipeline/learn-scoring.js" "lesson-review" "$existing_list"
 }
 
-# Phase 13: Patch openclaw.json with lesson-recall plugin config (safe JSON merge via python3).
-phase_13_patch_config() {
-    log_step "Phase 13: Patch openclaw.json for lesson-recall"
+# Phase 14: Patch openclaw.json with lesson-recall plugin config (safe JSON merge via python3).
+phase_14_patch_config() {
+    log_step "Phase 14: Patch openclaw.json for lesson-recall"
 
     if [[ "$DRY_RUN" != "true" ]]; then
         python3 - <<'PY' "$CONFIG_FILE" "$LESSON_DB_PATH" "$TELEGRAM_CHAT_ID" "$USER_TZ"
@@ -796,9 +904,9 @@ PY
     add_updated "openclaw.json patched for lesson-recall"
 }
 
-# Phase 14: Optionally inject API keys.
-phase_14_inject_keys() {
-    log_step "Phase 14: Optional API key injection"
+# Phase 15: Optionally inject API keys.
+phase_15_inject_keys() {
+    log_step "Phase 15: Optional API key injection"
 
     if [[ "$INJECT_KEYS" != "true" ]]; then
         log_info "--inject-keys not set; skipping key injection"
@@ -851,9 +959,9 @@ PY
     add_updated "API keys injected"
 }
 
-# Phase 15: Restart gateway and run health checks.
-phase_15_restart_and_healthcheck() {
-    log_step "Phase 15: Restart gateway and healthcheck"
+# Phase 16: Restart gateway and run health checks.
+phase_16_restart_and_healthcheck() {
+    log_step "Phase 16: Restart gateway and healthcheck"
 
     if ! command -v openclaw >/dev/null 2>&1; then
         log_warning "openclaw not found; skipping restart/healthcheck"
@@ -868,12 +976,12 @@ phase_15_restart_and_healthcheck() {
             log_warning "Gateway restart failed"
         fi
 
-        if [[ -f "$INSTALL_DIR/src/healthcheck.sh" ]]; then
+        if [[ -f "$INSTALL_SRC_DIR/healthcheck.sh" ]]; then
             (
                 export GOOSE_WORKSPACE_DIR="$WORKSPACE_DIR"
                 export GOOSE_ARCH="$(uname -m)"
                 # shellcheck source=/dev/null
-                source "$INSTALL_DIR/src/healthcheck.sh"
+                source "$INSTALL_SRC_DIR/healthcheck.sh"
             ) || log_warning "Healthcheck reported issues"
         else
             log_warning "healthcheck.sh not found; skipped"
@@ -886,9 +994,9 @@ phase_15_restart_and_healthcheck() {
     add_updated "Gateway restart + healthcheck phase completed"
 }
 
-# Phase 16: Print an explicit summary of actions performed and skipped.
-phase_16_summary() {
-    log_step "Phase 16: Upgrade summary"
+# Phase 17: Print an explicit summary of actions performed and skipped.
+phase_17_summary() {
+    log_step "Phase 17: Upgrade summary"
 
     if [[ ${#UPDATED_ITEMS[@]} -gt 0 ]]; then
         log_success "Completed/planned actions:"
@@ -928,13 +1036,14 @@ main() {
     phase_7_cli_refresh
     phase_8_deploy_learning_pipeline
     phase_9_deploy_plugin
-    phase_10_workspace_merge
-    phase_11_rebuild_launchagents
-    phase_12_install_cron
-    phase_13_patch_config
-    phase_14_inject_keys
-    phase_15_restart_and_healthcheck
-    phase_16_summary
+    phase_10_deploy_dashboard
+    phase_11_workspace_merge
+    phase_12_rebuild_launchagents
+    phase_13_install_cron
+    phase_14_patch_config
+    phase_15_inject_keys
+    phase_16_restart_and_healthcheck
+    phase_17_summary
 }
 
 main "$@"
