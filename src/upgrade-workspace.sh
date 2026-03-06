@@ -29,11 +29,14 @@ append_missing_sections() {
     done < <(awk '/^##[[:space:]]+/ {sub(/^##[[:space:]]+/, "", $0); print}' "$target_file")
 
     local appended=false
+    if [[ ${#headings[@]} -eq 0 ]]; then
+        return 0
+    fi
     local heading
     for heading in "${headings[@]}"; do
         local exists=false
         local target_heading
-        for target_heading in "${target_headings[@]}"; do
+        for target_heading in ${target_headings[@]+"${target_headings[@]}"}; do
             if [[ "$target_heading" == "$heading" ]]; then
                 exists=true
                 break
