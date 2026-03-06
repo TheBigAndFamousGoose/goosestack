@@ -19,8 +19,18 @@ INJECT_KEYS=false
 ANTHROPIC_KEY=""
 OPENAI_KEY=""
 GOOGLE_KEY=""
+GROQ_KEY=""
+XAI_KEY=""
 BRAVE_KEY=""
 TELEGRAM_BOT_TOKEN=""
+
+OPENAI_KEY="${OPENAI_KEY:-}"
+GOOGLE_KEY="${GOOGLE_KEY:-}"
+GROQ_KEY="${GROQ_KEY:-}"
+XAI_KEY="${XAI_KEY:-}"
+BRAVE_KEY="${BRAVE_KEY:-}"
+TELEGRAM_BOT_TOKEN="${TELEGRAM_BOT_TOKEN:-}"
+ANTHROPIC_KEY="${ANTHROPIC_KEY:-}"
 
 TEMP_DIR=""
 INSTALL_DIR=""
@@ -91,6 +101,8 @@ Options:
   --anthropic-key <value>   Anthropic API key to inject
   --openai-key <value>      OpenAI API key to inject
   --google-key <value>      Google API key to inject
+  --groq-key <value>        Groq API key to inject
+  --xai-key <value>         xAI API key to inject
   --brave-key <value>       Brave Search API key to inject
   --telegram-bot-token <v>  Telegram bot token to inject
   -h, --help                Show this help
@@ -122,6 +134,14 @@ parse_args() {
                 ;;
             --google-key)
                 GOOGLE_KEY="${2:-}"
+                shift 2
+                ;;
+            --groq-key)
+                GROQ_KEY="${2:-}"
+                shift 2
+                ;;
+            --xai-key)
+                XAI_KEY="${2:-}"
                 shift 2
                 ;;
             --brave-key)
@@ -914,18 +934,18 @@ phase_15_inject_keys() {
         return
     fi
 
-    if [[ -z "$ANTHROPIC_KEY$OPENAI_KEY$GOOGLE_KEY$BRAVE_KEY$TELEGRAM_BOT_TOKEN" ]]; then
+    if [[ -z "$ANTHROPIC_KEY$OPENAI_KEY$GOOGLE_KEY$GROQ_KEY$XAI_KEY$BRAVE_KEY$TELEGRAM_BOT_TOKEN" ]]; then
         log_warning "--inject-keys set but no key values were provided"
         add_skipped "API key injection (no values provided)"
         return
     fi
 
     if [[ "$DRY_RUN" != "true" ]]; then
-        python3 - <<'PY' "$CONFIG_FILE" "$ANTHROPIC_KEY" "$OPENAI_KEY" "$GOOGLE_KEY" "$BRAVE_KEY" "$TELEGRAM_BOT_TOKEN"
+        python3 - <<'PY' "$CONFIG_FILE" "$ANTHROPIC_KEY" "$OPENAI_KEY" "$GOOGLE_KEY" "$GROQ_KEY" "$XAI_KEY" "$BRAVE_KEY" "$TELEGRAM_BOT_TOKEN"
 import json
 import sys
 
-config_path, anthropic, openai, google, brave, telegram = sys.argv[1:7]
+config_path, anthropic, openai, google, groq, xai, brave, telegram = sys.argv[1:9]
 with open(config_path, "r", encoding="utf-8") as f:
     data = json.load(f)
 
@@ -940,6 +960,12 @@ if openai:
 if google:
     p = auth_profiles.setdefault("google:default", {"provider": "google", "mode": "api_key"})
     p["apiKey"] = google
+if groq:
+    p = auth_profiles.setdefault("groq:default", {"provider": "groq", "mode": "api_key"})
+    p["apiKey"] = groq
+if xai:
+    p = auth_profiles.setdefault("xai:default", {"provider": "xai", "mode": "api_key"})
+    p["apiKey"] = xai
 if brave:
     data.setdefault("tools", {}).setdefault("web", {}).setdefault("search", {})["apiKey"] = brave
 if telegram:
