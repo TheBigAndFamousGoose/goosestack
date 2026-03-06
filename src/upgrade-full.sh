@@ -279,6 +279,22 @@ phase_1_preflight() {
         log_warning "openclaw binary not found in PATH (some phases may be skipped)"
     fi
 
+    # Check for Xcode Command Line Tools (required for native npm packages like better-sqlite3)
+    if ! xcode-select -p >/dev/null 2>&1; then
+        log_warning "Xcode Command Line Tools not found — required for native npm packages"
+        log_info "Installing Xcode Command Line Tools (this may take a few minutes)..."
+        if [[ "$DRY_RUN" != "true" ]]; then
+            xcode-select --install 2>/dev/null || true
+            # Wait for installation to complete
+            log_info "Please complete the Xcode CLT installation dialog, then re-run this script."
+            exit 0
+        else
+            log_info "[DRY RUN] Would: xcode-select --install"
+        fi
+    else
+        log_info "Xcode Command Line Tools: $(xcode-select -p)"
+    fi
+
     add_updated "Preflight checks passed"
 }
 
