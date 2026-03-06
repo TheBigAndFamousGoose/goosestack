@@ -937,8 +937,8 @@ add_lesson_review_cron() {
             --cron "30 4 * * *" \
             --tz "$USER_TZ" \
             --session main \
-            --system-event "LESSON_REVIEW_TRIGGER: Check for awaiting_approval lessons and send to Alex for review." \
-            --no-deliver 2>/dev/null; then
+            --system-event "LESSON_REVIEW_TRIGGER: Check for awaiting_approval lessons and send to User for review." \
+            2>/dev/null; then
             log_success "Cron added: $name"
         else
             log_warning "Failed to add cron job: $name"
@@ -946,7 +946,7 @@ add_lesson_review_cron() {
             return
         fi
     else
-        log_info "[DRY RUN] Would: openclaw cron add --name '$name' --cron '30 4 * * *' --tz '$USER_TZ' --session main --system-event 'LESSON_REVIEW_TRIGGER: Check for awaiting_approval lessons and send to Alex for review.' --no-deliver"
+        log_info "[DRY RUN] Would: openclaw cron add --name '$name' --cron '30 4 * * *' --tz '$USER_TZ' --session main --system-event 'LESSON_REVIEW_TRIGGER: Check for awaiting_approval lessons and send to User for review.'"
     fi
 
     add_updated "Cron: $name"
