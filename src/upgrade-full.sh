@@ -878,6 +878,24 @@ phase_12_rebuild_launchagents() {
         fi
     done
 
+    # Load non-gateway LaunchAgents (gateway is managed by openclaw gateway start)
+    if [[ "$DRY_RUN" != "true" ]]; then
+        for plist_file in "$launch_dir"/ai.openclaw.*.plist; do
+            [[ -f "$plist_file" ]] || continue
+            local plist_name
+            plist_name=$(basename "$plist_file" .plist)
+            # Skip gateway — managed by openclaw itself
+            [[ "$plist_name" == "ai.openclaw.gateway" ]] && continue
+            # Unload first (idempotent)
+            launchctl bootout "gui/$(id -u)/$plist_name" 2>/dev/null || true
+            if launchctl bootstrap "gui/$(id -u)" "$plist_file" 2>/dev/null || launchctl load "$plist_file" 2>/dev/null; then
+                log_success "Loaded LaunchAgent: $plist_name"
+            else
+                log_warning "Failed to load LaunchAgent: $plist_name"
+            fi
+        done
+    fi
+
     add_updated "LaunchAgents rebuilt"
 }
 
